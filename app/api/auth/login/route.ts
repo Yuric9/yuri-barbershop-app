@@ -8,7 +8,16 @@ import { createSession, SESSION_COOKIE } from "../../../session-auth";
 
 export const dynamic = "force-dynamic";
 
+function safeServerError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (/no such table/i.test(message)) return "Banco de dados ainda não foi preparado.";
+  if (/cpu|time limit|exceeded/i.test(message)) return "O processamento da senha excedeu o limite do servidor.";
+  if (/D1|database|SQLITE/i.test(message)) return "Falha ao acessar o banco de dados.";
+  return "Falha interna ao criar o acesso.";
+}
+
 export async function POST(request: Request) {
+ try {
   const body = await request.json() as Record<string, unknown>;
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
@@ -37,4 +46,8 @@ export async function POST(request: Request) {
   const session = await createSession(email);
   (await cookies()).set(SESSION_COOKIE, session.token, { httpOnly: true, secure: new URL(request.url).protocol === "https:", sameSite: "lax", path: "/", expires: session.expiresAt });
   return Response.json({ ok: true, role });
+ } catch (error) {
+  console.error("auth-login-failure", error);
+  return Response.json({ error: safeServerError(error) }, { status: 500 });
+ }
 }
