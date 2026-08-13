@@ -1,4 +1,4 @@
-const ITERATIONS = 210_000;
+const ITERATIONS = 10_000;
 
 function bytesToBase64Url(bytes: Uint8Array) {
   let binary = "";
@@ -23,7 +23,7 @@ export async function verifyPassword(password: string, encoded: string) {
   const [algorithm, iterationsText, saltText, expectedText] = encoded.split("$");
   if (algorithm !== "pbkdf2-sha256" || !iterationsText || !saltText || !expectedText) return false;
   const iterations = Number(iterationsText);
-  if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000) return false;
+  if (!Number.isInteger(iterations) || iterations < 10_000 || iterations > 1_000_000) return false;
   const salt = base64UrlToBytes(saltText);
   const expected = base64UrlToBytes(expectedText);
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
