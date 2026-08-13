@@ -1,10 +1,11 @@
-import { chatGPTSignInPath, getChatGPTUser } from "./chatgpt-auth";
+import { getChatGPTUser } from "./chatgpt-auth";
 import PortalClient from "./portal-client";
 import { isAdminEmail } from "./admin-access";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "../db";
 import { products, promotions, subscriptionCampaigns } from "../db/schema";
 import LoginCampaignPopup from "./login-campaign-popup";
+import LoginPanel from "./login-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -30,19 +31,11 @@ export default async function Home() {
             <img src="/brand/yuri-barbershop-logo.png" alt="Yuri Barbershop" />
             <span>ESTILO • CONFIANÇA • ATITUDE</span>
           </div>
-          <div className="access-box login-card" id="acesso">
-            <span className="eyebrow">BEM-VINDO</span>
-            <h1>Acesse a Yuri Barbershop</h1>
-            <p>Entre para agendar serviços, acompanhar seus horários e conhecer nossas novidades.</p>
-            <a className="primary-button access-client" href={chatGPTSignInPath("/")}><span>♙</span><div><strong>Entrar como cliente</strong><small>Agendar e consultar horários</small></div></a>
-            <a className="access-admin" href={chatGPTSignInPath("/")}><span>◇</span><div><strong>Entrar como administrador</strong><small>Acesso exclusivo à gestão</small></div></a>
-            <div className="login-help"><b>Horários de atendimento</b><span>Segunda a sexta: 18h às 20h30</span><span>Sábado: 8h às 20h30 • Domingo: 8h às 12h</span><small>Os agendamentos aguardam confirmação pelo WhatsApp.</small></div>
-            <a className="privacy-link" href="/privacidade">Privacidade e proteção de dados</a>
-          </div>
+          <LoginPanel />
         </section>
       </main>
     );
   }
 
-  return <PortalClient user={{ name: user.displayName, email: user.email }} role={isAdminEmail(user.email) ? "admin" : "client"} />;
+  return <PortalClient user={{ name: user.displayName, email: user.email }} role={user.role === "admin" || isAdminEmail(user.email) ? "admin" : "client"} />;
 }

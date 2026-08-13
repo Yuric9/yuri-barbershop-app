@@ -8,6 +8,21 @@ export const profiles = sqliteTable("profiles", {
   createdAt: text("created_at").notNull(),
 });
 
+export const accounts = sqliteTable("accounts", {
+  email: text("email").primaryKey(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("client"),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull(),
+});
+
+export const authSessions = sqliteTable("auth_sessions", {
+  tokenHash: text("token_hash").primaryKey(),
+  accountEmail: text("account_email").notNull(),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
 export const services = sqliteTable("services", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),

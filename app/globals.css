@@ -93,6 +93,22 @@ a {
 .access-box.login-card { max-width: none; margin: 0; padding: 34px; border-color: #454137; border-radius: 24px; background: #191916ed; box-shadow: 0 35px 90px #0008; }
 .login-card h1 { margin: 8px 0 10px; font: 36px/1.1 Georgia,serif; }
 .login-card > p { margin-bottom: 22px !important; font-size: 13px !important; line-height: 1.55; }
+.login-tabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; margin-bottom: 18px; padding: 4px; border-radius: 11px; background: #0e0e0c; }
+.login-tabs button { padding: 10px 5px; border: 0; border-radius: 8px; background: transparent; color: #89857c; font-size: 9px; font-weight: 800; }
+.login-tabs button.active { background: #302d26; color: var(--gold); }
+.own-login-form { display: grid; gap: 12px; }
+.own-login-form label { display: grid; gap: 6px; color: #aaa69c; font-size: 9px; font-weight: 800; }
+.own-login-form input { width: 100%; padding: 13px; border: 1px solid #454138; border-radius: 9px; outline: 0; background: #10100e; color: white; }
+.own-login-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px #c59a3d18; }
+.login-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.login-submit { width: 100%; margin-top: 3px; }
+.login-submit:disabled { opacity: .65; cursor: wait; }
+.login-message { margin: 0 !important; padding: 10px 12px; border: 1px solid #89483f; border-radius: 8px; background: #451f1b55; color: #efb6ad !important; font-size: 10px !important; }
+.visitor-link { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border: 1px solid #3e3a32; border-radius: 10px; color: white; text-decoration: none; }
+.visitor-link > span { color: var(--gold); font-size: 20px; }
+.visitor-link div { display: flex; flex-direction: column; gap: 3px; }
+.visitor-link strong { font-size: 11px; }
+.visitor-link small { color: #89857c; font-size: 8px; }
 .login-help { display: flex; flex-direction: column; gap: 5px; margin-top: 22px; padding-top: 18px; border-top: 1px solid #34322d; color: #aaa69c; font-size: 10px; line-height: 1.45; }
 .login-help b { margin-bottom: 3px; color: white; font-size: 11px; }
 .login-help small { margin-top: 6px; color: var(--gold); font-size: 9px; }

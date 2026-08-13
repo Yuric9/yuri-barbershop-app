@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const user = await getChatGPTUser();
-  if (!user || !isAdminEmail(user.email)) return Response.json({ error: "Não autorizado" }, { status: 403 });
+  if (!user || (user.role !== "admin" && !isAdminEmail(user.email))) return Response.json({ error: "Não autorizado" }, { status: 403 });
   const data = await request.formData();
   const file = data.get("file");
   if (!(file instanceof File)) return Response.json({ error: "Selecione uma imagem" }, { status: 400 });

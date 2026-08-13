@@ -1,10 +1,12 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getSessionUser } from "./session-auth";
 
 export type ChatGPTUser = {
   displayName: string;
   email: string;
   fullName: string | null;
+  role?: string;
 };
 
 const USER_EMAIL_HEADER = "oai-authenticated-user-email";
@@ -19,7 +21,7 @@ const CALLBACK_PATH = "/callback";
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!email) return null;
+  if (!email) return getSessionUser();
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
@@ -50,8 +52,8 @@ export function chatGPTSignInPath(returnTo: string): string {
 }
 
 export function chatGPTSignOutPath(returnTo = "/"): string {
-  const safeReturnTo = safeRelativeReturnPath(returnTo);
-  return `${SIGN_OUT_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
+  void returnTo;
+  return "/api/auth/logout";
 }
 
 function safeRelativeReturnPath(value: string): string {

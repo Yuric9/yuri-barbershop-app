@@ -290,7 +290,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
         )}
         <a
           className="logout-button"
-          href="/signout-with-chatgpt?return_to=%2F"
+          href="/api/auth/logout"
           rel="nofollow"
         >
           <span>↪</span> {portalRole === "admin" ? "Sair / trocar usuário" : "Sair"}

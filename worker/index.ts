@@ -6,6 +6,8 @@ interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
   BUCKET: R2Bucket;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD_HASH?: string;
   IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -30,6 +32,8 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     (globalThis as typeof globalThis & { __YURI_DB?: D1Database }).__YURI_DB = env.DB;
     (globalThis as typeof globalThis & { __YURI_BUCKET?: R2Bucket }).__YURI_BUCKET = env.BUCKET;
+    (globalThis as typeof globalThis & { __YURI_ADMIN_EMAIL?: string }).__YURI_ADMIN_EMAIL = env.ADMIN_EMAIL;
+    (globalThis as typeof globalThis & { __YURI_ADMIN_PASSWORD_HASH?: string }).__YURI_ADMIN_PASSWORD_HASH = env.ADMIN_PASSWORD_HASH;
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {

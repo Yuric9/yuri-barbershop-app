@@ -71,7 +71,7 @@ export async function GET(request: Request) {
   if (!user) return unauthorized();
   await seedServices();
   const db = getDb();
-  const isAdmin = isAdminEmail(user.email);
+  const isAdmin = user.role === "admin" || isAdminEmail(user.email);
   const [
     serviceRows,
     productRows,
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
   const db = getDb();
   const body = (await request.json()) as Record<string, unknown>;
   const action = String(body.action || "");
-  const isAdmin = isAdminEmail(user.email);
+  const isAdmin = user.role === "admin" || isAdminEmail(user.email);
   const now = new Date().toISOString();
 
   if (action === "profile") {
