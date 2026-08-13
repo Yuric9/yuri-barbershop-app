@@ -3,8 +3,7 @@ import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 
-const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
-  "00000000-0000-4000-8000-000000000000";
+const CLOUDFLARE_DATABASE_ID = "11c22ba1-548c-4143-b964-1341ecdf0e88";
 
 const { d1, r2 } = hostingConfig;
 
@@ -18,8 +17,9 @@ const localBindingConfig = {
     ? [
         {
           binding: d1,
-          database_name: "site-creator-d1",
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
+          database_name: "yuri-barbershop-db",
+          database_id: CLOUDFLARE_DATABASE_ID,
+          migrations_dir: "./drizzle",
         },
       ]
     : [],
@@ -27,7 +27,7 @@ const localBindingConfig = {
     ? [
         {
           binding: r2,
-          bucket_name: "site-creator-r2",
+          bucket_name: "imagens-de-barbearia-yuri",
         },
       ]
     : [],

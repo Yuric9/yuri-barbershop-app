@@ -6,7 +6,7 @@ interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
   BUCKET: R2Bucket;
-  IMAGES: {
+  IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
         output(options: { format: string; quality: number }): Promise<{ response(): Response }>;
@@ -33,6 +33,13 @@ const worker = {
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
+      if (!env.IMAGES) {
+        const source = url.searchParams.get("url");
+        if (!source || !source.startsWith("/")) {
+          return new Response("Imagem inválida", { status: 400 });
+        }
+        return env.ASSETS.fetch(new Request(new URL(source, request.url)));
+      }
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),

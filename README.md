@@ -1,4 +1,19 @@
-# vinext-starter
+# Yuri Barbershop
+
+## Implantação própria na Cloudflare
+
+O projeto inclui `wrangler.jsonc` preparado para o Worker `yuri-barbershop-app`,
+o banco D1 `yuri-barbershop-db` e o bucket R2
+`imagens-de-barbearia-yuri`.
+
+Antes da primeira implantação:
+
+1. Configure a autenticação e os segredos do administrador.
+2. Execute `npm run cloudflare:migrate` para criar ou atualizar as tabelas.
+3. Valide com `npm run cloudflare:check`.
+4. Implante pelo fluxo conectado ao GitHub na Cloudflare.
+
+Nunca grave senhas ou tokens no código ou no arquivo `wrangler.jsonc`.
 
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
