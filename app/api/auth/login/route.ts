@@ -20,12 +20,15 @@ export async function POST(request: Request) {
   let valid = Boolean(account?.active && await verifyPassword(password, account.passwordHash));
   let role = account?.role || "client";
 
-  if (!account) {
-    const admin = adminRuntimeConfig();
-    if (email === admin.email && admin.passwordHash && await verifyPassword(password, admin.passwordHash)) {
-      role = "admin";
-      valid = true;
+  const admin = adminRuntimeConfig();
+  const validRuntimeAdmin = email === admin.email && Boolean(admin.passwordHash) && await verifyPassword(password, admin.passwordHash);
+  if (validRuntimeAdmin) {
+    role = "admin";
+    valid = true;
+    if (!account) {
       await db.insert(accounts).values({ email, passwordHash: admin.passwordHash, role, active: true, createdAt: new Date().toISOString() });
+    } else if (account.role !== "admin" || !account.active || account.passwordHash !== admin.passwordHash) {
+      await db.update(accounts).set({ passwordHash: admin.passwordHash, role: "admin", active: true }).where(eq(accounts.email, email));
     }
   }
 
