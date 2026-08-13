@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `admin_message` text DEFAULT '' NOT NULL;

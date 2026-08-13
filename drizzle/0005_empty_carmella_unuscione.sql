@@ -1,0 +1,1 @@
+ALTER TABLE `subscriptions` ADD `admin_message` text DEFAULT '' NOT NULL;
