@@ -16,7 +16,8 @@
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "cloudflare:check": "npm run build && wrangler deploy --dry-run",
     "cloudflare:types": "wrangler types",
-    "cloudflare:migrate": "npm run build && wrangler d1 migrations apply DB --remote",
+    "cloudflare:migrate": "wrangler d1 migrations apply DB --remote",
+    "cloudflare:deploy": "npm run cloudflare:migrate && wrangler deploy",
     "admin:hash-password": "node scripts/hash-admin-password.mjs"
   },
   "dependencies": {

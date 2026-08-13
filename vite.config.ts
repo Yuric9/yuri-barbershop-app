@@ -19,7 +19,8 @@ const localBindingConfig = {
           binding: d1,
           database_name: "yuri-barbershop-db",
           database_id: CLOUDFLARE_DATABASE_ID,
-          migrations_dir: "./drizzle",
+          // The generated deploy config lives in dist/server.
+          migrations_dir: "../../drizzle",
         },
       ]
     : [],
