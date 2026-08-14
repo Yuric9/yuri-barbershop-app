@@ -12,6 +12,17 @@ function base64UrlToBytes(value: string) {
   return Uint8Array.from(binary, character => character.charCodeAt(0));
 }
 
+function bytesToHex(bytes: Uint8Array) {
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeTextEqual(left: string, right: string) {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index++) difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  return difference === 0;
+}
+
 export async function hashPassword(password: string) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
@@ -20,6 +31,13 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, encoded: string) {
+  if (encoded.startsWith("sha256$")) {
+    const expectedHex = encoded.slice("sha256$".length).trim().toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(expectedHex)) return false;
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password)));
+    return constantTimeTextEqual(bytesToHex(digest), expectedHex);
+  }
+
   const [algorithm, iterationsText, saltText, expectedText] = encoded.split("$");
   if (algorithm !== "pbkdf2-sha256" || !iterationsText || !saltText || !expectedText) return false;
   const iterations = Number(iterationsText);
