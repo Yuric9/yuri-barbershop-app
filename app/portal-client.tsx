@@ -65,27 +65,6 @@ function bookingTimesForDate(date: string) {
   return slots;
 }
 
-const appointments = [
-  {
-    time: "18:00",
-    client: "João Marcos",
-    service: "Corte + Barba",
-    status: "Confirmado",
-  },
-  {
-    time: "19:00",
-    client: "Lucas Almeida",
-    service: "Corte",
-    status: "Confirmado",
-  },
-  {
-    time: "20:00",
-    client: "Carlos Eduardo",
-    service: "Barba",
-    status: "Pendente",
-  },
-];
-
 const icons: Record<string, string> = {
   inicio: "⌂",
   agenda: "□",
@@ -417,7 +396,7 @@ function AdminView({
   user: any;
   onRefresh: () => Promise<any> | undefined;
 }) {
-  const isoToday = new Date().toISOString().slice(0,10);
+  const isoToday = localDateKey();
   const month = isoToday.slice(0,7);
   const todayTransactions = (data.transactions||[]).filter((t:any)=>t.date===isoToday);
   const monthTransactions = (data.transactions||[]).filter((t:any)=>t.date?.startsWith(month));
@@ -425,6 +404,27 @@ function AdminView({
   const monthBalance = monthTransactions.reduce((s:number,t:any)=>s+(t.kind?.toLowerCase()==="entrada"?t.amountCents:-t.amountCents),0);
   const todayAppointments = (data.appointments||[]).filter((a:any)=>a.date===isoToday && a.status!=="Cancelado");
   const ticket = todayAppointments.length ? todayAppointments.reduce((s:number,a:any)=>s+a.totalCents,0)/todayAppointments.length : 0;
+  const upcomingAppointments = (data.appointments || [])
+    .filter((item: any) => item.date >= isoToday && item.status !== "Cancelado")
+    .sort((a: any, b: any) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+    .slice(0, 3);
+  const todayAtNoon = new Date(`${isoToday}T12:00:00`);
+  const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(todayAtNoon);
+    date.setDate(date.getDate() - (6 - index));
+    const key = localDateKey(date);
+    const revenue = (data.transactions || [])
+      .filter((item: any) => item.date === key && item.kind?.toLowerCase() === "entrada")
+      .reduce((sum: number, item: any) => sum + Number(item.amountCents || 0), 0);
+    return {
+      key,
+      revenue,
+      label: date.toLocaleDateString("pt-BR", { weekday: "narrow" }).slice(0, 1).toUpperCase(),
+      fullLabel: date.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" }),
+    };
+  });
+  const sevenDayRevenue = lastSevenDays.reduce((sum, day) => sum + day.revenue, 0);
+  const highestDailyRevenue = Math.max(...lastSevenDays.map((day) => day.revenue), 0);
   if (section === "mensagens") return <Inbox messages={data.messages || []} clients={data.clientSummaries || []} user={user} isAdmin onRefresh={onRefresh} />;
   if (section === "crescimento") return <GrowthCenter data={data} onRefresh={onRefresh} />;
   if (section === "agenda") return <Agenda appointments={data.appointments || []} collaborators={data.collaborators || []} onRefresh={onRefresh} />;
@@ -477,9 +477,15 @@ function AdminView({
             </div>
             <button onClick={() => onNavigate("agenda")}>Ver agenda</button>
           </div>
-          {appointments.map((a) => (
-            <Appointment key={a.time} {...a} />
-          ))}
+          {upcomingAppointments.length ? upcomingAppointments.map((item: any) => (
+            <Appointment
+              key={item.id || `${item.date}-${item.time}-${item.clientName}`}
+              time={item.time}
+              client={item.clientName}
+              service={`${item.serviceName} · ${formatDate(item.date)}`}
+              status={item.status}
+            />
+          )) : <p className="form-hint">Nenhum atendimento futuro registrado.</p>}
         </section>
         <section className="panel chart-panel">
           <div className="panel-head">
@@ -487,13 +493,17 @@ function AdminView({
               <small>FATURAMENTO</small>
               <h3>Últimos 7 dias</h3>
             </div>
-            <b>R$ 1.320</b>
+            <b>{money(sevenDayRevenue)}</b>
           </div>
           <div className="bars">
-            {[45, 72, 58, 84, 66, 92, 75].map((h, i) => (
-              <div key={i}>
-                <span style={{ height: `${h}%` }} />
-                <small>{["S", "T", "Q", "Q", "S", "S", "D"][i]}</small>
+            {lastSevenDays.map((day) => (
+              <div key={day.key} title={`${day.fullLabel}: ${money(day.revenue)}`}>
+                <span
+                  role="img"
+                  aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
+                  style={{ height: `${highestDailyRevenue ? Math.max(2, (day.revenue / highestDailyRevenue) * 100) : 2}%` }}
+                />
+                <small>{day.label}</small>
               </div>
             ))}
           </div>
@@ -1081,6 +1091,12 @@ function Registry({ title, headers, rows, showAdd = false }: any) {
   );
 }
 function money(cents:number){return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(cents/100)}
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 function formatDate(value:string|null){return value ? new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR") : "Sem atendimento"}
 function ClientsDatabase({clients}:any){
   return <section><div className="section-title"><div><small>BASE DE RELACIONAMENTO</small><h2>Clientes cadastrados</h2></div><span className="client-count">{clients.length} clientes</span></div>
