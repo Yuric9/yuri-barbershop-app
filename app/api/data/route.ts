@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import {
   appointments,
+  accounts,
   catalogItems,
   messages,
   reviews,
@@ -16,9 +17,13 @@ import {
   subscriptions,
   subscriptionCampaigns,
   transactions,
+  collaborators,
+  collaboratorServices,
+  commissionSettlements,
 } from "../../../db/schema";
 import { getChatGPTUser } from "../../chatgpt-auth";
 import { isAdminEmail } from "../../admin-access";
+import { hashPassword } from "../../password-security";
 
 export const dynamic = "force-dynamic";
 const defaults = [
@@ -93,12 +98,51 @@ async function seedServices() {
       );
 }
 
+async function finalizeAppointment(db: any, appointment: typeof appointments.$inferSelect, status: string, paymentMethod: string, message: string, actorEmail: string, now: string) {
+  if (!["Pendente", "Confirmado", "Finalizado", "Cancelado"].includes(status)) throw new Error("Status de agendamento inválido");
+  if (status !== "Finalizado" || appointment.status === "Finalizado") {
+    await db.update(appointments).set({ status, adminMessage: message }).where(eq(appointments.id, appointment.id));
+    return;
+  }
+  let commissionPercent = 0;
+  if (appointment.collaboratorId) {
+    const [collaborator] = await db.select().from(collaborators).where(eq(collaborators.id, appointment.collaboratorId)).limit(1);
+    const [override] = await db.select().from(collaboratorServices).where(and(eq(collaboratorServices.collaboratorId, appointment.collaboratorId), eq(collaboratorServices.serviceId, appointment.serviceId), eq(collaboratorServices.active, true))).limit(1);
+    commissionPercent = Math.max(0, Math.min(100, override?.commissionPercent ?? collaborator?.defaultCommissionPercent ?? 0));
+  }
+  const [cashEntry] = await db.insert(transactions).values({
+    kind: "entrada",
+    description: `${appointment.serviceName} — ${appointment.clientName}`,
+    amountCents: appointment.totalCents,
+    date: appointment.date,
+    appointmentId: appointment.id,
+    collaboratorId: appointment.collaboratorId,
+    paymentMethod,
+    createdAt: now,
+  }).returning();
+  await db.update(appointments).set({
+    status,
+    adminMessage: message,
+    paymentMethod,
+    commissionPercent,
+    commissionCents: Math.round(appointment.totalCents * commissionPercent / 100),
+    cashTransactionId: cashEntry.id,
+  }).where(eq(appointments.id, appointment.id));
+  if (message.trim()) await db.insert(messages).values({ senderEmail: actorEmail, senderName: "Yuri Barbershop", recipientEmail: appointment.clientEmail, subject: `Atualização do agendamento: ${appointment.serviceName}`, body: message.trim(), createdAt: now });
+}
+
 export async function GET(request: Request) {
   const user = await getChatGPTUser();
   if (!user) return unauthorized();
   await seedServices();
   const db = getDb();
   const isAdmin = user.role === "admin" || isAdminEmail(user.email);
+  const isBarber = user.role === "barber";
+  if (isAdmin) {
+    const owner = await db.select().from(collaborators).where(eq(collaborators.email, user.email)).limit(1);
+    if (!owner.length) await db.insert(collaborators).values({ email: user.email, name: user.displayName || "Yuri César", defaultCommissionPercent: 100, active: true, owner: true, createdAt: new Date().toISOString() });
+  }
+  const [currentCollaborator] = isBarber ? await db.select().from(collaborators).where(eq(collaborators.email, user.email)).limit(1) : [];
   const [
     serviceRows,
     productRows,
@@ -115,6 +159,9 @@ export async function GET(request: Request) {
     settingsRows,
     subscriptionCampaignRows,
     marketingContactRows,
+    collaboratorRows,
+    collaboratorServiceRows,
+    settlementRows,
   ] = await Promise.all([
     db.select().from(services).where(eq(services.active, true)),
     db.select().from(products).where(eq(products.active, true)),
@@ -123,6 +170,8 @@ export async function GET(request: Request) {
           .select()
           .from(appointments)
           .orderBy(desc(appointments.date), desc(appointments.time))
+      : isBarber && currentCollaborator
+        ? db.select().from(appointments).where(eq(appointments.collaboratorId, currentCollaborator.id)).orderBy(desc(appointments.date), desc(appointments.time))
       : db
           .select()
           .from(appointments)
@@ -133,7 +182,7 @@ export async function GET(request: Request) {
       : db.select().from(profiles).where(eq(profiles.email, user.email)),
     isAdmin
       ? db.select().from(transactions).orderBy(desc(transactions.date))
-      : Promise.resolve([]),
+      : isBarber && currentCollaborator ? db.select().from(transactions).where(eq(transactions.collaboratorId, currentCollaborator.id)).orderBy(desc(transactions.date)) : Promise.resolve([]),
     db.select().from(promotions).where(eq(promotions.active, true)).orderBy(desc(promotions.id)),
     db.select().from(catalogItems).where(eq(catalogItems.active, true)).orderBy(desc(catalogItems.id)),
     isAdmin
@@ -148,6 +197,9 @@ export async function GET(request: Request) {
     db.select().from(businessSettings).limit(1),
     db.select().from(subscriptionCampaigns).where(eq(subscriptionCampaigns.active, true)).orderBy(desc(subscriptionCampaigns.id)),
     isAdmin ? db.select().from(marketingContacts).orderBy(desc(marketingContacts.updatedAt)) : Promise.resolve([]),
+    isAdmin ? db.select().from(collaborators).orderBy(collaborators.name) : db.select().from(collaborators).where(eq(collaborators.active, true)).orderBy(collaborators.name),
+    db.select().from(collaboratorServices).where(eq(collaboratorServices.active, true)),
+    isAdmin || (isBarber && currentCollaborator) ? db.select().from(commissionSettlements).orderBy(desc(commissionSettlements.id)) : Promise.resolve([]),
   ]);
   const requestUrl = new URL(request.url);
   const selectedDate = requestUrl.searchParams.get("date");
@@ -173,7 +225,7 @@ export async function GET(request: Request) {
       });
     });
   }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   const clientSummaries = isAdmin
     ? profileRows.map((profile) => {
         const history = appointmentRows
@@ -206,6 +258,8 @@ export async function GET(request: Request) {
     : [];
   return Response.json({
     isAdmin,
+    isBarber,
+    currentCollaborator,
     services: serviceRows,
     products: productRows,
     appointments: appointmentRows,
@@ -223,6 +277,9 @@ export async function GET(request: Request) {
     settings: settingsRows[0] || { monthlyGoalCents: 500000, loyaltyTarget: 10, loyaltyReward: "1 atendimento grátis" },
     subscriptionCampaigns: subscriptionCampaignRows,
     marketingContacts: marketingContactRows,
+    collaborators: collaboratorRows,
+    collaboratorServices: collaboratorServiceRows,
+    commissionSettlements: settlementRows,
   });
 }
 
@@ -233,6 +290,8 @@ export async function POST(request: Request) {
   const body = (await request.json()) as Record<string, unknown>;
   const action = String(body.action || "");
   const isAdmin = user.role === "admin" || isAdminEmail(user.email);
+  const isBarber = user.role === "barber";
+  const [currentCollaborator] = isBarber ? await db.select().from(collaborators).where(eq(collaborators.email, user.email)).limit(1) : [];
   const now = new Date().toISOString();
 
   if (action === "profile") {
@@ -275,6 +334,11 @@ export async function POST(request: Request) {
       : [undefined];
     const date = String(body.date || "");
     const time = String(body.time || "");
+    const requestedCollaboratorId = Number(body.collaboratorId || 0);
+    const activeCollaborators = await db.select().from(collaborators).where(eq(collaborators.active, true));
+    let collaborator = requestedCollaboratorId ? activeCollaborators.find((item) => item.id === requestedCollaboratorId) : undefined;
+    if (!collaborator && activeCollaborators.length === 1) collaborator = activeCollaborators[0];
+    if (requestedCollaboratorId && !collaborator) return Response.json({ error: "Profissional indisponível" }, { status: 400 });
     if (!date || !time)
       return Response.json(
         { error: "Escolha uma data e um horário" },
@@ -294,6 +358,7 @@ export async function POST(request: Request) {
     const requestedStart = timeToMinutes(time);
     const dayBlocks = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.date, date));
     const blocked = dayBlocks.some((block) => {
+      if (block.collaboratorId && block.collaboratorId !== collaborator?.id) return false;
       if (block.time === "Dia inteiro") return true;
       const blockStart = timeToMinutes(block.time);
       return Number.isFinite(blockStart) && overlaps(requestedStart, service.durationMin, blockStart, 30);
@@ -303,11 +368,9 @@ export async function POST(request: Request) {
         { error: "Este período está bloqueado na agenda. Escolha outro horário." },
         { status: 409 },
       );
-
     const dayAppointments = await db.select().from(appointments).where(eq(appointments.date, date));
-    const activeAppointments = dayAppointments.filter((item) => item.status !== "Cancelado");
-    const existingServiceIds = [...new Set(activeAppointments.map((item) => item.serviceId))];
-    const durationRows = existingServiceIds.length
+    const activeAppointments = dayAppointments.filter((item) => item.status !== "Cancelado" && (!collaborator || !item.collaboratorId || item.collaboratorId === collaborator.id));
+    const durationRows = activeAppointments.length
       ? await db.select({ id: services.id, durationMin: services.durationMin }).from(services)
       : [];
     const durationByService = new Map(durationRows.map((item) => [item.id, item.durationMin]));
@@ -342,6 +405,8 @@ export async function POST(request: Request) {
         date,
         time,
         totalCents: service.priceCents + (product?.priceCents || 0),
+        collaboratorId: collaborator?.id,
+        collaboratorName: collaborator?.name || "A definir",
         createdAt: now,
       })
       .returning();
@@ -352,18 +417,9 @@ export async function POST(request: Request) {
     if (existing.some((item) => item.status === "Ativa" || item.status === "Aguardando pagamento"))
       return Response.json({ error: "Você já possui uma assinatura ativa ou em análise." }, { status: 409 });
     const profile = await db.select().from(profiles).where(eq(profiles.email, user.email)).limit(1);
-    const clientName = profile[0]?.name || user.displayName;
     await db.insert(subscriptions).values({
       clientEmail: user.email,
-      clientName,
-      createdAt: now,
-    });
-    await db.insert(messages).values({
-      senderEmail: user.email,
-      senderName: clientName,
-      recipientEmail: "admin",
-      subject: "Nova solicitação de assinatura",
-      body: `${clientName} solicitou a assinatura do Clube Yuri. Confira o pagamento e use “Confirmar pagamento e ativar 30 dias” na aba Assinaturas. A contagem ainda não começou.`,
+      clientName: profile[0]?.name || user.displayName,
       createdAt: now,
     });
     return Response.json({ ok: true });
@@ -396,6 +452,15 @@ export async function POST(request: Request) {
   }
   if (action === "waitlist") {
     await db.insert(waitlist).values({ clientEmail: user.email, clientName: user.displayName, serviceName: String(body.serviceName || "Atendimento"), preferredDate: String(body.preferredDate || ""), preferredTime: String(body.preferredTime || ""), createdAt: now });
+    return Response.json({ ok: true });
+  }
+  if (isBarber && action === "appointment-status") {
+    const id = Number(body.id);
+    const [appointment] = await db.select().from(appointments).where(and(eq(appointments.id, id), eq(appointments.collaboratorId, currentCollaborator?.id || -1))).limit(1);
+    if (!appointment) return forbidden();
+    const status = String(body.status || appointment.status);
+    if (!["Confirmado", "Finalizado", "Cancelado"].includes(status)) return Response.json({ error: "Status inválido" }, { status: 400 });
+    await finalizeAppointment(db, appointment, status, String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now);
     return Response.json({ ok: true });
   }
   if (!isAdmin) return forbidden();
@@ -455,33 +520,19 @@ export async function POST(request: Request) {
         description: String(body.description),
         amountCents: Math.round(Number(body.amount) * 100),
         date: String(body.date),
+        collaboratorId: body.collaboratorId ? Number(body.collaboratorId) : null,
+        paymentMethod: String(body.paymentMethod || ""),
         createdAt: now,
       });
   } else if (action === "appointment-status") {
-    await db
-      .update(appointments)
-      .set({ status: String(body.status), adminMessage: String(body.message || "") })
-      .where(eq(appointments.id, Number(body.id)));
     const [appointment] = await db.select().from(appointments).where(eq(appointments.id, Number(body.id))).limit(1);
-    const internalMessage = String(body.message || "").trim();
-    if (appointment && internalMessage) await db.insert(messages).values({ senderEmail: user.email, senderName: "Yuri Barbershop", recipientEmail: appointment.clientEmail, subject: `Atualização do agendamento: ${appointment.serviceName}`, body: internalMessage, createdAt: now });
+    if (!appointment) return Response.json({ error: "Agendamento não encontrado" }, { status: 404 });
+    await finalizeAppointment(db, appointment, String(body.status), String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now);
   } else if (action === "subscription-activate") {
     const startDate = String(body.startDate || new Date().toISOString().slice(0, 10));
     const end = new Date(`${startDate}T12:00:00`);
     end.setDate(end.getDate() + 30);
-    const subscriptionId = Number(body.id);
-    const [current] = await db.select().from(subscriptions).where(eq(subscriptions.id, subscriptionId)).limit(1);
-    if (!current) return Response.json({ error: "Assinatura não encontrada" }, { status: 404 });
-    const endDate = end.toISOString().slice(0, 10);
-    await db.update(subscriptions).set({ status: "Ativa", startDate, endDate }).where(eq(subscriptions.id, subscriptionId));
-    await db.insert(messages).values({
-      senderEmail: user.email,
-      senderName: "Yuri Barbershop",
-      recipientEmail: current.clientEmail,
-      subject: "Assinatura Clube Yuri ativada",
-      body: `Pagamento confirmado! Sua assinatura está ativa de ${startDate} até ${endDate}. Você já pode usar “Agende aqui seu atendimento” no Clube Yuri.`,
-      createdAt: now,
-    });
+    await db.update(subscriptions).set({ status: "Ativa", startDate, endDate: end.toISOString().slice(0, 10) }).where(eq(subscriptions.id, Number(body.id)));
   } else if (action === "subscription-manage") {
     const id = Number(body.id);
     const operation = String(body.operation || "");
@@ -498,8 +549,36 @@ export async function POST(request: Request) {
       const internalMessage = String(body.message || "").trim();
       if (internalMessage) await db.insert(messages).values({ senderEmail: user.email, senderName: "Yuri Barbershop", recipientEmail: current.clientEmail, subject: "Mensagem sobre sua assinatura", body: internalMessage, createdAt: now });
     } else return Response.json({ error: "Operação inválida" }, { status: 400 });
+  } else if (action === "collaborator-save") {
+    const id = Number(body.id || 0);
+    const email = String(body.email || "").trim().toLowerCase();
+    const name = String(body.name || "").trim();
+    const percent = Math.max(0, Math.min(100, Math.round(Number(body.defaultCommissionPercent))));
+    if (!name || !/^\S+@\S+\.\S+$/.test(email)) return Response.json({ error: "Informe nome e e-mail válidos" }, { status: 400 });
+    if (id) {
+      const [existing] = await db.select().from(collaborators).where(eq(collaborators.id, id)).limit(1);
+      if (!existing) return Response.json({ error: "Colaborador não encontrado" }, { status: 404 });
+      await db.update(collaborators).set({ name, email, phone: String(body.phone || ""), defaultCommissionPercent: percent, active: body.active !== false }).where(eq(collaborators.id, id));
+      if (existing.email !== email) await db.update(accounts).set({ email }).where(eq(accounts.email, existing.email));
+    } else {
+      const password = String(body.password || "");
+      if (password.length < 8) return Response.json({ error: "Crie uma senha temporária com pelo menos 8 caracteres" }, { status: 400 });
+      await db.insert(collaborators).values({ email, name, phone: String(body.phone || ""), defaultCommissionPercent: percent, active: true, owner: false, createdAt: now });
+      await db.insert(accounts).values({ email, passwordHash: await hashPassword(password), role: "barber", active: true, createdAt: now }).onConflictDoUpdate({ target: accounts.email, set: { passwordHash: await hashPassword(password), role: "barber", active: true } });
+    }
+  } else if (action === "collaborator-service") {
+    const collaboratorId = Number(body.collaboratorId); const serviceId = Number(body.serviceId);
+    const value = body.commissionPercent === "" || body.commissionPercent == null ? null : Math.max(0, Math.min(100, Math.round(Number(body.commissionPercent))));
+    const [existing] = await db.select().from(collaboratorServices).where(and(eq(collaboratorServices.collaboratorId, collaboratorId), eq(collaboratorServices.serviceId, serviceId))).limit(1);
+    if (existing) await db.update(collaboratorServices).set({ commissionPercent: value, active: body.active !== false }).where(eq(collaboratorServices.id, existing.id));
+    else await db.insert(collaboratorServices).values({ collaboratorId, serviceId, commissionPercent: value, active: body.active !== false });
+  } else if (action === "commission-settle") {
+    const collaboratorId = Number(body.collaboratorId); const periodStart = String(body.periodStart); const periodEnd = String(body.periodEnd);
+    const rows = await db.select().from(appointments).where(eq(appointments.collaboratorId, collaboratorId));
+    const amountCents = rows.filter((item) => item.status === "Finalizado" && item.date >= periodStart && item.date <= periodEnd).reduce((sum, item) => sum + item.commissionCents, 0);
+    await db.insert(commissionSettlements).values({ collaboratorId, periodStart, periodEnd, amountCents, note: String(body.note || ""), paidAt: now, createdAt: now });
   } else if (action === "schedule-block") {
-    await db.insert(scheduleBlocks).values({ date: String(body.date), time: String(body.time || "Dia inteiro"), reason: String(body.reason || "Indisponível"), createdAt: now });
+    await db.insert(scheduleBlocks).values({ date: String(body.date), time: String(body.time || "Dia inteiro"), reason: String(body.reason || "Indisponível"), collaboratorId: body.collaboratorId ? Number(body.collaboratorId) : null, createdAt: now });
   } else if (action === "waitlist-status") {
     await db.update(waitlist).set({ status: String(body.status || "Atendido") }).where(eq(waitlist.id, Number(body.id)));
   } else if (action === "business-settings") {
