@@ -348,6 +348,7 @@ a {
   flex-direction: column;
   gap: 6px;
 }
+.menu-group-label { display: block; margin: 16px 14px 6px; color: #77736a; font-size: 11px; font-weight: 900; letter-spacing: .13em; }
 .sidebar nav button {
   display: flex;
   align-items: center;
@@ -539,6 +540,18 @@ a {
   font-size: 10px;
   font-weight: 800;
 }
+.forgot-password-link { width: fit-content; margin: -2px 0 2px auto !important; color: #d9ae57 !important; font-size: 14px !important; font-weight: 700; text-decoration: none; }
+.forgot-password-link:hover { text-decoration: underline; }
+
+/* Legibilidade consistente para clientes de diferentes idades. */
+.app-shell button,.app-shell a,.app-shell input,.app-shell select,.app-shell textarea { font-size: max(14px, .875rem); }
+.app-shell input,.app-shell select,.app-shell textarea { min-height: 44px; }
+.app-shell p,.app-shell li { font-size: max(15px, .9375rem); line-height: 1.6; }
+.app-shell small { font-size: max(12px, .75rem); }
+.sidebar nav button,.sidebar-social a,.logout-button { min-height: 46px; font-size: 14px; }
+.sidebar-social > small { font-size: 11px; }
+.sidebar-user strong { font-size: 14px; }
+.sidebar-user small,.user-email { font-size: 12px; }
 .dashboard,
 .app-content > section {
   max-width: 1250px;
@@ -1296,6 +1309,15 @@ a {
   }
 }
 @media (max-width: 620px) {
+  .app-content { padding: 0 14px 32px; }
+  .app-header { height: 78px; }
+  .app-header h1 { font-size: 24px; }
+  .header-actions { gap: 6px; }
+  .demo-badge { padding: 6px 8px; font-size: 12px; }
+  .sidebar { width: min(86vw, 320px); left: min(-86vw, -320px); }
+  .sidebar nav button { min-height: 50px; }
+  .menu-button,.icon-button { width: 44px; height: 44px; flex: 0 0 44px; }
+  .dashboard,.app-content > section { margin: 20px auto; }
   .product-ads article { grid-template-columns: 120px 1fr; }
   .product-ads img { height: 170px; }
   .product-ads article > div { padding: 16px; }
@@ -1423,125 +1445,5 @@ a {
   .section-title .primary-button {
     white-space: nowrap;
     font-size: 10px;
-  }
-}
-
-
-/* Controles de retorno do Assistente Yuri */
-.chat-home-logo {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  overflow: hidden;
-}
-.chat-home-logo:focus-visible,
-.chat-home-button:focus-visible {
-  outline: 2px solid #d0a13a;
-  outline-offset: 3px;
-}
-.chat-home-button {
-  margin-left: auto;
-  border: 1px solid rgba(208, 161, 58, 0.55);
-  border-radius: 999px;
-  background: transparent;
-  color: #d0a13a;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 12px;
-}
-.chat-home-button:hover {
-  background: #d0a13a;
-  color: #111;
-}
-@media (max-width: 560px) {
-  .chat-home-button {
-    font-size: 11px;
-    padding: 7px 10px;
-  }
-}
-
-
-
-
-/* Clube Yuri: área exclusiva do assinante */
-.member-booking-button{margin-top:18px;min-width:260px}
-.member-exclusive{margin:24px 0;padding:24px;border:1px solid #dfd5c1;border-radius:22px;background:#fffdf8}
-.member-campaign-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
-.member-campaign-grid article{overflow:hidden;border:1px solid #e5dccb;border-radius:18px;background:#fff;box-shadow:0 14px 34px rgba(33,29,22,.08)}
-.member-campaign-grid img{display:block;width:100%;aspect-ratio:9/12;object-fit:cover;background:#eee8dc}
-.member-campaign-grid article>div{padding:18px}
-.member-campaign-grid small{color:#b47a08;font-weight:800;letter-spacing:.14em}
-.member-campaign-grid h3{margin:7px 0 8px;font-size:1.25rem}
-.member-campaign-grid p{margin:0;color:#655f55;line-height:1.55}
-@media(max-width:700px){.member-exclusive{padding:16px}.member-booking-button{width:100%;min-width:0}.member-campaign-grid{grid-template-columns:1fr}}
-
-
-/* Reforço responsivo da tela de entrada */
-@media(max-width:760px){
-  .login-page{min-height:100dvh;padding:18px 14px 28px;overflow-x:hidden}
-  .login-shell{width:100%;max-width:430px;grid-template-columns:1fr!important;gap:18px}
-  .login-brand{align-items:center;text-align:center}
-  .login-brand img{width:min(72vw,280px);height:auto;object-fit:contain}
-  .login-card{width:100%;min-width:0;padding:24px 18px;border-radius:22px}
-  .login-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
-  .login-tabs button{min-width:0;padding:11px 5px;font-size:.78rem}
-  .login-form,.login-field{width:100%;min-width:0}
-  .login-form input{width:100%;min-width:0;box-sizing:border-box;font-size:16px}
-  .password-row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
-  .password-toggle{justify-self:start}
-  .guest-login{width:100%;box-sizing:border-box}
-  .login-hours{font-size:.82rem;line-height:1.55}
-}
-
-/* Revisão final: acessibilidade, toque e legibilidade responsiva */
-:where(button, a, input, select, textarea):focus-visible {
-  outline: 3px solid #d3a43b;
-  outline-offset: 3px;
-}
-:where(button, [role="button"], input, select) {
-  min-height: 44px;
-}
-@media (max-width: 620px) {
-  .login-stage {
-    width: min(100%, 480px);
-    padding: 18px;
-    gap: 20px;
-  }
-  .login-card {
-    width: 100%;
-    padding: 22px 18px;
-  }
-  .login-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .login-tabs button {
-    min-width: 0;
-    padding-inline: 8px;
-  }
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-  .login-card label,
-  .login-card input,
-  .login-card button,
-  .login-card p,
-  .login-card a {
-    line-height: 1.35;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
 }
