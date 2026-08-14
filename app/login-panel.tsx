@@ -8,7 +8,7 @@ export default function LoginPanel() {
   const [view, setView] = useState<View>("client");
   const [form, setForm] = useState({ name: "", phone: "", birthDate: "", email: "", password: "" });
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);\n  const [showPassword, setShowPassword] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setLoading(true); setMessage("");
@@ -34,7 +34,8 @@ export default function LoginPanel() {
     <form className="own-login-form" onSubmit={submit}>
       {view === "register" && <><label>Nome completo<input required autoComplete="name" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })}/></label><div className="login-form-row"><label>Telefone com DDD<input required inputMode="tel" autoComplete="tel" value={form.phone} onChange={event => setForm({ ...form, phone: event.target.value })}/></label><label>Data de aniversário<input type="date" value={form.birthDate} onChange={event => setForm({ ...form, birthDate: event.target.value })}/></label></div></>}
       <label>E-mail<input required type="email" autoComplete="email" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })}/></label>
-      <label>Senha<input required type="password" minLength={8} autoComplete={view === "register" ? "new-password" : "current-password"} value={form.password} onChange={event => setForm({ ...form, password: event.target.value })}/></label>
+      <label>Senha<input required type={showPassword ? "text" : "password"} minLength={8} autoComplete={view === "register" ? "new-password" : "current-password"} value={form.password} onChange={event => setForm({ ...form, password: event.target.value })}/></label>
+      <label className="show-password-option"><input type="checkbox" checked={showPassword} onChange={event => setShowPassword(event.target.checked)}/><span>Mostrar senha</span></label>
       {message && <p className="login-message">{message}</p>}
       <button className="primary-button login-submit" disabled={loading}>{loading ? "Aguarde..." : view === "register" ? "Criar cadastro" : "Entrar"}</button>
     </form>
