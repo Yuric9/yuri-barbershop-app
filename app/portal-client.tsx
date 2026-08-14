@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Brand from "./brand";
 
 type Role = "admin" | "client";
@@ -39,13 +39,27 @@ const defaultProducts = [
   },
 ];
 
-function bookingTimesForDate(date: string, durationMin = 30) {
+const visitorPromotions = [
+  { id: "visitor-promo-1", title: "Primeira visita com um cuidado especial", description: "Converse com o Yuri pelo WhatsApp e conheça as condições disponíveis para novos clientes.", validUntil: null },
+  { id: "visitor-promo-2", title: "Clube Yuri: visual em dia o mês inteiro", description: "Plano individual com serviços ilimitados durante 30 dias, mediante agendamento e confirmação do pagamento.", validUntil: null },
+];
+
+const visitorCatalog = [
+  { id: "visitor-style-1", name: "Degradê clássico", category: "corte", description: "Laterais graduadas e acabamento limpo para o dia a dia." },
+  { id: "visitor-style-2", name: "Corte social", category: "corte", description: "Visual tradicional, elegante e fácil de manter." },
+  { id: "visitor-style-3", name: "Barba desenhada", category: "barba", description: "Contorno definido e acabamento alinhado ao formato do rosto." },
+  { id: "visitor-style-4", name: "Barba completa", category: "barba", description: "Aparagem, alinhamento e acabamento para valorizar o visual." },
+  { id: "visitor-style-5", name: "Pigmentação", category: "quimica", description: "Realce temporário para cabelo ou barba, após avaliação profissional." },
+  { id: "visitor-style-6", name: "Luzes e nevou", category: "quimica", description: "Clareamento planejado de acordo com o cabelo." },
+];
+
+function bookingTimesForDate(date: string) {
   if (!date) return [];
   const day = new Date(`${date}T12:00:00`).getDay();
   const startMinutes = day === 0 || day === 6 ? 8 * 60 : 18 * 60;
   const endMinutes = day === 0 ? 12 * 60 : 20 * 60 + 30;
   const slots: string[] = [];
-  for (let minutes = startMinutes; minutes + Math.max(5, durationMin) <= endMinutes; minutes += 30) {
+  for (let minutes = startMinutes; minutes <= endMinutes; minutes += 30) {
     slots.push(`${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`);
   }
   return slots;
@@ -101,20 +115,19 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [selectedService, setSelectedService] = useState("Corte");
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [notice, setNotice] = useState("");
-  const [bookingDate, setBookingDate] = useState("");
+  const [bookingDate, setBookingDate] = useState("2026-08-15");
   const [liveServices, setLiveServices] = useState(defaultServices);
   const [liveProducts, setLiveProducts] = useState(defaultProducts);
   const [clientProfile, setClientProfile] = useState<any>(null);
   const [clientAppointments, setClientAppointments] = useState<any[]>([]);
-  const [livePromotions, setLivePromotions] = useState<any[]>([]);
-  const [liveCatalog, setLiveCatalog] = useState<any[]>([]);
+  const [livePromotions, setLivePromotions] = useState<any[]>(demo ? visitorPromotions : []);
+  const [liveCatalog, setLiveCatalog] = useState<any[]>(demo ? visitorCatalog : []);
   const [liveSubscriptions, setLiveSubscriptions] = useState<any[]>([]);
   const [subscriptionCampaigns, setSubscriptionCampaigns] = useState<any[]>([]);
   const [liveMessages, setLiveMessages] = useState<any[]>([]);
   const [growthData, setGrowthData] = useState<any>({ reviews: [], waitlist: [], scheduleBlocks: [], settings: {} });
   const [adminData, setAdminData] = useState<any>({ clientSummaries: [], appointments: [] });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [bookingResetKey, setBookingResetKey] = useState(0);
   const today = useMemo(
     () =>
       new Intl.DateTimeFormat("pt-BR", {
@@ -139,20 +152,29 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     ["relatorios", "Relatórios"],
     ["crescimento", "Crescimento"],
   ];
-  const clientItems = [
-    ["agendar", "Agendar"],
-    ["mensagens", "Caixa de entrada"],
-    ["meus-horarios", "Meus horários"],
-    ["historico", "Meu histórico"],
-    ["fidelidade", "Fidelidade"],
-    ["avaliar", "Avaliar atendimento"],
-    ["produtos", "Produtos"],
-    ["catalogo", "Catálogo de estilos"],
-    ["promocoes", "Promoções"],
-    ["assinatura", "Clube Yuri"],
-    ["localizacao", "Localização"],
-    ["perfil", "Meu perfil"],
+  const registeredClientItems = [
+    ["agendar", "Agendar", "ATENDIMENTO"],
+    ["mensagens", "Caixa de entrada", "ATENDIMENTO"],
+    ["meus-horarios", "Meus horários", "ATENDIMENTO"],
+    ["historico", "Meu histórico", "ATENDIMENTO"],
+    ["fidelidade", "Fidelidade", "BENEFÍCIOS"],
+    ["avaliar", "Avaliar atendimento", "BENEFÍCIOS"],
+    ["promocoes", "Promoções", "BENEFÍCIOS"],
+    ["assinatura", "Clube Yuri", "BENEFÍCIOS"],
+    ["produtos", "Produtos", "CONHEÇA"],
+    ["catalogo", "Catálogo de estilos", "CONHEÇA"],
+    ["localizacao", "Localização", "CONHEÇA"],
+    ["perfil", "Meu perfil", "MINHA CONTA"],
   ];
+  const visitorItems = [
+    ["agendar", "Agendar", "ATENDIMENTO"],
+    ["promocoes", "Promoções", "BENEFÍCIOS"],
+    ["assinatura", "Clube Yuri", "BENEFÍCIOS"],
+    ["produtos", "Produtos", "CONHEÇA"],
+    ["catalogo", "Catálogo de estilos", "CONHEÇA"],
+    ["localizacao", "Localização", "CONHEÇA"],
+  ];
+  const clientItems = demo ? visitorItems : registeredClientItems;
   const items = portalRole === "admin" ? adminItems : clientItems;
   const unreadMessages = liveMessages.filter((message:any) => !message.read).length;
 
@@ -167,20 +189,6 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     setSection(key);
     setMenuOpen(false);
     setNotice("");
-  }
-
-  function goHome() {
-    if (portalRole === "admin") {
-      navigate("inicio");
-      return;
-    }
-    setSection("agendar");
-    setMenuOpen(false);
-    setNotice("");
-    setSelectedService("");
-    setBookingDate("");
-    setSelectedTime("");
-    setBookingResetKey((current) => current + 1);
   }
   async function loadData() {
     if (demo) return;
@@ -257,18 +265,17 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   return (
     <main className="app-shell">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <Brand onClick={goHome} />
+        <Brand onClick={() => demo ? window.location.assign("/") : navigate(portalRole === "admin" ? "inicio" : "agendar")} />
         <nav>
-          {items.map(([key, label]) => (
-            <button
-              key={key}
-              className={section === key ? "active" : ""}
-              onClick={() => navigate(key)}
-            >
-              <span>{icons[key] || "•"}</span>
-              {label}
-              {key === "mensagens" && unreadMessages > 0 && <b className="inbox-badge">{unreadMessages}</b>}
-            </button>
+          {items.map(([key, label, group], index) => (
+            <Fragment key={key}>
+              {portalRole === "client" && group && (index === 0 || items[index - 1]?.[2] !== group) && <small className="menu-group-label">{group}</small>}
+              <button className={section === key ? "active" : ""} onClick={() => navigate(key)}>
+                <span>{icons[key] || "•"}</span>
+                {label}
+                {key === "mensagens" && unreadMessages > 0 && <b className="inbox-badge">{unreadMessages}</b>}
+              </button>
+            </Fragment>
           ))}
         </nav>
         {portalRole === "client" && <div className="sidebar-social">
@@ -289,9 +296,9 @@ export default function PortalClient({ user, role, demo = false }: Props) {
         <div className="sidebar-user">
           <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
           <div>
-            <strong>{portalRole === "admin" ? "Yuri César" : user.name}</strong>
-            <small>{portalRole === "admin" ? "Administrador" : role === "admin" ? "Visualização do cliente" : "Cliente"}</small>
-            <span className="user-email">{user.email}</span>
+            <strong>{portalRole === "admin" ? "Yuri César" : demo ? "Visitante" : user.name}</strong>
+            <small>{portalRole === "admin" ? "Administrador" : role === "admin" ? "Visualização do cliente" : demo ? "Acesso público" : "Cliente"}</small>
+            {!demo && <span className="user-email">{user.email}</span>}
           </div>
         </div>
         {role === "admin" && (
@@ -308,7 +315,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
           href="/api/auth/logout"
           rel="nofollow"
         >
-          <span>↪</span> {portalRole === "admin" ? "Sair / trocar usuário" : "Sair"}
+          <span>↪</span> {demo ? "Voltar ao login" : portalRole === "admin" ? "Sair / trocar usuário" : "Sair"}
         </a>
       </aside>
       <section className="app-content">
@@ -324,8 +331,8 @@ export default function PortalClient({ user, role, demo = false }: Props) {
             <h1>{portalRole === "admin" ? "Visão geral" : "Área do cliente"}</h1>
           </div>
           <div className="header-actions">
-            {demo && <span className="demo-badge">Demonstração</span>}
-            <button className={`icon-button notification-button ${unreadMessages ? "has-notification" : ""}`} onClick={() => navigate("mensagens")} aria-label="Abrir caixa de entrada">✉{unreadMessages > 0 && <b>{unreadMessages}</b>}</button>
+            {demo && <span className="demo-badge">Modo visitante</span>}
+            {!demo && <button className={`icon-button notification-button ${unreadMessages ? "has-notification" : ""}`} onClick={() => navigate("mensagens")} aria-label="Abrir caixa de entrada">✉{unreadMessages > 0 && <b>{unreadMessages}</b>}</button>}
           </div>
         </header>
         {portalRole === "admin" ? (
@@ -356,7 +363,6 @@ export default function PortalClient({ user, role, demo = false }: Props) {
             notice={notice}
             setNotice={setNotice}
             confirmBooking={confirmBooking}
-            bookingResetKey={bookingResetKey}
           />
         )}
       </section>
@@ -498,7 +504,6 @@ function ClientView({
   notice,
   setNotice,
   confirmBooking,
-  bookingResetKey,
 }: any) {
   if (section === "mensagens") return <Inbox messages={messages || []} clients={[]} user={user} onRefresh={onRefresh} />;
   if (section === "historico") return <ClientHistory appointments={appointments || []} />;
@@ -520,10 +525,9 @@ function ClientView({
   if (section === "promocoes") return <Promotions items={promotions || []} />;
   if (section === "localizacao") return <Location />;
   if (section === "catalogo") return <StyleCatalog items={catalogItems || []} />;
-  if (section === "assinatura") return <SubscriptionClient items={subscriptions || []} campaigns={subscriptionCampaigns || []} demo={demo} onRefresh={onRefresh} onNavigate={onNavigate} />;
+  if (section === "assinatura") return <><SubscriptionCreative campaigns={subscriptionCampaigns || []}/><SubscriptionClient items={subscriptions || []} demo={demo} onRefresh={onRefresh} /></>;
   return (
     <BookingChat
-      key={bookingResetKey}
       {...{
         user,
         demo,
@@ -662,30 +666,20 @@ async function optimizeImage(file:File){
   return new File([blob],file.name.replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg"});
 }
 
-function SubscriptionClient({items,campaigns,demo,onRefresh,onNavigate}:any) {
-  const [message,setMessage]=useState("");const [sending,setSending]=useState(false);const current=items[0];const today=new Date().toISOString().slice(0,10);const active=current?.status==="Ativa"&&current?.endDate>=today;
-  async function requestPlan(){if(demo){setMessage("Solicitação registrada na demonstração.");return;}setSending(true);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"subscription-request"})});const data=await response.json();setSending(false);setMessage(response.ok?"Solicitação enviada. Você receberá a liberação após a confirmação do pagamento pelo administrador.":data.error||"Não foi possível solicitar a assinatura.");if(response.ok)await onRefresh();}
-  return <section className="membership-page">
-    {!active&&<SubscriptionCreative campaigns={campaigns}/>}
-    <div className="membership-hero"><span>♛ CLUBE YURI</span><h2>Visual sempre em dia,<br/>por um valor fixo.</h2><p>Plano individual da Yuri Barbershop para você cuidar do visual durante todo o mês.</p><div className="membership-price"><strong>R$ 120</strong><small>,00 / 30 dias</small></div>
-      {current?<><div className={`membership-status ${active?"active":""}`}><b>{active?"ASSINATURA ATIVA":current.status.toUpperCase()}</b>{active&&current.startDate&&<span>{formatDate(current.startDate)} até {formatDate(current.endDate)}</span>}{!active&&<span>A contagem começa somente após a confirmação do pagamento.</span>}</div>{current.adminMessage&&<div className="membership-admin-message"><b>Mensagem da barbearia</b><p>{current.adminMessage}</p></div>}</>:<button className="membership-action" disabled={sending} onClick={requestPlan}>{sending?"Enviando...":"Quero assinar"}</button>}
-      {message&&<p className="membership-message">{message}</p>}
-      {active&&<button className="membership-action member-booking-button" onClick={()=>onNavigate("agendar")}>Agende aqui seu atendimento</button>}
-    </div>
-    {active&&<div className="member-exclusive"><div className="section-title"><div><small>EXCLUSIVO PARA ASSINANTES</small><h2>Ofertas e planos do Clube Yuri</h2><p className="section-description">Promoções, criativos e opções de maior duração, como planos de 6 meses no cartão.</p></div></div>{campaigns?.length?<div className="member-campaign-grid">{campaigns.map((campaign:any)=><article key={campaign.id}>{campaign.imageKey&&<img src={storedImage(campaign.imageKey)} alt={campaign.title}/>}<div><small>OFERTA DO CLUBE</small><h3>{campaign.title}</h3><p>{campaign.description}</p></div></article>)}</div>:<div className="empty-promotion"><h3>Novidades em breve</h3><p>As promoções exclusivas para assinantes aparecerão aqui.</p></div>}</div>}
-    <div className="membership-benefits"><article><b>✓</b><div><h3>Serviços ilimitados</h3><p>Utilize os serviços da barbearia durante o período ativo do plano.</p></div></article><article><b>✓</b><div><h3>Plano pessoal</h3><p>Benefício exclusivo e intransferível para o usuário titular.</p></div></article><article><b>✓</b><div><h3>Validade de 30 dias</h3><p>O período começa após a confirmação do pagamento pelo administrador.</p></div></article><article><b>✓</b><div><h3>Agendamento necessário</h3><p>Use “Agende aqui seu atendimento”. A confirmação continua sendo feita pelo WhatsApp.</p></div></article></div>
-    <div className="membership-rules"><h3>Regras importantes</h3><p>A assinatura não pode ser compartilhada. Os atendimentos são pessoais, mediante agendamento, e não acumulam após o vencimento. Produtos não estão incluídos no plano.</p></div>
-  </section>;
+function SubscriptionClient({items,demo,onRefresh}:any) {
+  const [message,setMessage]=useState("");const [sending,setSending]=useState(false);const current=items[0];const active=current?.status==="Ativa"&&current?.endDate>=new Date().toISOString().slice(0,10);
+  async function requestPlan(){if(demo){setMessage("Solicitação registrada na demonstração.");return;}setSending(true);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"subscription-request"})});const data=await response.json();setSending(false);setMessage(response.ok?"Solicitação enviada. Aguarde a confirmação do pagamento.":data.error||"Não foi possível solicitar a assinatura.");if(response.ok)await onRefresh();}
+  return <section className="membership-page"><div className="membership-hero"><span>♛ CLUBE YURI</span><h2>Visual sempre em dia,<br/>por um valor fixo.</h2><p>Plano individual da Yuri Barbershop para você cuidar do visual durante todo o mês.</p><div className="membership-price"><strong>R$ 120</strong><small>,00 / 30 dias</small></div>{current?<><div className={`membership-status ${active?"active":""}`}><b>{active?"ASSINATURA ATIVA":current.status.toUpperCase()}</b>{current.startDate&&<span>{formatDate(current.startDate)} até {formatDate(current.endDate)}</span>}</div>{current.adminMessage&&<div className="membership-admin-message"><b>Mensagem da barbearia</b><p>{current.adminMessage}</p></div>}</>:<button className="membership-action" disabled={sending} onClick={requestPlan}>{sending?"Enviando...":"Quero assinar"}</button>}{message&&<p className="membership-message">{message}</p>}</div><div className="membership-benefits"><article><b>✓</b><div><h3>Serviços ilimitados</h3><p>Utilize os serviços da barbearia durante o período ativo do plano.</p></div></article><article><b>✓</b><div><h3>Plano pessoal</h3><p>Benefício exclusivo e intransferível para o usuário titular.</p></div></article><article><b>✓</b><div><h3>Validade de 30 dias</h3><p>O período começa após a confirmação do pagamento pelo administrador.</p></div></article><article><b>✓</b><div><h3>Agendamento necessário</h3><p>Atendimentos dependem dos horários disponíveis e confirmação pelo WhatsApp.</p></div></article></div><div className="membership-rules"><h3>Regras importantes</h3><p>A assinatura não pode ser compartilhada. Os atendimentos são pessoais, mediante agendamento, e não acumulam após o vencimento. Produtos não estão incluídos no plano.</p></div></section>;
 }
 
 function SubscriptionCreative({campaigns}:any){const campaign=campaigns?.[0];if(!campaign)return null;return <div className="membership-creative">{campaign.imageKey&&<img src={storedImage(campaign.imageKey)} alt={campaign.title}/>}<div><small>CONHEÇA O CLUBE YURI</small><h3>{campaign.title}</h3><p>{campaign.description}</p></div></div>}
 
-function CampaignManager({campaigns,onRefresh}:any){const [open,setOpen]=useState(false);const [file,setFile]=useState<File|null>(null);const [saving,setSaving]=useState(false);const [message,setMessage]=useState("");const [form,setForm]=useState({title:"Plano semestral Clube Yuri",description:"Assine 6 meses no cartão. Informe aqui o valor e as condições da oferta.",showOnLogin:false});async function save(){if(!file){setMessage("Escolha a imagem do criativo.");return;}try{setSaving(true);const imageKey=await uploadImage(file);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"subscription-campaign",...form,imageKey})});if(!response.ok)throw new Error();setOpen(false);setMessage("Criativo e oferta publicados no Clube Yuri.");await onRefresh();}catch{setMessage("Não foi possível publicar o criativo.");}finally{setSaving(false)}}return <section className="campaign-manager"><div className="section-title"><div><small>OFERTAS DO CLUBE</small><h2>Criativos e planos para assinantes</h2><p className="section-description">Publique promoções exclusivas e ofertas de maior duração, como 6 meses no cartão.</p></div><button className="primary-button small" onClick={()=>setOpen(!open)}>+ Carregar criativo</button></div>{open&&<div className="promotion-form"><label>Título<input value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><label>Oferta e condições<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Imagem do criativo<input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)}/></label><label className="campaign-check"><input type="checkbox" checked={form.showOnLogin} onChange={e=>setForm({...form,showOnLogin:e.target.checked})}/> Destacar também na entrada</label><button className="primary-button small" disabled={saving} onClick={save}>{saving?"Enviando...":"Publicar oferta"}</button></div>}{message&&<p className="form-message">{message}</p>}<SubscriptionCreative campaigns={campaigns}/></section>}
+function CampaignManager({campaigns,onRefresh}:any){const [open,setOpen]=useState(false);const [file,setFile]=useState<File|null>(null);const [saving,setSaving]=useState(false);const [message,setMessage]=useState("");const [form,setForm]=useState({title:"Clube Yuri",description:"Visual sempre em dia por um valor fixo.",showOnLogin:true});async function save(){if(!file){setMessage("Escolha a imagem do criativo.");return;}try{setSaving(true);const imageKey=await uploadImage(file);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"subscription-campaign",...form,imageKey})});if(!response.ok)throw new Error();setOpen(false);setMessage("Criativo de assinatura publicado.");await onRefresh();}catch{setMessage("Não foi possível publicar o criativo.");}finally{setSaving(false)}}return <section className="campaign-manager"><div className="section-title"><div><small>DIVULGAÇÃO DO CLUBE</small><h2>Criativos da assinatura</h2></div><button className="primary-button small" onClick={()=>setOpen(!open)}>+ Carregar criativo</button></div>{open&&<div className="promotion-form"><label>Título<input value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><label>Texto<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Imagem do criativo<input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)}/></label><label className="campaign-check"><input type="checkbox" checked={form.showOnLogin} onChange={e=>setForm({...form,showOnLogin:e.target.checked})}/> Destacar também na entrada</label><button className="primary-button small" disabled={saving} onClick={save}>{saving?"Enviando...":"Publicar criativo"}</button></div>}{message&&<p className="form-message">{message}</p>}<SubscriptionCreative campaigns={campaigns}/></section>}
 
 function SubscriptionAdmin({items,onRefresh}:any) {
   const [working,setWorking]=useState<number|null>(null);const [messageFor,setMessageFor]=useState<number|null>(null);const [message,setMessage]=useState("");
-  async function act(item:any,operation:string){if(operation==="activate"&&!window.confirm(`Confirma que o pagamento de ${item.clientName} foi recebido? A contagem de 30 dias começará hoje.`))return;setWorking(item.id);const action=operation==="activate"?"subscription-activate":"subscription-manage";const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action,id:item.id,operation,message})});setWorking(null);if(response.ok){setMessageFor(null);setMessage("");await onRefresh();}}
-  return <section><div className="section-title"><div><small>CLUBE YURI</small><h2>Gestão de assinantes</h2><p className="section-description">Confira o pagamento e autorize. Somente então começa a contagem do período.</p></div><span className="client-count">{items.filter((i:any)=>i.status==="Ativa").length} ativas</span></div><div className="subscription-admin-list">{items.length?items.map((item:any)=><article className="subscriber-card" key={item.id}><div className="subscriber-head"><div><strong>{item.clientName}</strong><small>{item.clientEmail}</small></div><span className={`subscriber-badge ${item.status.toLowerCase().replaceAll(" ","-")}`}>{item.status}</span></div><div className="subscriber-dates"><span>Valor<b>{money(item.priceCents)}</b></span><span>Início<b>{item.startDate?formatDate(item.startDate):"Aguardando autorização"}</b></span><span>Vencimento<b>{item.endDate?formatDate(item.endDate):"Ainda não iniciado"}</b></span></div>{item.adminMessage&&<p className="subscriber-last-message">Última mensagem: {item.adminMessage}</p>}<div className="subscriber-actions">{item.status!=="Ativa"&&<button className="accept-booking" disabled={working===item.id} onClick={()=>act(item,"activate")}>✓ Confirmar pagamento e ativar 30 dias</button>}{item.status==="Ativa"&&<button onClick={()=>act(item,"extend")}>+30 dias</button>}{item.status==="Bloqueada"?<button onClick={()=>act(item,"Ativa")}>Reativar</button>:<button className="block-subscription" onClick={()=>act(item,"Bloqueada")}>Bloquear</button>}<button className="cancel-booking" onClick={()=>act(item,"Cancelada")}>Cancelar</button><button className="message-booking" onClick={()=>{setMessageFor(messageFor===item.id?null:item.id);setMessage(item.adminMessage||"")}}>Mensagem</button></div>{messageFor===item.id&&<div className="subscriber-message-form"><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Digite uma mensagem para o assinante..."/><button className="primary-button small" disabled={!message.trim()||working===item.id} onClick={()=>act(item,"message")}>Enviar</button></div>}</article>):<div className="empty-promotion"><h3>Nenhuma solicitação</h3><p>Os clientes que solicitarem o plano aparecerão aqui.</p></div>}</div></section>;
+  async function act(item:any,operation:string){setWorking(item.id);const action=operation==="activate"?"subscription-activate":"subscription-manage";const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action,id:item.id,operation,message})});setWorking(null);if(response.ok){setMessageFor(null);setMessage("");await onRefresh();}}
+  return <section><div className="section-title"><div><small>CLUBE YURI</small><h2>Gestão de assinantes</h2><p className="section-description">Ative após o pagamento e acompanhe cada cliente durante o período.</p></div><span className="client-count">{items.filter((i:any)=>i.status==="Ativa").length} ativas</span></div><div className="subscription-admin-list">{items.length?items.map((item:any)=><article className="subscriber-card" key={item.id}><div className="subscriber-head"><div><strong>{item.clientName}</strong><small>{item.clientEmail}</small></div><span className={`subscriber-badge ${item.status.toLowerCase().replaceAll(" ","-")}`}>{item.status}</span></div><div className="subscriber-dates"><span>Valor<b>{money(item.priceCents)}</b></span><span>Início<b>{item.startDate?formatDate(item.startDate):"—"}</b></span><span>Vencimento<b>{item.endDate?formatDate(item.endDate):"—"}</b></span></div>{item.adminMessage&&<p className="subscriber-last-message">Última mensagem: {item.adminMessage}</p>}<div className="subscriber-actions">{item.status!=="Ativa"&&<button className="accept-booking" onClick={()=>act(item,"activate")}>✓ Aceitar / ativar</button>}<button onClick={()=>act(item,"extend")}>+30 dias</button>{item.status==="Bloqueada"?<button onClick={()=>act(item,"Ativa")}>Reativar</button>:<button className="block-subscription" onClick={()=>act(item,"Bloqueada")}>Bloquear</button>}<button className="cancel-booking" onClick={()=>act(item,"Cancelada")}>Cancelar</button><button className="message-booking" onClick={()=>{setMessageFor(messageFor===item.id?null:item.id);setMessage(item.adminMessage||"")}}>Mensagem</button></div>{messageFor===item.id&&<div className="subscriber-message-form"><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Digite uma mensagem para o assinante..."/><button className="primary-button small" disabled={!message.trim()||working===item.id} onClick={()=>act(item,"message")}>Enviar</button></div>}</article>):<div className="empty-promotion"><h3>Nenhuma solicitação</h3><p>Os clientes que solicitarem o plano aparecerão aqui.</p></div>}</div></section>;
 }
 
 function ClientProfile({ user, profile, demo, onRefresh }: any) {
@@ -713,12 +707,9 @@ function BookingChat({
   const [formError, setFormError] = useState("");
   const [greeting, setGreeting] = useState("Olá");
   const [acceptedDelayRule, setAcceptedDelayRule] = useState(false);
-  const [greetingAnswered, setGreetingAnswered] = useState(false);
-  const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
+  const times = bookingTimesForDate(bookingDate);
   const firstName = user.name?.split(" ")[0] || "cliente";
   const chosen = services.find((service: any) => service.name === selectedService);
-  const chosenDuration = Number.parseInt(String(chosen?.time || "30"), 10) || 30;
-  const times = bookingTimesForDate(bookingDate, chosenDuration).filter((time) => !occupiedTimes.includes(time));
   const money = (value: number) => `R$ ${Number(value || 0).toFixed(2).replace(".", ",")}`;
 
   useEffect(() => {
@@ -728,20 +719,6 @@ function BookingChat({
   useEffect(() => {
     if (profile) setCustomer({ name: profile.name || user.name || "", phone: profile.phone || "", birthDate: profile.birthDate || "" });
   }, [profile, user.name]);
-  useEffect(() => {
-    if (demo || !bookingDate || !chosen?.id) {
-      setOccupiedTimes([]);
-      return;
-    }
-    const controller = new AbortController();
-    fetch(`/api/data?date=${encodeURIComponent(bookingDate)}&serviceId=${encodeURIComponent(chosen.id)}`, { signal: controller.signal })
-      .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((data) => setOccupiedTimes(Array.isArray(data.occupiedTimes) ? data.occupiedTimes : []))
-      .catch((error) => {
-        if (error?.name !== "AbortError") setOccupiedTimes([]);
-      });
-    return () => controller.abort();
-  }, [bookingDate, chosen?.id, demo]);
 
   const isRegistered = Boolean(customer.name.trim() && customer.phone.replace(/\D/g, "").length >= 10 && customer.birthDate);
   const formattedDate = bookingDate ? new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR") : "";
@@ -749,7 +726,7 @@ function BookingChat({
 
   function restart() {
     setStep(-1); setMode(""); setSelectedService(""); setBookingDate(""); setSelectedTime("");
-    setNotice(""); setFormError(""); setAcceptedDelayRule(false); setGreetingAnswered(false);
+    setNotice(""); setFormError(""); setAcceptedDelayRule(false);
   }
   function chooseDate() {
     if (!bookingDate) return;
@@ -780,22 +757,18 @@ function BookingChat({
     <div className="booking-with-ads">
       <section className="chat-booking">
         <div className="chat-top">
-          <button type="button" className="bot-avatar brand-avatar chat-home-logo" onClick={restart} aria-label="Voltar ao início do atendimento"><img src="/brand/yuri-barbershop-logo.png" alt="Voltar ao início" /></button>
-          <div><strong>Assistente Yuri</strong><small><i /> atendimento online</small></div><button type="button" className="chat-home-button" onClick={restart}>⌂ Início</button>
+          <div className="bot-avatar brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="" /></div>
+          <div><strong>Assistente Yuri</strong><small><i /> atendimento online</small></div><span>✂</span>
         </div>
         <div className="chat-progress"><span style={{ width: step < 0 ? "0%" : `${Math.min(100, (Math.min(step, 7) + 1) * 14)}%` }} /></div>
         <div className="chat-body conversational-flow" aria-live="polite">
           {step === -1 && <div className="chat-welcome"><div className="welcome-mark brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="Logo Yuri Barbershop" /></div><span>ATENDIMENTO ONLINE</span><h2>Bem-vindo à Yuri Barbershop</h2><p>Converse com o Assistente Yuri e envie seu pedido pronto pelo WhatsApp.</p><button className="primary-button start-chat" onClick={() => setStep(0)}>Iniciar conversa</button></div>}
 
-          {step >= 0 && <BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble>}
-          {step === 0 && !greetingAnswered && <ChatOptions>
-            <ChatChoice icon="👋" title={`${greeting}! Tudo bem.`} subtitle="Responder ao Assistente Yuri" onClick={() => setGreetingAnswered(true)} />
-            <ChatChoice icon="🙂" title="Olá! Tudo certo." subtitle="Continuar o atendimento" onClick={() => setGreetingAnswered(true)} />
+          {step >= 0 && <><BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble><BotBubble>Posso te ajudar? Você quer solicitar um serviço?</BotBubble></>}
+          {step === 0 && <ChatOptions>
+            <ChatChoice icon="✓" title="Sim, quero" subtitle="Escolher serviço, data e atendimento" onClick={() => setStep(1)} />
+            <ChatChoice icon="×" title="Não, obrigado" subtitle="Ver outras opções da barbearia" onClick={() => setStep(90)} />
           </ChatOptions>}
-          {step === 0 && greetingAnswered && <><UserBubble>{greeting}! Tudo bem.</UserBubble><BotBubble>Que bom falar com você! O que você está precisando hoje?</BotBubble><ChatOptions>
-            <ChatChoice icon="✂" title="Quero um serviço" subtitle="Escolher serviço, data e atendimento" onClick={() => setStep(1)} />
-            <ChatChoice icon="×" title="Só quero conhecer" subtitle="Ver outras opções da barbearia" onClick={() => setStep(90)} />
-          </ChatOptions></>}
 
           {step >= 1 && step < 90 && <UserBubble>Sim, quero solicitar um serviço.</UserBubble>}
           {step === 1 && <><BotBubble>Perfeito! Qual serviço você gostaria de fazer? Os valores aparecem para você escolher com tranquilidade.</BotBubble><ChatOptions>
