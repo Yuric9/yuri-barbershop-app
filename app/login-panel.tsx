@@ -37,6 +37,7 @@ export default function LoginPanel() {
       <label>E-mail<input required type="email" autoComplete="email" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })}/></label>
       <label>Senha<input required type={showPassword ? "text" : "password"} minLength={8} autoComplete={view === "register" ? "new-password" : "current-password"} value={form.password} onChange={event => setForm({ ...form, password: event.target.value })}/></label>
       <label className="show-password-option"><input type="checkbox" checked={showPassword} onChange={event => setShowPassword(event.target.checked)}/><span>Mostrar senha</span></label>
+      {view === "client" && <a className="forgot-password-link" href="https://wa.me/5562981007636?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20para%20recuperar%20meu%20acesso%20ao%20aplicativo%20da%20Yuri%20Barbershop." target="_blank" rel="noreferrer">Esqueci minha senha</a>}
       {message && <p className="login-message">{message}</p>}
       <button className="primary-button login-submit" disabled={loading}>{loading ? "Aguarde..." : view === "register" ? "Criar cadastro" : "Entrar"}</button>
     </form>
