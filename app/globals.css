@@ -12,6 +12,7 @@
   --green: #2f7250;
   --red: #9d493e;
 }
+
 * {
   box-sizing: border-box;
 }
@@ -1446,4 +1447,29 @@ a {
     white-space: nowrap;
     font-size: 10px;
   }
+}
+
+/* Salvaguardas finais de legibilidade e toque. */
+.app-shell button,
+.app-shell input,
+.app-shell select,
+.app-shell textarea,
+.app-shell a { font-size: max(14px, 1em); }
+.app-shell input,
+.app-shell select,
+.app-shell textarea { min-height: 44px; }
+.app-shell .sidebar small,
+.app-shell .section-title small,
+.app-shell .panel-head small,
+.app-shell .chat-shell small,
+.app-shell .product-card small,
+.app-shell .style-card small { font-size: 12px; line-height: 1.4; }
+.app-shell .menu-group-label,
+.app-shell .sidebar-social > small { font-size: 11px; }
+
+@media (max-width: 760px) {
+  .app-shell .status,
+  .app-shell .pending,
+  .app-shell .section-title .primary-button { font-size: 12px; }
+  .app-shell .section-title .primary-button { min-height: 44px; }
 }
