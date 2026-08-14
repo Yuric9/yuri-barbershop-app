@@ -280,9 +280,18 @@ export async function POST(request: Request) {
     if (existing.some((item) => item.status === "Ativa" || item.status === "Aguardando pagamento"))
       return Response.json({ error: "Você já possui uma assinatura ativa ou em análise." }, { status: 409 });
     const profile = await db.select().from(profiles).where(eq(profiles.email, user.email)).limit(1);
+    const clientName = profile[0]?.name || user.displayName;
     await db.insert(subscriptions).values({
       clientEmail: user.email,
-      clientName: profile[0]?.name || user.displayName,
+      clientName,
+      createdAt: now,
+    });
+    await db.insert(messages).values({
+      senderEmail: user.email,
+      senderName: clientName,
+      recipientEmail: "admin",
+      subject: "Nova solicitação de assinatura",
+      body: `${clientName} solicitou a assinatura do Clube Yuri. Confira o pagamento e use “Confirmar pagamento e ativar 30 dias” na aba Assinaturas. A contagem ainda não começou.`,
       createdAt: now,
     });
     return Response.json({ ok: true });
@@ -388,7 +397,19 @@ export async function POST(request: Request) {
     const startDate = String(body.startDate || new Date().toISOString().slice(0, 10));
     const end = new Date(`${startDate}T12:00:00`);
     end.setDate(end.getDate() + 30);
-    await db.update(subscriptions).set({ status: "Ativa", startDate, endDate: end.toISOString().slice(0, 10) }).where(eq(subscriptions.id, Number(body.id)));
+    const subscriptionId = Number(body.id);
+    const [current] = await db.select().from(subscriptions).where(eq(subscriptions.id, subscriptionId)).limit(1);
+    if (!current) return Response.json({ error: "Assinatura não encontrada" }, { status: 404 });
+    const endDate = end.toISOString().slice(0, 10);
+    await db.update(subscriptions).set({ status: "Ativa", startDate, endDate }).where(eq(subscriptions.id, subscriptionId));
+    await db.insert(messages).values({
+      senderEmail: user.email,
+      senderName: "Yuri Barbershop",
+      recipientEmail: current.clientEmail,
+      subject: "Assinatura Clube Yuri ativada",
+      body: `Pagamento confirmado! Sua assinatura está ativa de ${startDate} até ${endDate}. Você já pode usar “Agende aqui seu atendimento” no Clube Yuri.`,
+      createdAt: now,
+    });
   } else if (action === "subscription-manage") {
     const id = Number(body.id);
     const operation = String(body.operation || "");
