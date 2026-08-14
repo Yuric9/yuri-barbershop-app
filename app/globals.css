@@ -1495,3 +1495,53 @@ a {
   .guest-login{width:100%;box-sizing:border-box}
   .login-hours{font-size:.82rem;line-height:1.55}
 }
+
+/* Revisão final: acessibilidade, toque e legibilidade responsiva */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #d3a43b;
+  outline-offset: 3px;
+}
+:where(button, [role="button"], input, select) {
+  min-height: 44px;
+}
+@media (max-width: 620px) {
+  .login-stage {
+    width: min(100%, 480px);
+    padding: 18px;
+    gap: 20px;
+  }
+  .login-card {
+    width: 100%;
+    padding: 22px 18px;
+  }
+  .login-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .login-tabs button {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  .login-card label,
+  .login-card input,
+  .login-card button,
+  .login-card p,
+  .login-card a {
+    line-height: 1.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -4,6 +4,7 @@ import { getDb } from "../../../../db";
 import { accounts } from "../../../../db/schema";
 import { verifyPassword } from "../../../password-security";
 import { adminRuntimeConfig } from "../../../runtime-config";
+import { checkLoginLimit, clearLoginFailures, recordLoginFailure } from "../../../auth-rate-limit";
 import { createSession, SESSION_COOKIE } from "../../../session-auth";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,12 @@ export async function POST(request: Request) {
   const password = String(body.password || "");
   const requestedArea = body.area === "admin" ? "admin" : "client";
   if (!/^\S+@\S+\.\S+$/.test(email) || !password) return Response.json({ error: "Informe e-mail e senha." }, { status: 400 });
+
+  stage = "proteção de acesso";
+  const loginLimit = await checkLoginLimit(request, email);
+  if (loginLimit.blocked) {
+    return Response.json({ error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." }, { status: 429 });
+  }
 
   stage = "consulta da conta";
   const db = getDb();
@@ -31,6 +38,9 @@ export async function POST(request: Request) {
     // Validá-lo primeiro evita que um hash antigo salvo no D1 bloqueie o login.
     stage = "validação da senha administrativa";
     valid = await verifyPassword(password, admin.passwordHash);
+    if (!valid && account?.active && account.passwordHash !== admin.passwordHash) {
+      valid = await verifyPassword(password, account.passwordHash);
+    }
     if (valid) {
       role = "admin";
       stage = "sincronização da conta administrativa";
@@ -53,7 +63,11 @@ export async function POST(request: Request) {
     valid = Boolean(account?.active && await verifyPassword(password, account.passwordHash));
   }
 
-  if (!valid) return Response.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+  if (!valid) {
+    await recordLoginFailure(loginLimit.key);
+    return Response.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+  }
+  await clearLoginFailures(loginLimit.key);
   if (requestedArea === "admin" && role !== "admin") return Response.json({ error: "Este usuário não possui acesso administrativo." }, { status: 403 });
 
   stage = "criação da sessão";
@@ -69,6 +83,6 @@ export async function POST(request: Request) {
   return Response.json({ ok: true, role });
  } catch (error) {
   console.error("auth-login-failure", stage, error);
-  return Response.json({ error: `Falha na etapa: ${stage}.` }, { status: 500 });
+  return Response.json({ error: "Não foi possível entrar agora. Tente novamente em instantes." }, { status: 500 });
  }
 }

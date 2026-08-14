@@ -166,3 +166,10 @@ export const marketingContacts = sqliteTable("marketing_contacts", {
   returned: integer("returned", { mode: "boolean" }).notNull().default(false),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const authAttempts = sqliteTable("auth_attempts", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  windowStart: text("window_start").notNull(),
+  blockedUntil: text("blocked_until").notNull().default(""),
+});

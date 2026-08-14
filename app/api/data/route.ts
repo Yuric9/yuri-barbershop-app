@@ -29,16 +29,43 @@ const defaults = [
   ["Pigmentação", 3000, 30],
 ] as const;
 
-function allowedBookingTimes(date: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
+function localToday() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function timeToMinutes(value: string) {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return Number.NaN;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function operatingWindow(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
   const day = new Date(`${date}T12:00:00`).getDay();
-  const startMinutes = day === 0 || day === 6 ? 8 * 60 : 18 * 60;
-  const endMinutes = day === 0 ? 12 * 60 : 20 * 60 + 30;
+  return {
+    start: day === 0 || day === 6 ? 8 * 60 : 18 * 60,
+    end: day === 0 ? 12 * 60 : 20 * 60 + 30,
+  };
+}
+
+function allowedBookingTimes(date: string, durationMin = 30) {
+  const window = operatingWindow(date);
+  if (!window) return [];
+  const safeDuration = Math.max(5, Number(durationMin) || 30);
   const slots: string[] = [];
-  for (let minutes = startMinutes; minutes <= endMinutes; minutes += 30) {
+  for (let minutes = window.start; minutes + safeDuration <= window.end; minutes += 30) {
     slots.push(`${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`);
   }
   return slots;
+}
+
+function overlaps(startA: number, durationA: number, startB: number, durationB: number) {
+  return startA < startB + durationB && startB < startA + durationA;
 }
 
 function unauthorized() {
@@ -122,15 +149,30 @@ export async function GET(request: Request) {
     db.select().from(subscriptionCampaigns).where(eq(subscriptionCampaigns.active, true)).orderBy(desc(subscriptionCampaigns.id)),
     isAdmin ? db.select().from(marketingContacts).orderBy(desc(marketingContacts.updatedAt)) : Promise.resolve([]),
   ]);
-  const selectedDate = new URL(request.url).searchParams.get("date");
-  const occupiedTimes = selectedDate
-    ? (
-        await db
-          .select({ time: appointments.time })
-          .from(appointments)
-          .where(eq(appointments.date, selectedDate))
-      ).map((row) => row.time)
-    : [];
+  const requestUrl = new URL(request.url);
+  const selectedDate = requestUrl.searchParams.get("date");
+  const selectedServiceId = Number(requestUrl.searchParams.get("serviceId") || 0);
+  const selectedService = serviceRows.find((item) => item.id === selectedServiceId);
+  const selectedDuration = selectedService?.durationMin || 30;
+  let occupiedTimes: string[] = [];
+  if (selectedDate) {
+    const dayAppointments = await db.select().from(appointments).where(eq(appointments.date, selectedDate));
+    const serviceDuration = new Map(serviceRows.map((item) => [item.id, item.durationMin]));
+    const activeAppointments = dayAppointments.filter((item) => item.status !== "Cancelado");
+    const dayBlocks = blockRows.filter((item) => item.date === selectedDate);
+    occupiedTimes = allowedBookingTimes(selectedDate, selectedDuration).filter((slot) => {
+      const slotStart = timeToMinutes(slot);
+      return dayBlocks.some((block) => {
+        if (block.time === "Dia inteiro") return true;
+        const blockStart = timeToMinutes(block.time);
+        return Number.isFinite(blockStart) && overlaps(slotStart, selectedDuration, blockStart, 30);
+      }) || activeAppointments.some((item) => {
+        const existingStart = timeToMinutes(item.time);
+        const existingDuration = serviceDuration.get(item.serviceId) || 30;
+        return Number.isFinite(existingStart) && overlaps(slotStart, selectedDuration, existingStart, existingDuration);
+      });
+    });
+  }
   const today = new Date().toISOString().slice(0, 10);
   const clientSummaries = isAdmin
     ? profileRows.map((profile) => {
@@ -238,19 +280,49 @@ export async function POST(request: Request) {
         { error: "Escolha uma data e um horário" },
         { status: 400 },
       );
-    if (!allowedBookingTimes(date).includes(time))
+    if (date < localToday())
       return Response.json(
-        { error: "Horário fora do funcionamento da Yuri Barbershop" },
+        { error: "Não é possível solicitar um horário em uma data passada." },
         { status: 400 },
       );
-    const conflict = await db
-      .select({ id: appointments.id })
-      .from(appointments)
-      .where(and(eq(appointments.date, date), eq(appointments.time, time)))
-      .limit(1);
-    if (conflict.length)
+    if (!allowedBookingTimes(date, service.durationMin).includes(time))
       return Response.json(
-        { error: "Este horário acabou de ser reservado. Escolha outro." },
+        { error: "Este serviço não cabe neste horário antes do fechamento. Escolha outro." },
+        { status: 400 },
+      );
+
+    const requestedStart = timeToMinutes(time);
+    const dayBlocks = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.date, date));
+    const blocked = dayBlocks.some((block) => {
+      if (block.time === "Dia inteiro") return true;
+      const blockStart = timeToMinutes(block.time);
+      return Number.isFinite(blockStart) && overlaps(requestedStart, service.durationMin, blockStart, 30);
+    });
+    if (blocked)
+      return Response.json(
+        { error: "Este período está bloqueado na agenda. Escolha outro horário." },
+        { status: 409 },
+      );
+
+    const dayAppointments = await db.select().from(appointments).where(eq(appointments.date, date));
+    const activeAppointments = dayAppointments.filter((item) => item.status !== "Cancelado");
+    const existingServiceIds = [...new Set(activeAppointments.map((item) => item.serviceId))];
+    const durationRows = existingServiceIds.length
+      ? await db.select({ id: services.id, durationMin: services.durationMin }).from(services)
+      : [];
+    const durationByService = new Map(durationRows.map((item) => [item.id, item.durationMin]));
+    const conflict = activeAppointments.some((item) => {
+      const existingStart = timeToMinutes(item.time);
+      return Number.isFinite(existingStart) && overlaps(
+        requestedStart,
+        service.durationMin,
+        existingStart,
+        durationByService.get(item.serviceId) || 30,
+      );
+    });
+    if (conflict)
+      return Response.json(
+        { error: "Este período acabou de ser reservado. Escolha outro horário." },
         { status: 409 },
       );
     const profile = await db

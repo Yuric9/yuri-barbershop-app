@@ -39,13 +39,13 @@ const defaultProducts = [
   },
 ];
 
-function bookingTimesForDate(date: string) {
+function bookingTimesForDate(date: string, durationMin = 30) {
   if (!date) return [];
   const day = new Date(`${date}T12:00:00`).getDay();
   const startMinutes = day === 0 || day === 6 ? 8 * 60 : 18 * 60;
   const endMinutes = day === 0 ? 12 * 60 : 20 * 60 + 30;
   const slots: string[] = [];
-  for (let minutes = startMinutes; minutes <= endMinutes; minutes += 30) {
+  for (let minutes = startMinutes; minutes + Math.max(5, durationMin) <= endMinutes; minutes += 30) {
     slots.push(`${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`);
   }
   return slots;
@@ -101,7 +101,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [selectedService, setSelectedService] = useState("Corte");
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [notice, setNotice] = useState("");
-  const [bookingDate, setBookingDate] = useState("2026-08-15");
+  const [bookingDate, setBookingDate] = useState("");
   const [liveServices, setLiveServices] = useState(defaultServices);
   const [liveProducts, setLiveProducts] = useState(defaultProducts);
   const [clientProfile, setClientProfile] = useState<any>(null);
@@ -714,9 +714,11 @@ function BookingChat({
   const [greeting, setGreeting] = useState("Olá");
   const [acceptedDelayRule, setAcceptedDelayRule] = useState(false);
   const [greetingAnswered, setGreetingAnswered] = useState(false);
-  const times = bookingTimesForDate(bookingDate);
+  const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
   const firstName = user.name?.split(" ")[0] || "cliente";
   const chosen = services.find((service: any) => service.name === selectedService);
+  const chosenDuration = Number.parseInt(String(chosen?.time || "30"), 10) || 30;
+  const times = bookingTimesForDate(bookingDate, chosenDuration).filter((time) => !occupiedTimes.includes(time));
   const money = (value: number) => `R$ ${Number(value || 0).toFixed(2).replace(".", ",")}`;
 
   useEffect(() => {
@@ -726,6 +728,20 @@ function BookingChat({
   useEffect(() => {
     if (profile) setCustomer({ name: profile.name || user.name || "", phone: profile.phone || "", birthDate: profile.birthDate || "" });
   }, [profile, user.name]);
+  useEffect(() => {
+    if (demo || !bookingDate || !chosen?.id) {
+      setOccupiedTimes([]);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`/api/data?date=${encodeURIComponent(bookingDate)}&serviceId=${encodeURIComponent(chosen.id)}`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((data) => setOccupiedTimes(Array.isArray(data.occupiedTimes) ? data.occupiedTimes : []))
+      .catch((error) => {
+        if (error?.name !== "AbortError") setOccupiedTimes([]);
+      });
+    return () => controller.abort();
+  }, [bookingDate, chosen?.id, demo]);
 
   const isRegistered = Boolean(customer.name.trim() && customer.phone.replace(/\D/g, "").length >= 10 && customer.birthDate);
   const formattedDate = bookingDate ? new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR") : "";
