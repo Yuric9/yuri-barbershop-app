@@ -100,6 +100,9 @@ a {
 .own-login-form label { display: grid; gap: 6px; color: #aaa69c; font-size: 9px; font-weight: 800; }
 .own-login-form input { width: 100%; padding: 13px; border: 1px solid #454138; border-radius: 9px; outline: 0; background: #10100e; color: white; }
 .own-login-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px #c59a3d18; }
+.show-password-option { display: flex !important; grid-template-columns: none !important; align-items: center; justify-content: flex-start; gap: 8px !important; width: fit-content; color: #d2cec4 !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer; user-select: none; }
+.show-password-option input { width: 17px !important; height: 17px; margin: 0; padding: 0 !important; accent-color: var(--gold); cursor: pointer; }
+.show-password-option span { line-height: 17px; }
 .login-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .login-submit { width: 100%; margin-top: 3px; }
 .login-submit:disabled { opacity: .65; cursor: wait; }
