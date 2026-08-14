@@ -8,7 +8,8 @@ export default function LoginPanel() {
   const [view, setView] = useState<View>("client");
   const [form, setForm] = useState({ name: "", phone: "", birthDate: "", email: "", password: "" });
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);\n  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setLoading(true); setMessage("");
