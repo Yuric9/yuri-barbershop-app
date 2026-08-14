@@ -675,32 +675,21 @@ function ClientProfile({ user, profile, demo, onRefresh }: any) {
 }
 
 function BookingChat({
-  user,
-  demo,
-  services,
-  products,
-  profile,
-  selectedService,
-  setSelectedService,
-  selectedTime,
-  setSelectedTime,
-  bookingDate,
-  setBookingDate,
-  notice,
-  setNotice,
-  confirmBooking,
-  promotions,
-  subscriptionCampaigns,
-  onNavigate,
+  user, demo, services, products, profile, selectedService, setSelectedService,
+  selectedTime, setSelectedTime, bookingDate, setBookingDate, notice, setNotice,
+  confirmBooking, promotions, subscriptionCampaigns, onNavigate,
 }: any) {
   const [step, setStep] = useState(-1);
-  const [product, setProduct] = useState<any>(null);
+  const [mode, setMode] = useState<"schedule" | "notice" | "">("");
   const [customer, setCustomer] = useState({ name: user.name || "", phone: "", birthDate: "" });
   const [formError, setFormError] = useState("");
   const [greeting, setGreeting] = useState("Olá");
   const [acceptedDelayRule, setAcceptedDelayRule] = useState(false);
   const times = bookingTimesForDate(bookingDate);
-  const firstName = user.name.split(" ")[0];
+  const firstName = user.name?.split(" ")[0] || "cliente";
+  const chosen = services.find((service: any) => service.name === selectedService);
+  const money = (value: number) => `R$ ${Number(value || 0).toFixed(2).replace(".", ",")}`;
+
   useEffect(() => {
     const hour = new Date().getHours();
     setGreeting(hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite");
@@ -708,23 +697,20 @@ function BookingChat({
   useEffect(() => {
     if (profile) setCustomer({ name: profile.name || user.name || "", phone: profile.phone || "", birthDate: profile.birthDate || "" });
   }, [profile, user.name]);
-  const isRegistered = Boolean(
-    customer.name.trim() && customer.phone.replace(/\D/g, "").length >= 10 && customer.birthDate,
-  );
-  const chosen = services.find((s: any) => s.name === selectedService);
-  async function chooseDate(value: string) {
-    setBookingDate(value);
-    setSelectedTime("");
-    setNotice("");
-    setStep(4);
-  }
+
+  const isRegistered = Boolean(customer.name.trim() && customer.phone.replace(/\D/g, "").length >= 10 && customer.birthDate);
+  const formattedDate = bookingDate ? new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR") : "";
+  const total = chosen?.price || 0;
+
   function restart() {
-    setStep(-1);
-    setProduct(null);
-    setNotice("");
-    setSelectedTime("");
-    setFormError("");
-    setAcceptedDelayRule(false);
+    setStep(-1); setMode(""); setSelectedService(""); setBookingDate(""); setSelectedTime("");
+    setNotice(""); setFormError(""); setAcceptedDelayRule(false);
+  }
+  function chooseDate() {
+    if (!bookingDate) return;
+    setSelectedTime(""); setNotice("");
+    if (mode === "schedule") setStep(4);
+    else setStep(isRegistered ? 6 : 5);
   }
   function finishRegistration() {
     if (!customer.name.trim() || customer.phone.replace(/\D/g, "").length < 10 || !customer.birthDate) {
@@ -732,259 +718,89 @@ function BookingChat({
     }
     setFormError(""); setStep(6);
   }
+
+  const requestKind = mode === "schedule" ? "solicitar um horário" : "avisar o dia em que pretendo ir";
   const confirmationText = encodeURIComponent(
-    `Olá, Yuri! Gostaria de consultar um horário para atendimento.\n\nCliente: ${customer.name}\nWhatsApp: ${customer.phone}\nServiço desejado: ${selectedService}${product ? `\nProduto para reservar: ${product.name}` : ""}\nData desejada: ${bookingDate ? new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR") : ""}\nHorário desejado: ${selectedTime}\n\nEsse é apenas um pedido de horário. Vou aguardar sua confirmação de disponibilidade pelo WhatsApp.`,
+    `Olá, Yuri! Gostaria de ${requestKind}.\n\nCliente: ${customer.name}\nWhatsApp: ${customer.phone}\nServiço: ${selectedService}\nValor: ${money(total)}\nData: ${formattedDate}${mode === "schedule" ? `\nHorário desejado: ${selectedTime}` : "\nSem reserva de horário"}\n\n${mode === "schedule" ? "Sei que o horário depende da sua confirmação pelo WhatsApp." : "Estou apenas avisando o dia em que pretendo comparecer."}`,
   );
   const whatsappConfirmationUrl = `https://wa.me/5562981007636?text=${confirmationText}`;
+  const directWhatsappUrl = "https://wa.me/5562981007636?text=Ol%C3%A1%2C%20Yuri!%20Gostaria%20de%20tirar%20uma%20d%C3%BAvida.";
   const storyItems = [
-    ...(promotions || []).filter((item: any) => item.imageKey).map((item: any) => ({
-      id: `promotion-${item.id}`,
-      label: "PROMOÇÃO",
-      title: item.title,
-      description: item.description,
-      imageKey: item.imageKey,
-      target: "promocoes",
-      action: "Ver promoção",
-    })),
-    ...(products || []).filter((item: any) => item.featured && item.imageKey).map((item: any) => ({
-      id: `product-${item.id}`,
-      label: "PRODUTO EM DESTAQUE",
-      title: item.name,
-      description: `${item.description || "Disponível na barbearia"} • R$ ${Number(item.price).toFixed(2).replace(".", ",")}`,
-      imageKey: item.imageKey,
-      target: "produtos",
-      action: "Ver produto",
-    })),
-    ...(subscriptionCampaigns || []).filter((item: any) => item.imageKey).map((item: any) => ({
-      id: `subscription-${item.id}`,
-      label: "CLUBE YURI",
-      title: item.title,
-      description: item.description,
-      imageKey: item.imageKey,
-      target: "assinatura",
-      action: "Conhecer o plano",
-    })),
+    ...(promotions || []).filter((item: any) => item.imageKey).map((item: any) => ({ id: `promotion-${item.id}`, label: "PROMOÇÃO", title: item.title, description: item.description, imageKey: item.imageKey, target: "promocoes", action: "Ver promoção" })),
+    ...(products || []).filter((item: any) => item.featured && item.imageKey).map((item: any) => ({ id: `product-${item.id}`, label: "PRODUTO EM DESTAQUE", title: item.name, description: `${item.description || "Disponível na barbearia"} • ${money(item.price)}`, imageKey: item.imageKey, target: "produtos", action: "Ver produto" })),
+    ...(subscriptionCampaigns || []).filter((item: any) => item.imageKey).map((item: any) => ({ id: `subscription-${item.id}`, label: "CLUBE YURI", title: item.title, description: item.description, imageKey: item.imageKey, target: "assinatura", action: "Conhecer o plano" })),
   ];
+
   return (
     <div className="booking-with-ads">
-    <section className="chat-booking">
-      <div className="chat-top">
-        <div className="bot-avatar brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="" /></div>
-        <div>
-          <strong>Assistente Yuri</strong>
-          <small>
-            <i /> atendimento online
-          </small>
+      <section className="chat-booking">
+        <div className="chat-top">
+          <div className="bot-avatar brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="" /></div>
+          <div><strong>Assistente Yuri</strong><small><i /> atendimento online</small></div><span>✂</span>
         </div>
-        <span>✂</span>
-      </div>
-      <div className="chat-progress">
-        <span style={{ width: step < 0 ? "0%" : `${Math.min(100, (step + 1) * 14)}%` }} />
-      </div>
-      <div className="chat-body" aria-live="polite">
-        {step === -1 && <div className="chat-welcome"><div className="welcome-mark brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="Logo Yuri Barbershop" /></div><span>ATENDIMENTO ONLINE</span><h2>Bem-vindo à Yuri Barbershop</h2><p>Escolha o serviço, o dia e o horário desejado. A confirmação será feita pessoalmente pelo WhatsApp.</p><button className="primary-button start-chat" onClick={()=>setStep(0)}>Iniciar atendimento</button></div>}
-        {step >= 0 && <><BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble><BotBubble>Vou ajudar você a cuidar do visual. O que está precisando hoje?</BotBubble></>}
-        {step === 0 && (
-          <ChatOptions>
-            <ChatChoice
-              icon="✂"
-              title="Agendar um serviço"
-              subtitle="Corte, barba e cuidados"
-              onClick={() => setStep(1)}
-            />
-            <ChatChoice
-              icon="◇"
-              title="Ver serviços e produtos"
-              subtitle="Conheça as opções antes de escolher"
-              onClick={() => setStep(1)}
-            />
-          </ChatOptions>
-        )}
-        {step >= 1 && <UserBubble>Quero agendar um serviço</UserBubble>}
-        {step === 1 && (
-          <>
-            <BotBubble>Perfeito! Qual serviço você deseja?</BotBubble>
-            <ChatOptions>
-              {services.map((s: any) => (
-                <ChatChoice
-                  key={s.id}
-                  icon="✂"
-                  title={s.name}
-                  subtitle={`${s.time} • R$ ${s.price.toFixed(2).replace(".", ",")}`}
-                  onClick={() => {
-                    setSelectedService(s.name);
-                    setStep(2);
-                  }}
-                />
-              ))}
-            </ChatOptions>
-          </>
-        )}
-        {step >= 2 && selectedService && (
-          <UserBubble>{selectedService}</UserBubble>
-        )}
-        {step === 2 && (
-          <>
-            <BotBubble>
-              Deseja reservar algum produto para retirar no atendimento?
-            </BotBubble>
-            <ChatOptions>
-              {products.map((p: any) => (
-                <ChatChoice
-                  key={p.id}
-                  icon="◇"
-                  title={p.name}
-                  subtitle={`${p.description} • R$ ${p.price.toFixed(2).replace(".", ",")}`}
-                  onClick={() => {
-                    setProduct(p);
-                    setStep(3);
-                  }}
-                />
-              ))}
-              <ChatChoice
-                icon="→"
-                title="Continuar sem produto"
-                subtitle="Somente o serviço"
-                onClick={() => {
-                  setProduct(null);
-                  setStep(3);
-                }}
-              />
-            </ChatOptions>
-          </>
-        )}
-        {step >= 3 && (
-          <UserBubble>
-            {product ? `Adicionar ${product.name}` : "Continuar sem produto"}
-          </UserBubble>
-        )}
-        {step === 3 && (
-          <>
-            <BotBubble>Agora escolha o melhor dia para você.</BotBubble>
-            <div className="chat-date">
-              <label>
-                Data do atendimento
-                <input
-                  type="date"
-                  min={new Date().toISOString().slice(0, 10)}
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                />
-              </label>
-              <button
-                className="date-continue"
-                disabled={!bookingDate}
-                onClick={() => chooseDate(bookingDate)}
-              >
-                Escolher horário desejado
-              </button>
-            </div>
-          </>
-        )}
-        {step >= 4 && bookingDate && (
-          <UserBubble>
-            {new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR", {
-              weekday: "long",
-              day: "2-digit",
-              month: "long",
-            })}
-          </UserBubble>
-        )}
-        {step === 4 && (
-          <>
-            <BotBubble>Qual horário você gostaria? A disponibilidade será confirmada pelo Yuri no WhatsApp.</BotBubble>
-            <div className="chat-times">
-              {times.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      setSelectedTime(t);
-                      setStep(isRegistered ? 6 : 5);
-                    }}
-                  >
-                    {t}
-                  </button>
-                ))}
-            </div>
-            {!times.length && <p className="form-error">A barbearia não atende nesta data. Escolha outro dia.</p>}
-          </>
-        )}
-        {step >= 5 && selectedTime && <UserBubble>{selectedTime}</UserBubble>}
-        {step === 5 && (
-          <>
-            <BotBubble>Ótimo horário! Agora preciso de alguns dados para concluir seu cadastro.</BotBubble>
-            <div className="client-register">
-              <label>Seu nome completo<input value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})} placeholder="Digite seu nome" /></label>
-              <label>Telefone / WhatsApp<input value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})} placeholder="(62) 99999-9999" inputMode="tel" /></label>
-              <label>Data de aniversário<input type="date" value={customer.birthDate} onChange={e=>setCustomer({...customer,birthDate:e.target.value})} /></label>
-              {customer.birthDate && <div className="birthday-gift"><b>🎁 Presente para você!</b><span>Você ganhará um corte grátis de presente no seu aniversário.</span></div>}
-              {formError && <p className="form-error">{formError}</p>}
-              <button className="primary-button" onClick={finishRegistration}>Continuar</button>
-            </div>
-          </>
-        )}
-        {step >= 6 && <UserBubble>{isRegistered ? "Cadastro reconhecido" : "Cadastro preenchido"}</UserBubble>}
-        {step === 6 && (
-          <>
-            <BotBubble>Perfeito, {customer.name.split(" ")[0]}! Confira suas preferências antes de chamar no WhatsApp:</BotBubble>
-            <div className="booking-summary">
-              <span>
-                Serviço<strong>{selectedService}</strong>
-              </span>
-              {product && (
-                <span>
-                  Produto<strong>{product.name}</strong>
-                </span>
-              )}
-              <span>
-                Data e horário desejados
-                <strong>
-                  {new Date(`${bookingDate}T12:00:00`).toLocaleDateString(
-                    "pt-BR",
-                  )}{" "}
-                  às {selectedTime}
-                </strong>
-              </span>
-              <span className="summary-total">
-                Total estimado
-                <strong>
-                  R${" "}
-                  {((chosen?.price || 0) + (product?.price || 0))
-                    .toFixed(2)
-                    .replace(".", ",")}
-                </strong>
-              </span>
-              <div className="arrival-warning">
-                <b>📱 Confirmação pelo WhatsApp</b>
-                <p>O horário escolhido ainda <strong>não está confirmado</strong>. Envie o pedido pelo WhatsApp e aguarde a resposta do Yuri informando se há disponibilidade.</p>
-                <label><input type="checkbox" checked={acceptedDelayRule} onChange={e=>setAcceptedDelayRule(e.target.checked)} /> Entendi que preciso aguardar a confirmação.</label>
-              </div>
-              {acceptedDelayRule ? <a className="primary-button whatsapp-confirm" href={whatsappConfirmationUrl} target="_blank" rel="noreferrer" onClick={()=>setStep(7)}>Continuar pelo WhatsApp</a> : <button className="primary-button" disabled>Continuar pelo WhatsApp</button>}
-            </div>
-          </>
-        )}
-        {step === 7 && (
-          <>
-            <div className="chat-success">
-              <b>✓</b>
-              <h3>Continue no WhatsApp</h3>
-              <p>
-                Envie a mensagem pronta e aguarde o Yuri confirmar se o horário desejado está disponível.
-              </p>
-              <a className="whatsapp-confirm" href={whatsappConfirmationUrl} target="_blank" rel="noreferrer">Abrir WhatsApp novamente</a>
-            </div>
-            <button className="restart-chat" onClick={restart}>
-              Fazer outro agendamento
-            </button>
-          </>
-        )}
-      </div>
-    </section>
-    <StoryAds items={storyItems} onNavigate={onNavigate} />
+        <div className="chat-progress"><span style={{ width: step < 0 ? "0%" : `${Math.min(100, (Math.min(step, 7) + 1) * 14)}%` }} /></div>
+        <div className="chat-body conversational-flow" aria-live="polite">
+          {step === -1 && <div className="chat-welcome"><div className="welcome-mark brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="Logo Yuri Barbershop" /></div><span>ATENDIMENTO ONLINE</span><h2>Bem-vindo à Yuri Barbershop</h2><p>Converse com o Assistente Yuri e envie seu pedido pronto pelo WhatsApp.</p><button className="primary-button start-chat" onClick={() => setStep(0)}>Iniciar conversa</button></div>}
+
+          {step >= 0 && <><BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble><BotBubble>Posso te ajudar? Você quer solicitar um serviço?</BotBubble></>}
+          {step === 0 && <ChatOptions>
+            <ChatChoice icon="✓" title="Sim, quero" subtitle="Escolher serviço, data e atendimento" onClick={() => setStep(1)} />
+            <ChatChoice icon="×" title="Não, obrigado" subtitle="Ver outras opções da barbearia" onClick={() => setStep(90)} />
+          </ChatOptions>}
+
+          {step >= 1 && step < 90 && <UserBubble>Sim, quero solicitar um serviço.</UserBubble>}
+          {step === 1 && <><BotBubble>Perfeito! Qual serviço você gostaria de fazer? Os valores aparecem para você escolher com tranquilidade.</BotBubble><ChatOptions>
+            {services.map((service: any) => <ChatChoice key={service.id} icon="✂" title={service.name} subtitle={`${service.time || "Tempo informado no atendimento"} • ${money(service.price)}`} onClick={() => { setSelectedService(service.name); setStep(2); }} />)}
+          </ChatOptions></>}
+
+          {step >= 2 && step < 90 && selectedService && <UserBubble>{selectedService} — {money(total)}</UserBubble>}
+          {step === 2 && <><BotBubble>Ótima escolha! Como você prefere continuar?</BotBubble><ChatOptions>
+            <ChatChoice icon="◷" title="Escolher data e horário" subtitle="Pedido sujeito à confirmação no WhatsApp" onClick={() => { setMode("schedule"); setStep(3); }} />
+            <ChatChoice icon="→" title="Apenas avisar o dia" subtitle="Sem reserva: informe quando pretende vir" onClick={() => { setMode("notice"); setStep(3); }} />
+          </ChatOptions></>}
+
+          {step >= 3 && step < 90 && <UserBubble>{mode === "schedule" ? "Quero escolher uma data e um horário." : "Quero apenas avisar o dia em que vou."}</UserBubble>}
+          {step === 3 && <><BotBubble>Combinado! Qual dia você pretende vir?</BotBubble><div className="chat-date"><label>Escolha a data<input type="date" min={new Date().toISOString().slice(0, 10)} value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} /></label><button className="date-continue" disabled={!bookingDate} onClick={chooseDate}>{mode === "schedule" ? "Continuar para os horários" : "Continuar atendimento"}</button></div></>}
+
+          {step >= 4 && step < 90 && bookingDate && <UserBubble>{new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</UserBubble>}
+          {step === 4 && mode === "schedule" && <><BotBubble>Qual horário você gostaria? O Yuri confirmará a disponibilidade pelo WhatsApp.</BotBubble><div className="chat-times">{times.map((time: string) => <button key={time} onClick={() => { setSelectedTime(time); setStep(isRegistered ? 6 : 5); }}>{time}</button>)}</div>{!times.length && <p className="form-error">A barbearia não atende nesta data. Escolha outro dia.</p>}</>}
+
+          {step >= 5 && step < 90 && mode === "schedule" && selectedTime && <UserBubble>{selectedTime}</UserBubble>}
+          {step === 5 && <><BotBubble>Antes de preparar a mensagem, preciso confirmar seus dados.</BotBubble><div className="client-register">
+            <label>Seu nome completo<input value={customer.name} onChange={event => setCustomer({ ...customer, name: event.target.value })} placeholder="Digite seu nome" /></label>
+            <label>Telefone / WhatsApp<input value={customer.phone} onChange={event => setCustomer({ ...customer, phone: event.target.value })} placeholder="(62) 99999-9999" inputMode="tel" /></label>
+            <label>Data de aniversário<input type="date" value={customer.birthDate} onChange={event => setCustomer({ ...customer, birthDate: event.target.value })} /></label>
+            {customer.birthDate && <div className="birthday-gift"><b>🎁 Presente para você!</b><span>Você ganhará um corte grátis de presente no seu aniversário.</span></div>}
+            {formError && <p className="form-error">{formError}</p>}<button className="primary-button" onClick={finishRegistration}>Continuar</button>
+          </div></>}
+
+          {step >= 6 && step < 90 && <UserBubble>{isRegistered ? "Meus dados estão corretos." : "Cadastro preenchido."}</UserBubble>}
+          {step === 6 && <><BotBubble>Perfeito, {customer.name.split(" ")[0]}! Confira seu pedido antes de abrir o WhatsApp:</BotBubble><div className="booking-summary">
+            <span>Serviço<strong>{selectedService}</strong></span><span>Data<strong>{formattedDate}</strong></span>
+            {mode === "schedule" && <span>Horário desejado<strong>{selectedTime}</strong></span>}
+            {mode === "notice" && <span>Forma de atendimento<strong>Somente aviso do dia, sem reserva</strong></span>}
+            <span className="summary-total">Valor do atendimento<strong>{money(total)}</strong></span>
+            <div className="arrival-warning"><b>📱 Envio pelo WhatsApp</b><p>{mode === "schedule" ? "O horário ainda não está confirmado. Envie o pedido e aguarde o Yuri confirmar a disponibilidade." : "A mensagem avisará o dia da sua visita, mas não reservará um horário."}</p><label><input type="checkbox" checked={acceptedDelayRule} onChange={event => setAcceptedDelayRule(event.target.checked)} /> Conferi os dados e quero continuar.</label></div>
+            {acceptedDelayRule ? <a className="primary-button whatsapp-confirm" href={whatsappConfirmationUrl} target="_blank" rel="noreferrer" onClick={() => setStep(7)}>Confirmar e abrir WhatsApp</a> : <button className="primary-button" disabled>Confirmar e abrir WhatsApp</button>}
+          </div></>}
+
+          {step === 7 && <><div className="chat-success"><b>✓</b><h3>Mensagem preparada!</h3><p>Continue no WhatsApp para enviar o pedido ao Yuri.</p><a className="whatsapp-confirm" href={whatsappConfirmationUrl} target="_blank" rel="noreferrer">Abrir WhatsApp novamente</a></div><button className="restart-chat" onClick={restart}>Iniciar outro atendimento</button></>}
+
+          {step === 90 && <><UserBubble>Não, obrigado.</UserBubble><BotBubble>Tudo bem! Posso ajudar com outra coisa?</BotBubble><ChatOptions>
+            <ChatChoice icon="✂" title="Ver serviços e valores" subtitle="Conheça todas as opções" onClick={() => setStep(1)} />
+            <ChatChoice icon="★" title="Ver promoções" subtitle="Confira as ofertas ativas" onClick={() => onNavigate("promocoes")} />
+            <ChatChoice icon="◇" title="Ver produtos" subtitle="Cuidados para cabelo e barba" onClick={() => onNavigate("produtos")} />
+            <ChatChoice icon="⌖" title="Ver localização" subtitle="Abra o endereço da barbearia" onClick={() => onNavigate("localizacao")} />
+            <a className="chat-choice" href={directWhatsappUrl} target="_blank" rel="noreferrer"><span>◉</span><div><strong>Falar pelo WhatsApp</strong><small>Tire uma dúvida diretamente com o Yuri</small></div><b>›</b></a>
+            <ChatChoice icon="×" title="Encerrar atendimento" subtitle="Finalizar esta conversa" onClick={() => setStep(91)} />
+          </ChatOptions></>}
+          {step === 91 && <><UserBubble>Encerrar atendimento.</UserBubble><BotBubble>Obrigado pela visita! Quando precisar, estarei por aqui. Até logo! 👋</BotBubble><ChatOptions><ChatChoice icon="↻" title="Voltar ao início" subtitle="Começar uma nova conversa" onClick={restart} /><a className="chat-choice" href={directWhatsappUrl} target="_blank" rel="noreferrer"><span>◉</span><div><strong>Falar no WhatsApp</strong><small>Conversar diretamente com o Yuri</small></div><b>›</b></a></ChatOptions></>}
+        </div>
+      </section>
+      <StoryAds items={storyItems} onNavigate={onNavigate} />
     </div>
   );
 }
-
 function StoryAds({ items, onNavigate }: any) {
   const [open, setOpen] = useState(true);
   const [slide, setSlide] = useState(0);
