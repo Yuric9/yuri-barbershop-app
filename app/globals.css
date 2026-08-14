@@ -1425,3 +1425,40 @@ a {
     font-size: 10px;
   }
 }
+
+
+/* Controles de retorno do Assistente Yuri */
+.chat-home-logo {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.chat-home-logo:focus-visible,
+.chat-home-button:focus-visible {
+  outline: 2px solid #d0a13a;
+  outline-offset: 3px;
+}
+.chat-home-button {
+  margin-left: auto;
+  border: 1px solid rgba(208, 161, 58, 0.55);
+  border-radius: 999px;
+  background: transparent;
+  color: #d0a13a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+.chat-home-button:hover {
+  background: #d0a13a;
+  color: #111;
+}
+@media (max-width: 560px) {
+  .chat-home-button {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+}

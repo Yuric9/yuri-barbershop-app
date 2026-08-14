@@ -114,6 +114,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [growthData, setGrowthData] = useState<any>({ reviews: [], waitlist: [], scheduleBlocks: [], settings: {} });
   const [adminData, setAdminData] = useState<any>({ clientSummaries: [], appointments: [] });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bookingResetKey, setBookingResetKey] = useState(0);
   const today = useMemo(
     () =>
       new Intl.DateTimeFormat("pt-BR", {
@@ -166,6 +167,20 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     setSection(key);
     setMenuOpen(false);
     setNotice("");
+  }
+
+  function goHome() {
+    if (portalRole === "admin") {
+      navigate("inicio");
+      return;
+    }
+    setSection("agendar");
+    setMenuOpen(false);
+    setNotice("");
+    setSelectedService("");
+    setBookingDate("");
+    setSelectedTime("");
+    setBookingResetKey((current) => current + 1);
   }
   async function loadData() {
     if (demo) return;
@@ -242,7 +257,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   return (
     <main className="app-shell">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <Brand onClick={() => navigate(portalRole === "admin" ? "inicio" : "agendar")} />
+        <Brand onClick={goHome} />
         <nav>
           {items.map(([key, label]) => (
             <button
@@ -341,6 +356,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
             notice={notice}
             setNotice={setNotice}
             confirmBooking={confirmBooking}
+            bookingResetKey={bookingResetKey}
           />
         )}
       </section>
@@ -482,6 +498,7 @@ function ClientView({
   notice,
   setNotice,
   confirmBooking,
+  bookingResetKey,
 }: any) {
   if (section === "mensagens") return <Inbox messages={messages || []} clients={[]} user={user} onRefresh={onRefresh} />;
   if (section === "historico") return <ClientHistory appointments={appointments || []} />;
@@ -506,6 +523,7 @@ function ClientView({
   if (section === "assinatura") return <><SubscriptionCreative campaigns={subscriptionCampaigns || []}/><SubscriptionClient items={subscriptions || []} demo={demo} onRefresh={onRefresh} /></>;
   return (
     <BookingChat
+      key={bookingResetKey}
       {...{
         user,
         demo,
@@ -685,6 +703,7 @@ function BookingChat({
   const [formError, setFormError] = useState("");
   const [greeting, setGreeting] = useState("Olá");
   const [acceptedDelayRule, setAcceptedDelayRule] = useState(false);
+  const [greetingAnswered, setGreetingAnswered] = useState(false);
   const times = bookingTimesForDate(bookingDate);
   const firstName = user.name?.split(" ")[0] || "cliente";
   const chosen = services.find((service: any) => service.name === selectedService);
@@ -704,7 +723,7 @@ function BookingChat({
 
   function restart() {
     setStep(-1); setMode(""); setSelectedService(""); setBookingDate(""); setSelectedTime("");
-    setNotice(""); setFormError(""); setAcceptedDelayRule(false);
+    setNotice(""); setFormError(""); setAcceptedDelayRule(false); setGreetingAnswered(false);
   }
   function chooseDate() {
     if (!bookingDate) return;
@@ -735,18 +754,22 @@ function BookingChat({
     <div className="booking-with-ads">
       <section className="chat-booking">
         <div className="chat-top">
-          <div className="bot-avatar brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="" /></div>
-          <div><strong>Assistente Yuri</strong><small><i /> atendimento online</small></div><span>✂</span>
+          <button type="button" className="bot-avatar brand-avatar chat-home-logo" onClick={restart} aria-label="Voltar ao início do atendimento"><img src="/brand/yuri-barbershop-logo.png" alt="Voltar ao início" /></button>
+          <div><strong>Assistente Yuri</strong><small><i /> atendimento online</small></div><button type="button" className="chat-home-button" onClick={restart}>⌂ Início</button>
         </div>
         <div className="chat-progress"><span style={{ width: step < 0 ? "0%" : `${Math.min(100, (Math.min(step, 7) + 1) * 14)}%` }} /></div>
         <div className="chat-body conversational-flow" aria-live="polite">
           {step === -1 && <div className="chat-welcome"><div className="welcome-mark brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="Logo Yuri Barbershop" /></div><span>ATENDIMENTO ONLINE</span><h2>Bem-vindo à Yuri Barbershop</h2><p>Converse com o Assistente Yuri e envie seu pedido pronto pelo WhatsApp.</p><button className="primary-button start-chat" onClick={() => setStep(0)}>Iniciar conversa</button></div>}
 
-          {step >= 0 && <><BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble><BotBubble>Posso te ajudar? Você quer solicitar um serviço?</BotBubble></>}
-          {step === 0 && <ChatOptions>
-            <ChatChoice icon="✓" title="Sim, quero" subtitle="Escolher serviço, data e atendimento" onClick={() => setStep(1)} />
-            <ChatChoice icon="×" title="Não, obrigado" subtitle="Ver outras opções da barbearia" onClick={() => setStep(90)} />
+          {step >= 0 && <BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble>}
+          {step === 0 && !greetingAnswered && <ChatOptions>
+            <ChatChoice icon="👋" title={`${greeting}! Tudo bem.`} subtitle="Responder ao Assistente Yuri" onClick={() => setGreetingAnswered(true)} />
+            <ChatChoice icon="🙂" title="Olá! Tudo certo." subtitle="Continuar o atendimento" onClick={() => setGreetingAnswered(true)} />
           </ChatOptions>}
+          {step === 0 && greetingAnswered && <><UserBubble>{greeting}! Tudo bem.</UserBubble><BotBubble>Que bom falar com você! O que você está precisando hoje?</BotBubble><ChatOptions>
+            <ChatChoice icon="✂" title="Quero um serviço" subtitle="Escolher serviço, data e atendimento" onClick={() => setStep(1)} />
+            <ChatChoice icon="×" title="Só quero conhecer" subtitle="Ver outras opções da barbearia" onClick={() => setStep(90)} />
+          </ChatOptions></>}
 
           {step >= 1 && step < 90 && <UserBubble>Sim, quero solicitar um serviço.</UserBubble>}
           {step === 1 && <><BotBubble>Perfeito! Qual serviço você gostaria de fazer? Os valores aparecem para você escolher com tranquilidade.</BotBubble><ChatOptions>
