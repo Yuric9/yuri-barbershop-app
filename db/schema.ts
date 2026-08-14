@@ -99,6 +99,12 @@ export const appointments = sqliteTable("appointments", {
   status: text("status").notNull().default("Pendente"),
   adminMessage: text("admin_message").notNull().default(""),
   totalCents: integer("total_cents").notNull(),
+  collaboratorId: integer("collaborator_id"),
+  collaboratorName: text("collaborator_name").notNull().default(""),
+  paymentMethod: text("payment_method").notNull().default(""),
+  commissionPercent: integer("commission_percent").notNull().default(0),
+  commissionCents: integer("commission_cents").notNull().default(0),
+  cashTransactionId: integer("cash_transaction_id"),
   createdAt: text("created_at").notNull(),
 });
 
@@ -108,6 +114,40 @@ export const transactions = sqliteTable("transactions", {
   description: text("description").notNull(),
   amountCents: integer("amount_cents").notNull(),
   date: text("date").notNull(),
+  appointmentId: integer("appointment_id"),
+  collaboratorId: integer("collaborator_id"),
+  paymentMethod: text("payment_method").notNull().default(""),
+  createdAt: text("created_at").notNull(),
+});
+
+export const collaborators = sqliteTable("collaborators", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().default(""),
+  defaultCommissionPercent: integer("default_commission_percent").notNull().default(40),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  owner: integer("owner", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull(),
+});
+
+export const collaboratorServices = sqliteTable("collaborator_services", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  collaboratorId: integer("collaborator_id").notNull(),
+  serviceId: integer("service_id").notNull(),
+  commissionPercent: integer("commission_percent"),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+});
+
+export const commissionSettlements = sqliteTable("commission_settlements", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  collaboratorId: integer("collaborator_id").notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  status: text("status").notNull().default("Pago"),
+  note: text("note").notNull().default(""),
+  paidAt: text("paid_at").notNull(),
   createdAt: text("created_at").notNull(),
 });
 
@@ -147,6 +187,7 @@ export const scheduleBlocks = sqliteTable("schedule_blocks", {
   date: text("date").notNull(),
   time: text("time").notNull().default("Dia inteiro"),
   reason: text("reason").notNull(),
+  collaboratorId: integer("collaborator_id"),
   createdAt: text("created_at").notNull(),
 });
 
