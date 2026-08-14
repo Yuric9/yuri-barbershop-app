@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Brand from "./brand";
 
-type Role = "admin" | "client";
+type Role = "admin" | "client" | "barber";
 type Props = {
   user: { name: string; email: string };
   role: Role;
@@ -101,6 +101,8 @@ const icons: Record<string, string> = {
   assinatura: "♛",
   mensagens: "✉",
   crescimento: "↗",
+  colaboradores: "♙",
+  ganhos: "$",
   historico: "◷",
   fidelidade: "★",
   avaliar: "☆",
@@ -110,7 +112,7 @@ const icons: Record<string, string> = {
 export default function PortalClient({ user, role, demo = false }: Props) {
   const [portalRole, setPortalRole] = useState<Role>(role);
   const [section, setSection] = useState(
-    role === "admin" ? "inicio" : "agendar",
+    role === "admin" || role === "barber" ? "inicio" : "agendar",
   );
   const [selectedService, setSelectedService] = useState("Corte");
   const [selectedTime, setSelectedTime] = useState("18:00");
@@ -127,6 +129,8 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [liveMessages, setLiveMessages] = useState<any[]>([]);
   const [growthData, setGrowthData] = useState<any>({ reviews: [], waitlist: [], scheduleBlocks: [], settings: {} });
   const [adminData, setAdminData] = useState<any>({ clientSummaries: [], appointments: [] });
+  const [liveCollaborators, setLiveCollaborators] = useState<any[]>([]);
+  const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const today = useMemo(
     () =>
@@ -143,6 +147,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     ["agenda", "Agenda"],
     ["caixa", "Caixa"],
     ["clientes", "Clientes"],
+    ["colaboradores", "Colaboradores"],
     ["remarketing", "Remarketing"],
     ["servicos", "Serviços"],
     ["produtos", "Produtos"],
@@ -151,6 +156,10 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     ["assinatura", "Assinaturas"],
     ["relatorios", "Relatórios"],
     ["crescimento", "Crescimento"],
+  ];
+  const barberItems = [
+    ["inicio", "Meu painel"], ["mensagens", "Caixa de entrada"], ["agenda", "Minha agenda"],
+    ["ganhos", "Meus ganhos"], ["perfil", "Meu perfil"],
   ];
   const registeredClientItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
@@ -175,12 +184,12 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     ["localizacao", "Localização", "CONHEÇA"],
   ];
   const clientItems = demo ? visitorItems : registeredClientItems;
-  const items = portalRole === "admin" ? adminItems : clientItems;
+  const items = portalRole === "admin" ? adminItems : portalRole === "barber" ? barberItems : clientItems;
   const unreadMessages = liveMessages.filter((message:any) => !message.read).length;
 
   function switchPortal(nextRole: Role) {
     setPortalRole(nextRole);
-    setSection(nextRole === "admin" ? "inicio" : "agendar");
+    setSection(nextRole === "admin" || nextRole === "barber" ? "inicio" : "agendar");
     setMenuOpen(false);
     setNotice("");
   }
@@ -224,8 +233,9 @@ export default function PortalClient({ user, role, demo = false }: Props) {
         setLiveSubscriptions(data.subscriptions || []);
         setSubscriptionCampaigns(data.subscriptionCampaigns || []);
         setLiveMessages(data.messages || []);
+        setLiveCollaborators(data.collaborators || []);
         setGrowthData({ reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], settings: data.settings || {} });
-        if (data.isAdmin) setAdminData({ clientSummaries: data.clientSummaries || [], appointments: data.appointments || [], transactions: data.transactions || [], services: data.services || [], products: data.products || [], promotions: data.promotions || [], catalogItems: data.catalogItems || [], subscriptions: data.subscriptions || [], subscriptionCampaigns: data.subscriptionCampaigns || [], messages: data.messages || [], reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], marketingContacts: data.marketingContacts || [], settings: data.settings || {} });
+        if (data.isAdmin || data.isBarber) setAdminData({ ...data, clientSummaries: data.clientSummaries || [], appointments: data.appointments || [], transactions: data.transactions || [], services: data.services || [], products: data.products || [], promotions: data.promotions || [], catalogItems: data.catalogItems || [], subscriptions: data.subscriptions || [], subscriptionCampaigns: data.subscriptionCampaigns || [], messages: data.messages || [], reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], marketingContacts: data.marketingContacts || [], settings: data.settings || {} });
       })
       .catch(() => setNotice("Não foi possível carregar os dados agora."));
   }
@@ -251,6 +261,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
         productId,
         date: bookingDate,
         time: selectedTime,
+        collaboratorId: selectedCollaboratorId || undefined,
       }),
     });
     const data = await response.json();
@@ -265,7 +276,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   return (
     <main className="app-shell">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <Brand onClick={() => demo ? window.location.assign("/") : navigate(portalRole === "admin" ? "inicio" : "agendar")} />
+        <Brand onClick={() => demo ? window.location.assign("/") : navigate(portalRole === "client" ? "agendar" : "inicio")} />
         <nav>
           {items.map(([key, label, group], index) => (
             <Fragment key={key}>
@@ -297,7 +308,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
           <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
           <div>
             <strong>{portalRole === "admin" ? "Yuri César" : demo ? "Visitante" : user.name}</strong>
-            <small>{portalRole === "admin" ? "Administrador" : role === "admin" ? "Visualização do cliente" : demo ? "Acesso público" : "Cliente"}</small>
+            <small>{portalRole === "admin" ? "Administrador" : portalRole === "barber" ? "Barbeiro colaborador" : role === "admin" ? "Visualização do cliente" : demo ? "Acesso público" : "Cliente"}</small>
             {!demo && <span className="user-email">{user.email}</span>}
           </div>
         </div>
@@ -328,7 +339,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
           </button>
           <div>
             <small>{today}</small>
-            <h1>{portalRole === "admin" ? "Visão geral" : "Área do cliente"}</h1>
+            <h1>{sectionTitle(portalRole, section)}</h1>
           </div>
           <div className="header-actions">
             {demo && <span className="demo-badge">Modo visitante</span>}
@@ -337,6 +348,8 @@ export default function PortalClient({ user, role, demo = false }: Props) {
         </header>
         {portalRole === "admin" ? (
           <AdminView section={section} onNavigate={navigate} data={adminData} user={user} onRefresh={loadData} />
+        ) : portalRole === "barber" ? (
+          <BarberView section={section} data={adminData} user={user} onRefresh={loadData} />
         ) : (
           <ClientView
             section={section}
@@ -363,11 +376,32 @@ export default function PortalClient({ user, role, demo = false }: Props) {
             notice={notice}
             setNotice={setNotice}
             confirmBooking={confirmBooking}
+            collaborators={liveCollaborators}
+            selectedCollaboratorId={selectedCollaboratorId}
+            setSelectedCollaboratorId={setSelectedCollaboratorId}
           />
         )}
       </section>
     </main>
   );
+}
+
+function sectionTitle(role: Role, section: string) {
+  const titles: Record<string,string> = { inicio: role === "barber" ? "Meu painel" : "Visão geral", mensagens: "Caixa de entrada", agenda: role === "barber" ? "Minha agenda" : "Agenda", caixa: "Livro caixa", clientes: "Clientes", colaboradores: "Colaboradores", remarketing: "Remarketing", servicos: "Serviços", produtos: "Produtos", catalogo: "Catálogo de estilos", promocoes: "Promoções", assinatura: "Assinaturas", relatorios: "Relatórios", crescimento: "Crescimento", ganhos: "Meus ganhos", perfil: "Meu perfil", agendar: "Agendamento", "meus-horarios": "Meus horários", historico: "Meu histórico", fidelidade: "Fidelidade", avaliar: "Avaliação", localizacao: "Localização" };
+  return titles[section] || (role === "client" ? "Área do cliente" : "Painel");
+}
+
+function BarberView({ section, data, user, onRefresh }: any) {
+  const rows = data.appointments || [];
+  const finalized = rows.filter((item:any) => item.status === "Finalizado");
+  const total = finalized.reduce((sum:number,item:any)=>sum+(item.commissionCents||0),0);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date());
+  if (section === "mensagens") return <Inbox messages={data.messages || []} clients={[]} user={user} onRefresh={onRefresh} />;
+  if (section === "agenda") return <Agenda appointments={rows} collaborators={data.collaborators || []} onRefresh={onRefresh} barberMode />;
+  if (section === "ganhos") return <section><div className="section-title"><div><small>TRANSPARÊNCIA</small><h2>Meus ganhos</h2></div></div><div className="metric-grid"><Metric label="Comissão acumulada" value={money(total)} hint="Atendimentos finalizados" tone="gold"/><Metric label="Atendimentos finalizados" value={String(finalized.length)} hint="Histórico registrado"/><Metric label="Percentual padrão" value={`${data.currentCollaborator?.defaultCommissionPercent ?? 0}%`} hint="Pode variar por serviço"/></div><Registry title="Comissões por atendimento" headers={["Data","Cliente","Serviço","Percentual","Comissão"]} rows={finalized.map((item:any)=>[formatDate(item.date),item.clientName,item.serviceName,`${item.commissionPercent}%`,money(item.commissionCents)])} showAdd={false}/></section>;
+  if (section === "perfil") return <section className="form-panel"><small>MEU CADASTRO</small><h2>{data.currentCollaborator?.name || user.name}</h2><p>{user.email}</p><p>Comissão padrão atual: <b>{data.currentCollaborator?.defaultCommissionPercent ?? 0}%</b>. Ajustes são feitos pelo administrador.</p></section>;
+  const todayRows = rows.filter((item:any)=>item.date===today && item.status!=="Cancelado");
+  return <section className="dashboard"><div className="welcome-line"><div><p>Olá, {user.name.split(" ")[0]}!</p><h2>Seu resumo de hoje</h2></div></div><div className="metric-grid"><Metric label="Atendimentos hoje" value={String(todayRows.length)} hint={`${todayRows.filter((item:any)=>item.status==="Pendente").length} pendentes`} tone="gold"/><Metric label="Comissão acumulada" value={money(total)} hint="Atendimentos finalizados"/><Metric label="Próximo cliente" value={todayRows[0]?.time || "—"} hint={todayRows[0]?.clientName || "Agenda livre"}/></div><Agenda appointments={todayRows} collaborators={data.collaborators || []} onRefresh={onRefresh} barberMode /></section>;
 }
 
 function AdminView({
@@ -387,16 +421,17 @@ function AdminView({
   const month = isoToday.slice(0,7);
   const todayTransactions = (data.transactions||[]).filter((t:any)=>t.date===isoToday);
   const monthTransactions = (data.transactions||[]).filter((t:any)=>t.date?.startsWith(month));
-  const todayRevenue = todayTransactions.filter((t:any)=>t.kind==="Entrada").reduce((s:number,t:any)=>s+t.amountCents,0);
-  const monthBalance = monthTransactions.reduce((s:number,t:any)=>s+(t.kind==="Entrada"?t.amountCents:-t.amountCents),0);
+  const todayRevenue = todayTransactions.filter((t:any)=>t.kind?.toLowerCase()==="entrada").reduce((s:number,t:any)=>s+t.amountCents,0);
+  const monthBalance = monthTransactions.reduce((s:number,t:any)=>s+(t.kind?.toLowerCase()==="entrada"?t.amountCents:-t.amountCents),0);
   const todayAppointments = (data.appointments||[]).filter((a:any)=>a.date===isoToday && a.status!=="Cancelado");
   const ticket = todayAppointments.length ? todayAppointments.reduce((s:number,a:any)=>s+a.totalCents,0)/todayAppointments.length : 0;
   if (section === "mensagens") return <Inbox messages={data.messages || []} clients={data.clientSummaries || []} user={user} isAdmin onRefresh={onRefresh} />;
   if (section === "crescimento") return <GrowthCenter data={data} onRefresh={onRefresh} />;
-  if (section === "agenda") return <Agenda appointments={data.appointments || []} onRefresh={onRefresh} />;
+  if (section === "agenda") return <Agenda appointments={data.appointments || []} collaborators={data.collaborators || []} onRefresh={onRefresh} />;
   if (section === "caixa") return <Cash transactions={data.transactions || []} services={data.services || []} onRefresh={onRefresh} />;
   if (section === "clientes")
     return <ClientsDatabase clients={data.clientSummaries || []} />;
+  if (section === "colaboradores") return <CollaboratorManager collaborators={data.collaborators || []} services={data.services || []} links={data.collaboratorServices || []} appointments={data.appointments || []} settlements={data.commissionSettlements || []} onRefresh={onRefresh} />;
   if (section === "remarketing") return <Remarketing clients={data.clientSummaries || []} initialContacts={data.marketingContacts || []} onRefresh={onRefresh} />;
   if (section === "servicos") return <ServiceManager items={data.services || []} onRefresh={onRefresh}/>;
   if (section === "produtos") return <><ProductCampaignManager items={data.products || []} onRefresh={onRefresh}/><CatalogManager type="product" items={data.products || []} onRefresh={onRefresh}/></>;
@@ -504,6 +539,9 @@ function ClientView({
   notice,
   setNotice,
   confirmBooking,
+  collaborators,
+  selectedCollaboratorId,
+  setSelectedCollaboratorId,
 }: any) {
   if (section === "mensagens") return <Inbox messages={messages || []} clients={[]} user={user} onRefresh={onRefresh} />;
   if (section === "historico") return <ClientHistory appointments={appointments || []} />;
@@ -546,6 +584,9 @@ function ClientView({
         promotions,
         subscriptionCampaigns,
         onNavigate,
+        collaborators,
+        selectedCollaboratorId,
+        setSelectedCollaboratorId,
       }}
     />
   );
@@ -700,6 +741,7 @@ function BookingChat({
   user, demo, services, products, profile, selectedService, setSelectedService,
   selectedTime, setSelectedTime, bookingDate, setBookingDate, notice, setNotice,
   confirmBooking, promotions, subscriptionCampaigns, onNavigate,
+  collaborators, selectedCollaboratorId, setSelectedCollaboratorId,
 }: any) {
   const [step, setStep] = useState(-1);
   const [mode, setMode] = useState<"schedule" | "notice" | "">("");
@@ -723,10 +765,12 @@ function BookingChat({
   const isRegistered = Boolean(customer.name.trim() && customer.phone.replace(/\D/g, "").length >= 10 && customer.birthDate);
   const formattedDate = bookingDate ? new Date(`${bookingDate}T12:00:00`).toLocaleDateString("pt-BR") : "";
   const total = chosen?.price || 0;
+  const activeCollaborators = (collaborators || []).filter((item:any)=>item.active);
+  const selectedCollaborator = activeCollaborators.find((item:any)=>item.id===selectedCollaboratorId);
 
   function restart() {
     setStep(-1); setMode(""); setSelectedService(""); setBookingDate(""); setSelectedTime("");
-    setNotice(""); setFormError(""); setAcceptedDelayRule(false);
+    setNotice(""); setFormError(""); setAcceptedDelayRule(false); setSelectedCollaboratorId(0);
   }
   function chooseDate() {
     if (!bookingDate) return;
@@ -772,10 +816,12 @@ function BookingChat({
 
           {step >= 1 && step < 90 && <UserBubble>Sim, quero solicitar um serviço.</UserBubble>}
           {step === 1 && <><BotBubble>Perfeito! Qual serviço você gostaria de fazer? Os valores aparecem para você escolher com tranquilidade.</BotBubble><ChatOptions>
-            {services.map((service: any) => <ChatChoice key={service.id} icon="✂" title={service.name} subtitle={`${service.time || "Tempo informado no atendimento"} • ${money(service.price)}`} onClick={() => { setSelectedService(service.name); setStep(2); }} />)}
+            {services.map((service: any) => <ChatChoice key={service.id} icon="✂" title={service.name} subtitle={`${service.time || "Tempo informado no atendimento"} • ${money(service.price)}`} onClick={() => { setSelectedService(service.name); setStep(activeCollaborators.length>1?15:2); if(activeCollaborators.length===1)setSelectedCollaboratorId(activeCollaborators[0].id); }} />)}
           </ChatOptions></>}
 
-          {step >= 2 && step < 90 && selectedService && <UserBubble>{selectedService} — {money(total)}</UserBubble>}
+          {step >= 2 && step < 90 && step!==15 && selectedService && <UserBubble>{selectedService} — {money(total)}</UserBubble>}
+          {step === 15 && <><UserBubble>{selectedService} — {money(total)}</UserBubble><BotBubble>Você prefere ser atendido por qual profissional?</BotBubble><ChatOptions><ChatChoice icon="✂" title="Qualquer profissional" subtitle="Escolheremos conforme a disponibilidade" onClick={()=>{setSelectedCollaboratorId(0);setStep(2)}}/>{activeCollaborators.map((item:any)=><ChatChoice key={item.id} icon="♙" title={item.name} subtitle="Barbeiro disponível" onClick={()=>{setSelectedCollaboratorId(item.id);setStep(2)}}/>)}</ChatOptions></>}
+          {step === 2 && selectedCollaborator && <UserBubble>Profissional: {selectedCollaborator.name}</UserBubble>}
           {step === 2 && <><BotBubble>Ótima escolha! Como você prefere continuar?</BotBubble><ChatOptions>
             <ChatChoice icon="◷" title="Escolher data e horário" subtitle="Pedido sujeito à confirmação no WhatsApp" onClick={() => { setMode("schedule"); setStep(3); }} />
             <ChatChoice icon="→" title="Apenas avisar o dia" subtitle="Sem reserva: informe quando pretende vir" onClick={() => { setMode("notice"); setStep(3); }} />
@@ -802,6 +848,7 @@ function BookingChat({
             {mode === "schedule" && <span>Horário desejado<strong>{selectedTime}</strong></span>}
             {mode === "notice" && <span>Forma de atendimento<strong>Somente aviso do dia, sem reserva</strong></span>}
             <span className="summary-total">Valor do atendimento<strong>{money(total)}</strong></span>
+            <span>Profissional<strong>{selectedCollaborator?.name || "Conforme disponibilidade"}</strong></span>
             <div className="arrival-warning"><b>📱 Envio pelo WhatsApp</b><p>{mode === "schedule" ? "O horário ainda não está confirmado. Envie o pedido e aguarde o Yuri confirmar a disponibilidade." : "A mensagem avisará o dia da sua visita, mas não reservará um horário."}</p><label><input type="checkbox" checked={acceptedDelayRule} onChange={event => setAcceptedDelayRule(event.target.checked)} /> Conferi os dados e quero continuar.</label></div>
             {acceptedDelayRule ? <a className="primary-button whatsapp-confirm" href={whatsappConfirmationUrl} target="_blank" rel="noreferrer" onClick={() => setStep(7)}>Confirmar e abrir WhatsApp</a> : <button className="primary-button" disabled>Confirmar e abrir WhatsApp</button>}
           </div></>}
@@ -904,9 +951,23 @@ function Appointment(a: any) {
     </div>
   );
 }
-function Agenda({appointments:rows=[],onRefresh}:any) {
-  const [messageFor,setMessageFor]=useState<number|null>(null);const [message,setMessage]=useState("");const [saving,setSaving]=useState<number|null>(null);
-  async function update(item:any,status:string){setSaving(item.id);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"appointment-status",id:item.id,status,message:messageFor===item.id?message:item.adminMessage||""})});setSaving(null);if(response.ok){setMessageFor(null);setMessage("");await onRefresh();}}
+function CollaboratorManager({ collaborators, services, links, appointments, settlements, onRefresh }: any) {
+  const [form,setForm]=useState({id:0,name:"",email:"",phone:"",password:"",defaultCommissionPercent:40,active:true});
+  const [status,setStatus]=useState(""); const [saving,setSaving]=useState(false);
+  const [serviceEditor,setServiceEditor]=useState<any>(null);
+  async function save(){setSaving(true);setStatus("");const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"collaborator-save",...form})});const data=await response.json();setSaving(false);if(!response.ok){setStatus(data.error||"Não foi possível salvar.");return;}setForm({id:0,name:"",email:"",phone:"",password:"",defaultCommissionPercent:40,active:true});setStatus("Colaborador salvo com sucesso.");await onRefresh();}
+  async function saveService(collaboratorId:number,serviceId:number,commissionPercent:any,active:boolean){await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"collaborator-service",collaboratorId,serviceId,commissionPercent,active})});await onRefresh();}
+  const finalized=(appointments||[]).filter((item:any)=>item.status==="Finalizado");
+  return <section><div className="section-title"><div><small>EQUIPE E COMISSÕES</small><h2>Barbeiros colaboradores</h2></div><button className="primary-button small" onClick={()=>setForm({id:0,name:"",email:"",phone:"",password:"",defaultCommissionPercent:40,active:true})}>+ Novo colaborador</button></div>
+    <div className="form-panel collaborator-form"><h3>{form.id?"Editar colaborador":"Cadastrar colaborador"}</h3><div className="form-grid"><label>Nome<input value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>E-mail de acesso<input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label><label>Telefone<input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>{!form.id&&<label>Senha temporária<input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></label>}<label>Comissão padrão (%)<input type="number" min="0" max="100" step="1" value={form.defaultCommissionPercent} onChange={e=>setForm({...form,defaultCommissionPercent:Math.max(0,Math.min(100,Number(e.target.value)))})}/><small>Editável entre 0% e 100%.</small></label><label className="check-label"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Colaborador ativo</label></div><button className="primary-button small" disabled={saving||!form.name||!form.email} onClick={save}>{saving?"Salvando...":"Salvar colaborador"}</button>{status&&<p className="form-message">{status}</p>}</div>
+    <div className="collaborator-grid">{collaborators.map((item:any)=>{const done=finalized.filter((a:any)=>a.collaboratorId===item.id);const earnings=done.reduce((sum:number,a:any)=>sum+(a.commissionCents||0),0);return <article className="collaborator-card" key={item.id}><header><div className="avatar">{item.name[0]}</div><div><h3>{item.name}</h3><small>{item.owner?"Proprietário":"Barbeiro colaborador"} • {item.active?"Ativo":"Bloqueado"}</small></div></header><div className="collaborator-stats"><span>Comissão padrão<b>{item.defaultCommissionPercent}%</b></span><span>Finalizados<b>{done.length}</b></span><span>Comissões<b>{money(earnings)}</b></span></div><div className="agenda-actions"><button onClick={()=>setForm({id:item.id,name:item.name,email:item.email,phone:item.phone||"",password:"",defaultCommissionPercent:item.defaultCommissionPercent,active:item.active})}>Editar dados e %</button><button onClick={()=>setServiceEditor(serviceEditor===item.id?null:item.id)}>Comissão por serviço</button></div>{serviceEditor===item.id&&<div className="service-commission-list"><p>Deixe vazio para usar os {item.defaultCommissionPercent}% padrão.</p>{services.map((service:any)=>{const link=links.find((l:any)=>l.collaboratorId===item.id&&l.serviceId===service.id);return <div key={service.id}><span>{service.name}</span><input aria-label={`Comissão de ${service.name}`} type="number" min="0" max="100" defaultValue={link?.commissionPercent??""} placeholder={`${item.defaultCommissionPercent}%`} onBlur={e=>saveService(item.id,service.id,e.target.value,true)}/><b>%</b></div>})}</div>}</article>})}</div>
+    <p className="form-hint">A comissão é calculada apenas quando o atendimento é marcado como finalizado. Alterar o percentual não modifica atendimentos antigos.</p>
+  </section>;
+}
+
+function Agenda({appointments:rows=[],onRefresh,barberMode=false}:any) {
+  const [messageFor,setMessageFor]=useState<number|null>(null);const [message,setMessage]=useState("");const [saving,setSaving]=useState<number|null>(null);const [paymentMethod,setPaymentMethod]=useState("Pix");
+  async function update(item:any,status:string){if(status==="Finalizado"&&!window.confirm(`Finalizar o atendimento de ${item.clientName} e lançar ${money(item.totalCents)} no caixa?`))return;setSaving(item.id);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"appointment-status",id:item.id,status,paymentMethod,message:messageFor===item.id?message:item.adminMessage||""})});setSaving(null);if(response.ok){setMessageFor(null);setMessage("");await onRefresh();}}
   return (
     <section>
       <div className="section-title">
@@ -914,10 +975,10 @@ function Agenda({appointments:rows=[],onRefresh}:any) {
           <small>AGENDA</small>
           <h2>Agendamentos de hoje</h2>
         </div>
-        <button className="primary-button small">+ Adicionar horário</button>
+        {!barberMode&&<button className="primary-button small" onClick={()=>document.getElementById("agenda-list")?.scrollIntoView({behavior:"smooth"})}>Ver agenda completa</button>}
       </div>
-      <div className="panel">
-        {rows.length ? rows.map((a:any)=><div className="agenda-admin-row" key={a.id}><Appointment time={a.time} client={a.clientName} service={`${a.serviceName} • ${formatDate(a.date)}`} status={a.status}/><div className="agenda-actions"><button className="accept-booking" disabled={saving===a.id||a.status==="Finalizado"} onClick={()=>update(a,"Confirmado")}>✓ Aceitar</button><button className="finish-booking" disabled={saving===a.id||a.status==="Finalizado"} onClick={()=>update(a,"Finalizado")}>★ Finalizar atendimento</button><button className="message-booking" onClick={()=>{setMessageFor(messageFor===a.id?null:a.id);setMessage(a.adminMessage||"")}}>✉ Mensagem</button><button className="cancel-booking" disabled={saving===a.id||a.status==="Finalizado"} onClick={()=>update(a,"Cancelado")}>× Cancelar</button></div>{messageFor===a.id&&<div className="appointment-message-form"><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Digite uma informação para o cliente..."/><button className="primary-button small" disabled={!message.trim()||saving===a.id} onClick={()=>update(a,a.status)}>Enviar mensagem</button></div>}</div>) : <p className="empty-table">Nenhum agendamento registrado.</p>}
+      <div className="panel" id="agenda-list"><label className="payment-selector">Forma de pagamento ao finalizar<select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}><option>Pix</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option><option>Assinatura</option><option>Cortesia</option></select></label>
+        {rows.length ? rows.map((a:any)=><div className="agenda-admin-row" key={a.id}><Appointment time={a.time} client={a.clientName} service={`${a.serviceName} • ${formatDate(a.date)}${a.collaboratorName?` • ${a.collaboratorName}`:""}`} status={a.status}/><div className="agenda-actions"><button className="accept-booking" disabled={saving===a.id||a.status==="Finalizado"} onClick={()=>update(a,"Confirmado")}>✓ Aceitar</button><button className="finish-booking" disabled={saving===a.id||a.status==="Finalizado"} onClick={()=>update(a,"Finalizado")}>★ Finalizar atendimento</button><button className="message-booking" onClick={()=>{setMessageFor(messageFor===a.id?null:a.id);setMessage(a.adminMessage||"")}}>✉ Mensagem</button><button className="cancel-booking" disabled={saving===a.id||a.status==="Finalizado"} onClick={()=>update(a,"Cancelado")}>× Cancelar</button></div>{a.status==="Finalizado"&&<p className="commission-note">Pagamento: {a.paymentMethod||"—"} • Comissão: {a.commissionPercent}% ({money(a.commissionCents)})</p>}{messageFor===a.id&&<div className="appointment-message-form"><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Digite uma informação para o cliente..."/><button className="primary-button small" disabled={!message.trim()||saving===a.id} onClick={()=>update(a,a.status)}>Enviar mensagem</button></div>}</div>) : <p className="empty-table">Nenhum agendamento registrado.</p>}
       </div>
     </section>
   );
