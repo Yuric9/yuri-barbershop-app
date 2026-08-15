@@ -1141,8 +1141,11 @@ function Reports({transactions,appointments,clients,onRefresh}:any) {
   const [year,setYear]=useState(currentYear);
   const [month,setMonth]=useState(new Date().getMonth()+1);
   const [showHistory,setShowHistory]=useState(false);
+  const [launchMode,setLaunchMode]=useState<"day"|"month">("day");
+  const [launchDate,setLaunchDate]=useState(localDateKey());
   const [historical,setHistorical]=useState({revenue:"",expenses:"",note:""});
   const [saving,setSaving]=useState(false);
+  const [launchStatus,setLaunchStatus]=useState("");
   const names=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   const prefix=`${year}-${String(month).padStart(2,"0")}`;
   const yearRows=transactions.filter((t:any)=>t.date.startsWith(String(year)));
@@ -1155,17 +1158,24 @@ function Reports({transactions,appointments,clients,onRefresh}:any) {
   const visits=appointments.filter((a:any)=>a.date.startsWith(prefix)).length;
   async function saveHistory(){
     const revenue=Number(historical.revenue),expense=Number(historical.expenses);
-    if(revenue<=0&&expense<=0)return;
+    if(revenue<=0&&expense<=0){setLaunchStatus("Informe um valor de faturamento ou despesa.");return;}
+    if(launchMode==="day"&&!/^\d{4}-\d{2}-\d{2}$/.test(launchDate)){setLaunchStatus("Escolha uma data válida.");return;}
     setSaving(true);
-    const date=`${year}-${String(month).padStart(2,"0")}-01`;
+    setLaunchStatus("");
+    const date=launchMode==="day"?launchDate:`${year}-${String(month).padStart(2,"0")}-01`;
+    const launchLabel=launchMode==="day"?formatDate(date):`${names[month-1]}/${year}`;
     const requests=[];
-    if(revenue>0)requests.push(fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"transaction",kind:"entrada",description:historical.note||`Faturamento consolidado — ${names[month-1]}/${year}`,amount:revenue,date})}));
-    if(expense>0)requests.push(fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"transaction",kind:"despesa",description:historical.note?`Despesas — ${historical.note}`:`Despesas consolidadas — ${names[month-1]}/${year}`,amount:expense,date})}));
-    await Promise.all(requests);setSaving(false);setHistorical({revenue:"",expenses:"",note:""});setShowHistory(false);await onRefresh();
+    if(revenue>0)requests.push(fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"transaction",kind:"entrada",description:historical.note||`Faturamento ${launchMode==="day"?"do dia":"consolidado"} — ${launchLabel}`,amount:revenue,date})}));
+    if(expense>0)requests.push(fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"transaction",kind:"despesa",description:historical.note?`Despesas — ${historical.note}`:`Despesas ${launchMode==="day"?"do dia":"consolidadas"} — ${launchLabel}`,amount:expense,date})}));
+    const responses=await Promise.all(requests);
+    setSaving(false);
+    if(responses.some(response=>!response.ok)){setLaunchStatus("Não foi possível salvar todos os valores. Tente novamente.");return;}
+    if(launchMode==="day"){setYear(Number(date.slice(0,4)));setMonth(Number(date.slice(5,7)));}
+    setHistorical({revenue:"",expenses:"",note:""});setLaunchStatus(`Dados de ${launchLabel} salvos com sucesso.`);await onRefresh();
   }
   return <section>
-    <div className="section-title"><div><small>RELATÓRIOS</small><h2>Relatórios financeiros</h2></div><div className="report-actions"><div className="report-filters"><label>Mês<select value={month} onChange={e=>setMonth(Number(e.target.value))}>{names.map((name,i)=><option key={name} value={i+1}>{name}</option>)}</select></label><label>Ano<select value={year} onChange={e=>setYear(Number(e.target.value))}>{[currentYear-5,currentYear-4,currentYear-3,currentYear-2,currentYear-1,currentYear,currentYear+1].map(y=><option key={y}>{y}</option>)}</select></label></div><button className="primary-button small" onClick={()=>setShowHistory(!showHistory)}>+ Lançar mês anterior</button></div></div>
-    {showHistory&&<div className="history-entry"><div><small>LANÇAMENTO HISTÓRICO</small><h3>{names[month-1]} de {year}</h3><p>Informe os totais que você já possui deste mês.</p></div><label>Faturamento total (R$)<input type="number" min="0" step="0.01" value={historical.revenue} onChange={e=>setHistorical({...historical,revenue:e.target.value})} placeholder="0,00"/></label><label>Despesas totais (R$)<input type="number" min="0" step="0.01" value={historical.expenses} onChange={e=>setHistorical({...historical,expenses:e.target.value})} placeholder="0,00"/></label><label>Observação<input value={historical.note} onChange={e=>setHistorical({...historical,note:e.target.value})} placeholder="Ex.: fechamento do mês"/></label><button className="primary-button small" disabled={saving} onClick={saveHistory}>{saving?"Salvando...":"Salvar dados do mês"}</button></div>}
+    <div className="section-title"><div><small>RELATÓRIOS</small><h2>Relatórios financeiros</h2></div><div className="report-actions"><div className="report-filters"><label>Mês<select value={month} onChange={e=>setMonth(Number(e.target.value))}>{names.map((name,i)=><option key={name} value={i+1}>{name}</option>)}</select></label><label>Ano<select value={year} onChange={e=>setYear(Number(e.target.value))}>{[currentYear-5,currentYear-4,currentYear-3,currentYear-2,currentYear-1,currentYear,currentYear+1].map(y=><option key={y}>{y}</option>)}</select></label></div><button className="primary-button small" onClick={()=>{setShowHistory(!showHistory);setLaunchStatus("")}}>+ Lançar dados</button></div></div>
+    {showHistory&&<><div className="history-entry"><div><small>LANÇAMENTO FINANCEIRO</small><h3>{launchMode==="day"?`Dia ${formatDate(launchDate)}`:`${names[month-1]} de ${year}`}</h3><p>Escolha um dia específico ou registre o fechamento completo do mês.</p></div><label>Período<select value={launchMode} onChange={e=>setLaunchMode(e.target.value as "day"|"month")}><option value="day">Dia específico</option><option value="month">Mês fechado</option></select></label>{launchMode==="day"&&<label>Data<input type="date" value={launchDate} max={localDateKey()} onChange={e=>setLaunchDate(e.target.value)}/></label>}<label>Faturamento (R$)<input type="number" min="0" step="0.01" value={historical.revenue} onChange={e=>setHistorical({...historical,revenue:e.target.value})} placeholder="0,00"/></label><label>Despesas (R$)<input type="number" min="0" step="0.01" value={historical.expenses} onChange={e=>setHistorical({...historical,expenses:e.target.value})} placeholder="0,00"/></label><label>Observação<input value={historical.note} onChange={e=>setHistorical({...historical,note:e.target.value})} placeholder={launchMode==="day"?"Ex.: movimento do dia":"Ex.: fechamento do mês"}/></label><button className="primary-button small" disabled={saving} onClick={saveHistory}>{saving?"Salvando...":launchMode==="day"?"Salvar dia":"Salvar mês"}</button></div>{launchStatus&&<p className="form-message" role="status">{launchStatus}</p>}</>}
     <div className="metric-grid"><Metric label="Entradas do mês" value={money(entries)} hint={`${visits} agendamentos`} tone="gold"/><Metric label="Saídas do mês" value={money(expenses)} hint="Despesas registradas"/><Metric label="Saldo mensal" value={money(entries-expenses)} hint={`${names[month-1]} de ${year}`}/><Metric label="Saldo anual" value={money(total(yearRows))} hint={`${clients.length} clientes cadastrados`}/></div>
     <div className="panel report-bars"><h3>Resultado por mês — {year}</h3><div className="bars tall">{values.map((value,i)=><div key={i}><span title={money(value)} style={{height:`${Math.max(2,Math.abs(value)/max*100)}%`,background:value<0?"var(--red)":"var(--gold)"}}/><small>{names[i]}</small></div>)}</div></div>
     <div className="table-card report-table"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>{monthRows.length?monthRows.map((t:any)=><tr key={t.id}><td>{formatDate(t.date)}</td><td>{t.description}</td><td>{t.kind==="entrada"?"Entrada":"Saída"}</td><td>{t.kind==="despesa"?"- ":""}{money(t.amountCents)}</td></tr>):<tr><td colSpan={4} className="empty-table">Nenhum lançamento neste mês.</td></tr>}</tbody></table></div>
