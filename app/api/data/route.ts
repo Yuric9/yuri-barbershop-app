@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
 import {
   appointments,
@@ -454,6 +454,16 @@ export async function POST(request: Request) {
     await db.insert(waitlist).values({ clientEmail: user.email, clientName: user.displayName, serviceName: String(body.serviceName || "Atendimento"), preferredDate: String(body.preferredDate || ""), preferredTime: String(body.preferredTime || ""), createdAt: now });
     return Response.json({ ok: true });
   }
+  if (action === "promotion-engagement") {
+    const id = Number(body.id);
+    if (!id) return Response.json({ error: "Promoção inválida" }, { status: 400 });
+    if (body.kind === "click") {
+      await db.update(promotions).set({ clicks: sql`${promotions.clicks} + 1` }).where(eq(promotions.id, id));
+    } else {
+      await db.update(promotions).set({ views: sql`${promotions.views} + 1` }).where(eq(promotions.id, id));
+    }
+    return Response.json({ ok: true });
+  }
   if (isBarber && action === "appointment-status") {
     const id = Number(body.id);
     const [appointment] = await db.select().from(appointments).where(and(eq(appointments.id, id), eq(appointments.collaboratorId, currentCollaborator?.id || -1))).limit(1);
@@ -497,7 +507,8 @@ export async function POST(request: Request) {
       description: String(body.description || "").trim(),
       validUntil: String(body.validUntil || ""),
       imageKey: String(body.imageKey || ""),
-      showOnLogin: body.showOnLogin === true,
+      showOnLogin: false,
+      audience: body.audience === "Assinantes" ? "Assinantes" : "Todos",
       createdAt: now,
     });
   } else if (action === "product-campaign") {
