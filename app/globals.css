@@ -1162,12 +1162,12 @@ a {
 .report-filters label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 8px; font-weight: 800; }
 .report-filters select { min-width: 90px; padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .report-table { margin-top: 18px; }
-.history-entry { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.2fr auto; align-items: end; gap: 10px; margin-bottom: 18px; padding: 16px; border: 1px solid #dfc98f; border-radius: 14px; background: #fffaf0; }
+.history-entry { display: grid; grid-template-columns: repeat(auto-fit,minmax(145px,1fr)); align-items: end; gap: 10px; margin-bottom: 18px; padding: 16px; border: 1px solid #dfc98f; border-radius: 14px; background: #fffaf0; }
 .history-entry small { color: var(--gold); font-size: 8px; font-weight: 800; letter-spacing: .12em; }
 .history-entry h3 { margin: 4px 0; font: 20px Georgia,serif; }
 .history-entry p { margin: 0; color: var(--muted); font-size: 9px; }
 .history-entry label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 9px; font-weight: 800; }
-.history-entry input { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.history-entry input,.history-entry select { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .client-count,.remarketing-count { padding: 8px 12px; border-radius: 999px; background: var(--gold-soft); color: #705316; font-size: 10px; font-weight: 800; }
 .cell-email { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
 .empty-table { padding: 35px!important; text-align: center!important; color: var(--muted); }
