@@ -438,7 +438,7 @@ function AdminView({
   if (section === "catalogo") return <StyleCatalogManager items={data.catalogItems || []} onRefresh={onRefresh}/>;
   if (section === "assinatura") return <><CampaignManager campaigns={data.subscriptionCampaigns || []} onRefresh={onRefresh}/><SubscriptionAdmin items={data.subscriptions || []} onRefresh={onRefresh}/></>;
   if (section === "promocoes") return <PromotionManager items={data.promotions || []} onRefresh={onRefresh}/>;
-  if (section === "relatorios") return <Reports transactions={data.transactions || []} appointments={data.appointments || []} clients={data.clientSummaries || []} onRefresh={onRefresh} />;
+  if (section === "relatorios") return <Reports transactions={data.transactions || []} appointments={data.appointments || []} clients={data.clientSummaries || []} services={data.services || []} onRefresh={onRefresh} />;
   return (
     <div className="dashboard">
       <div className="welcome-line">
@@ -1136,7 +1136,7 @@ function Remarketing({clients,initialContacts}:any){
     <div className="relationship-block"><div className="relationship-heading"><div><small>CAMPANHA ATIVA</small><h3>{selected.title}</h3></div><span className="remarketing-count">{selected.items.length} clientes</span></div><div className="remarketing-list">{selected.items.length?selected.items.map((c:any)=>{const key=`${tab}-${c.email}-${c.lastVisit||"novo"}`;const contact=contacts[key];return <article className={`remarketing-card ${contact?.sentAt?"contacted":""}`} key={key}><div className="avatar">{c.name[0]}</div><div className="remarketing-info"><strong>{c.name}</strong><span>{c.lastVisit?`Último atendimento: ${formatDate(c.lastVisit)} • ${c.lastService}`:c.phone||c.email}</span><small>{contact?.sentAt?`Contatado em ${new Date(contact.sentAt).toLocaleDateString("pt-BR")}`:selected.badge}</small></div><div className="remarketing-actions">{c.phone?<a href={whatsapp(c,selected.message(c))} onClick={()=>updateContact(key,c.email,{sentAt:new Date().toISOString()})} target="_blank" rel="noreferrer">Enviar WhatsApp</a>:<em>Sem telefone</em>}{contact?.sentAt&&<><button className={contact.answered?"active":""} onClick={()=>updateContact(key,c.email,{answered:!contact.answered})}>✓ Respondeu</button><button className={contact.returned?"active":""} onClick={()=>updateContact(key,c.email,{returned:!contact.returned})}>↻ Retornou</button></>}</div></article>}):<div className="empty-remarketing"><b>✓</b><h3>Nenhum cliente nesta campanha</h3><p>Os clientes aparecerão automaticamente quando atenderem aos critérios.</p></div>}</div></div>
   </section>
 }
-function Reports({transactions,appointments,clients,onRefresh}:any) {
+function Reports({transactions,appointments,clients,services,onRefresh}:any) {
   const currentYear=new Date().getFullYear();
   const [year,setYear]=useState(currentYear);
   const [month,setMonth]=useState(new Date().getMonth()+1);
@@ -1147,15 +1147,26 @@ function Reports({transactions,appointments,clients,onRefresh}:any) {
   const [saving,setSaving]=useState(false);
   const [launchStatus,setLaunchStatus]=useState("");
   const names=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const initialService=services.find((service:any)=>service.active!==false&&service.name.toLowerCase().includes("corte"))||services.find((service:any)=>service.active!==false)||services[0];
+  const [referenceServiceId,setReferenceServiceId]=useState(initialService?String(initialService.id):"");
+  const referenceService=services.find((service:any)=>String(service.id)===referenceServiceId)||initialService;
+  const referencePriceCents=Math.max(1,referenceService?.priceCents||3000);
   const prefix=`${year}-${String(month).padStart(2,"0")}`;
   const yearRows=transactions.filter((t:any)=>t.date.startsWith(String(year)));
   const monthRows=yearRows.filter((t:any)=>t.date.startsWith(prefix));
   const total=(rows:any[])=>rows.reduce((sum:number,t:any)=>sum+(t.kind==="entrada"?t.amountCents:-t.amountCents),0);
   const entries=monthRows.filter((t:any)=>t.kind==="entrada").reduce((sum:number,t:any)=>sum+t.amountCents,0);
   const expenses=monthRows.filter((t:any)=>t.kind==="despesa").reduce((sum:number,t:any)=>sum+t.amountCents,0);
-  const values=Array.from({length:12},(_,i)=>total(yearRows.filter((t:any)=>t.date.startsWith(`${year}-${String(i+1).padStart(2,"0")}`))));
-  const max=Math.max(1,...values.map(Math.abs));
-  const visits=appointments.filter((a:any)=>a.date.startsWith(prefix)).length;
+  const monthlySummaries=Array.from({length:12},(_,i)=>{
+    const monthPrefix=`${year}-${String(i+1).padStart(2,"0")}`;
+    const rows=yearRows.filter((t:any)=>t.date.startsWith(monthPrefix));
+    const monthEntries=rows.filter((t:any)=>t.kind==="entrada").reduce((sum:number,t:any)=>sum+t.amountCents,0);
+    const monthExpenses=rows.filter((t:any)=>t.kind==="despesa").reduce((sum:number,t:any)=>sum+t.amountCents,0);
+    const registeredVisits=appointments.filter((a:any)=>a.date?.startsWith(monthPrefix)&&a.status!=="Cancelado").length;
+    return {index:i+1,name:names[i],entries:monthEntries,expenses:monthExpenses,balance:monthEntries-monthExpenses,registeredVisits,estimatedVisits:Math.round(monthEntries/referencePriceCents)};
+  });
+  const maxRevenue=Math.max(1,...monthlySummaries.map(item=>item.entries));
+  const selectedSummary=monthlySummaries[month-1];
   async function saveHistory(){
     const revenue=Number(historical.revenue),expense=Number(historical.expenses);
     if(revenue<=0&&expense<=0){setLaunchStatus("Informe um valor de faturamento ou despesa.");return;}
@@ -1176,8 +1187,10 @@ function Reports({transactions,appointments,clients,onRefresh}:any) {
   return <section>
     <div className="section-title"><div><small>RELATÓRIOS</small><h2>Relatórios financeiros</h2></div><div className="report-actions"><div className="report-filters"><label>Mês<select value={month} onChange={e=>setMonth(Number(e.target.value))}>{names.map((name,i)=><option key={name} value={i+1}>{name}</option>)}</select></label><label>Ano<select value={year} onChange={e=>setYear(Number(e.target.value))}>{[currentYear-5,currentYear-4,currentYear-3,currentYear-2,currentYear-1,currentYear,currentYear+1].map(y=><option key={y}>{y}</option>)}</select></label></div><button className="primary-button small" onClick={()=>{setShowHistory(!showHistory);setLaunchStatus("")}}>+ Lançar dados</button></div></div>
     {showHistory&&<><div className="history-entry"><div><small>LANÇAMENTO FINANCEIRO</small><h3>{launchMode==="day"?`Dia ${formatDate(launchDate)}`:`${names[month-1]} de ${year}`}</h3><p>Escolha um dia específico ou registre o fechamento completo do mês.</p></div><label>Período<select value={launchMode} onChange={e=>setLaunchMode(e.target.value as "day"|"month")}><option value="day">Dia específico</option><option value="month">Mês fechado</option></select></label>{launchMode==="day"&&<label>Data<input type="date" value={launchDate} max={localDateKey()} onChange={e=>setLaunchDate(e.target.value)}/></label>}<label>Faturamento (R$)<input type="number" min="0" step="0.01" value={historical.revenue} onChange={e=>setHistorical({...historical,revenue:e.target.value})} placeholder="0,00"/></label><label>Despesas (R$)<input type="number" min="0" step="0.01" value={historical.expenses} onChange={e=>setHistorical({...historical,expenses:e.target.value})} placeholder="0,00"/></label><label>Observação<input value={historical.note} onChange={e=>setHistorical({...historical,note:e.target.value})} placeholder={launchMode==="day"?"Ex.: movimento do dia":"Ex.: fechamento do mês"}/></label><button className="primary-button small" disabled={saving} onClick={saveHistory}>{saving?"Salvando...":launchMode==="day"?"Salvar dia":"Salvar mês"}</button></div>{launchStatus&&<p className="form-message" role="status">{launchStatus}</p>}</>}
-    <div className="metric-grid"><Metric label="Entradas do mês" value={money(entries)} hint={`${visits} agendamentos`} tone="gold"/><Metric label="Saídas do mês" value={money(expenses)} hint="Despesas registradas"/><Metric label="Saldo mensal" value={money(entries-expenses)} hint={`${names[month-1]} de ${year}`}/><Metric label="Saldo anual" value={money(total(yearRows))} hint={`${clients.length} clientes cadastrados`}/></div>
-    <div className="panel report-bars"><h3>Resultado por mês — {year}</h3><div className="bars tall">{values.map((value,i)=><div key={i}><span title={money(value)} style={{height:`${Math.max(2,Math.abs(value)/max*100)}%`,background:value<0?"var(--red)":"var(--gold)"}}/><small>{names[i]}</small></div>)}</div></div>
+    <div className="report-estimator panel"><div><small>ESTIMATIVA DE ATENDIMENTOS</small><h3>Use o valor de um serviço como referência</h3><p>O sistema divide o faturamento de cada mês pelo preço escolhido. Exemplo: R$ 4.500 ÷ R$ 30 = aproximadamente 150 atendimentos.</p></div><label>Serviço de referência<select value={referenceServiceId} onChange={e=>setReferenceServiceId(e.target.value)}>{services.filter((service:any)=>service.active!==false).map((service:any)=><option key={service.id} value={service.id}>{service.name} — {money(service.priceCents)}</option>)}{!services.length&&<option value="">Corte — R$ 30,00</option>}</select></label></div>
+    <div className="metric-grid"><Metric label="Faturamento do mês" value={money(entries)} hint={`${selectedSummary.registeredVisits} agendamentos registrados`} tone="gold"/><Metric label="Atendimentos estimados" value={String(selectedSummary.estimatedVisits)} hint={`Faturamento ÷ ${money(referencePriceCents)}`}/><Metric label="Despesas do mês" value={money(expenses)} hint="Saídas registradas"/><Metric label="Saldo mensal" value={money(entries-expenses)} hint={`${names[month-1]} de ${year}`}/></div>
+    <div className="panel report-bars"><div className="report-chart-head"><div><small>FATURAMENTO ANUAL</small><h3>Faturamento por mês — {year}</h3></div><div><strong>{money(monthlySummaries.reduce((sum,item)=>sum+item.entries,0))}</strong><span>Saldo anual: {money(total(yearRows))}</span></div></div><p className="chart-help">Os valores aparecem acima das barras. Clique em um mês para ver seus lançamentos.</p><div className="monthly-bars">{monthlySummaries.map(item=><button type="button" className={month===item.index?"selected":""} key={item.index} onClick={()=>setMonth(item.index)} aria-label={`${item.name}: faturamento ${money(item.entries)}, estimativa de ${item.estimatedVisits} atendimentos`}><b>{item.entries?money(item.entries):"R$ 0"}</b><span style={{height:`${Math.max(3,item.entries/maxRevenue*100)}%`}}/><small>{item.name}</small></button>)}</div></div>
+    <div className="table-card annual-summary-table"><table><thead><tr><th>Mês</th><th>Faturamento</th><th>Despesas</th><th>Saldo</th><th>Agendamentos</th><th>Atendimentos estimados</th></tr></thead><tbody>{monthlySummaries.map(item=><tr className={month===item.index?"selected-month":""} key={item.index} onClick={()=>setMonth(item.index)}><td><strong>{item.name}/{year}</strong></td><td>{money(item.entries)}</td><td>{money(item.expenses)}</td><td className={item.balance<0?"negative-value":""}>{money(item.balance)}</td><td>{item.registeredVisits}</td><td><strong>{item.estimatedVisits}</strong><small className="estimation-note"> com base em {referenceService?.name||"Corte"}</small></td></tr>)}</tbody></table></div>
     <div className="table-card report-table"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>{monthRows.length?monthRows.map((t:any)=><tr key={t.id}><td>{formatDate(t.date)}</td><td>{t.description}</td><td>{t.kind==="entrada"?"Entrada":"Saída"}</td><td>{t.kind==="despesa"?"- ":""}{money(t.amountCents)}</td></tr>):<tr><td colSpan={4} className="empty-table">Nenhum lançamento neste mês.</td></tr>}</tbody></table></div>
   </section>;
 }
