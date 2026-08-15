@@ -1168,6 +1168,29 @@ a {
 .history-entry p { margin: 0; color: var(--muted); font-size: 9px; }
 .history-entry label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 9px; font-weight: 800; }
 .history-entry input,.history-entry select { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.report-estimator { margin: 0 0 18px; display: grid; grid-template-columns: 1fr minmax(230px,300px); align-items: end; gap: 20px; background: #fffaf0; border-color: #dfc98f; }
+.report-estimator small,.report-chart-head small { color: var(--gold-dark); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.report-estimator h3 { margin: 5px 0; font: 20px Georgia,serif; }
+.report-estimator p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.report-estimator label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 9px; font-weight: 800; }
+.report-estimator select { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+.report-chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.report-chart-head > div:last-child { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.report-chart-head strong { font: 24px Georgia,serif; }
+.report-chart-head span,.chart-help { color: var(--muted); font-size: 9px; }
+.chart-help { margin: 4px 0 14px; }
+.monthly-bars { height: 300px; display: grid; grid-template-columns: repeat(12,minmax(52px,1fr)); align-items: end; gap: 7px; overflow-x: auto; padding: 25px 4px 0; }
+.monthly-bars button { height: 100%; min-width: 52px; border: 0; border-radius: 8px; background: transparent; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; padding: 4px; cursor: pointer; }
+.monthly-bars button:hover,.monthly-bars button.selected { background: #f5f0e4; }
+.monthly-bars b { font-size: 8px; white-space: nowrap; color: var(--ink); }
+.monthly-bars span { width: 65%; max-width: 32px; min-height: 3px; border-radius: 6px 6px 0 0; background: var(--gold); }
+.monthly-bars button.selected span { background: var(--black); }
+.monthly-bars small { font-size: 9px; font-weight: 800; color: var(--muted); }
+.annual-summary-table { margin-top: 18px; overflow-x: auto; }
+.annual-summary-table tr { cursor: pointer; }
+.annual-summary-table .selected-month td { background: #fff7e4; }
+.negative-value { color: var(--red); }
+.estimation-note { display: block; color: var(--muted); font-size: 8px; margin-top: 3px; white-space: nowrap; }
 .client-count,.remarketing-count { padding: 8px 12px; border-radius: 999px; background: var(--gold-soft); color: #705316; font-size: 10px; font-weight: 800; }
 .cell-email { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
 .empty-table { padding: 35px!important; text-align: center!important; color: var(--muted); }
@@ -1285,6 +1308,7 @@ a {
   .catalog-upload-form label:nth-child(3),.catalog-upload-form > button { grid-column: 1/-1; }
   .history-entry { grid-template-columns: 1fr 1fr; }
   .history-entry > div,.history-entry > button { grid-column: 1 / -1; }
+  .monthly-bars { grid-template-columns: repeat(12,58px); }
   .cash-form { grid-template-columns: 1fr 1fr; }
   .cash-form > button { grid-column: 1 / -1; }
   .hero {
@@ -1381,6 +1405,10 @@ a {
   .report-actions { width: 100%; flex-direction: column; align-items: stretch; }
   .report-filters { width: 100%; }
   .report-filters label,.report-filters select { flex: 1; width: 100%; }
+  .report-estimator { grid-template-columns: 1fr; }
+  .report-chart-head { flex-direction: column; }
+  .report-chart-head > div:last-child { align-items: flex-start; text-align: left; }
+  .monthly-bars { height: 250px; }
   .remarketing-card { grid-template-columns: 38px 1fr; }
   .remarketing-card > a,.remarketing-actions { grid-column: 1 / -1; width: 100%; max-width: none; }
   .remarketing-metrics { grid-template-columns: 1fr 1fr; }
