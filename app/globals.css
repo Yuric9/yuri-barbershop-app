@@ -1257,16 +1257,31 @@ a {
 .demo-links a:hover { color: white; }
 .promotion-carousel { position: relative; display: grid; grid-template-columns: 48px 1fr 48px; gap: 12px; align-items: center; }
 .promotion-carousel > button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: white; font-size: 28px; }
+.promotion-carousel > button:disabled { opacity: .28; cursor: default; }
 .promotion-carousel article { min-height: 390px; display: grid; grid-template-columns: 1.1fr .9fr; overflow: hidden; border-radius: 22px; background: #1b1b18; color: white; box-shadow: 0 24px 55px #0003; }
 .promotion-carousel article > img { width: 100%; height: 100%; max-height: 480px; object-fit: cover; }
+.promotion-creative-placeholder { min-height: 390px; display: grid !important; place-items: center; padding: 0 !important; background: linear-gradient(135deg,#2b261b,#111); color: var(--gold); font-size: 84px; }
 .promotion-carousel article > div { display: flex; flex-direction: column; justify-content: center; padding: 38px; }
 .promotion-carousel article span { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: .16em; }
 .promotion-carousel article h3 { margin: 14px 0; font: 34px/1.05 Georgia,serif; }
 .promotion-carousel article p { color: #c2beb5; line-height: 1.6; }
-.promotion-carousel article small { margin: 10px 0 20px; color: var(--gold); }
+.promotion-carousel article small { color: var(--gold); }
+.promotion-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 22px; padding: 0 !important; }
+.promotion-meta small { padding: 7px 10px; border: 1px solid #d1a23d55; border-radius: 999px; background: #d1a23d12; }
+.promotion-whatsapp { width: fit-content; min-height: 46px; padding: 0 18px; border: 0; border-radius: 10px; background: #25d366; color: #092d16; font-weight: 900; }
 .carousel-dots { grid-column: 1/-1; display: flex; justify-content: center; gap: 7px; }
-.carousel-dots i { width: 7px; height: 7px; border-radius: 50%; background: #ccc7bc; }
-.carousel-dots i.active { width: 22px; border-radius: 999px; background: var(--gold); }
+.carousel-dots button { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%; background: #ccc7bc; }
+.carousel-dots button.active { width: 24px; border-radius: 999px; background: var(--gold); }
+.promotion-admin-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 22px; }
+.promotion-admin-metrics article { padding: 19px; border: 1px solid var(--line); border-radius: 15px; background: white; }
+.promotion-admin-metrics small { display: block; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.promotion-admin-metrics strong { display: block; margin-top: 8px; font: 28px Georgia,serif; }
+.promotion-admin-list { display: grid; gap: 9px; margin-top: 22px; }
+.promotion-admin-list article { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 13px; padding: 10px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+.promotion-admin-list img { width: 64px; height: 54px; border-radius: 8px; object-fit: cover; }
+.promotion-admin-list div { display: flex; flex-direction: column; gap: 4px; }
+.promotion-admin-list small,.promotion-admin-list span { color: var(--muted); font-size: 11px; }
+.promotion-admin-list span { text-align: right; line-height: 1.5; }
 .membership-creative { display: grid; grid-template-columns: .9fr 1.1fr; min-height: 270px; margin-bottom: 20px; overflow: hidden; border-radius: 22px; background: #1b1b18; color: white; box-shadow: 0 20px 50px #0003; }
 .membership-creative img { width: 100%; height: 100%; max-height: 380px; object-fit: cover; }
 .membership-creative > div { display: flex; flex-direction: column; justify-content: center; padding: 32px; }
@@ -1383,6 +1398,10 @@ a {
   .promotion-carousel article { min-height: 0; }
   .promotion-carousel article > img { height: 280px; }
   .promotion-carousel article > div,.membership-creative > div,.campaign-popup > div { padding: 24px; }
+  .promotion-admin-metrics { grid-template-columns: 1fr 1fr; }
+  .promotion-admin-list article { grid-template-columns: 52px 1fr; }
+  .promotion-admin-list img { width: 52px; height: 48px; }
+  .promotion-admin-list span { grid-column: 2; text-align: left; }
   .campaign-popup { max-height: 90vh; overflow-y: auto; }
   .campaign-popup > img { min-height: 0; height: 250px; }
   .google-review-promo { grid-template-columns: 1fr; gap: 20px; padding: 25px 20px; }
