@@ -50,6 +50,9 @@ export const promotions = sqliteTable("promotions", {
   validUntil: text("valid_until").notNull().default(""),
   imageKey: text("image_key").notNull().default(""),
   showOnLogin: integer("show_on_login", { mode: "boolean" }).notNull().default(false),
+  audience: text("audience").notNull().default("Todos"),
+  views: integer("views").notNull().default(0),
+  clicks: integer("clicks").notNull().default(0),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
 });
