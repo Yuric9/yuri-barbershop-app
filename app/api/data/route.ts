@@ -474,6 +474,16 @@ export async function POST(request: Request) {
     return Response.json({ ok: true });
   }
   if (!isAdmin) return forbidden();
+  if (action === "client-create") {
+    const name = String(body.name || "").trim();
+    const phone = String(body.phone || "").trim();
+    const informedEmail = String(body.email || "").trim().toLowerCase();
+    if (!name || !phone) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
+    const phoneKey = phone.replace(/\D/g, "") || String(Date.now());
+    const email = informedEmail || `cliente-${phoneKey}@cadastro.local`;
+    await db.insert(profiles).values({ email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name, phone, birthDate: String(body.birthDate || "") } });
+    return Response.json({ ok: true, client: { email, name, phone } });
+  }
   if (action === "service") {
     await db
       .insert(services)
@@ -524,6 +534,10 @@ export async function POST(request: Request) {
       createdAt: now,
     });
   } else if (action === "transaction") {
+    const serviceId = body.serviceId ? Number(body.serviceId) : null;
+    const [linkedService] = serviceId ? await db.select().from(services).where(eq(services.id, serviceId)).limit(1) : [];
+    const clientEmail = String(body.clientEmail || "").trim().toLowerCase();
+    const [linkedClient] = clientEmail ? await db.select().from(profiles).where(eq(profiles.email, clientEmail)).limit(1) : [];
     await db
       .insert(transactions)
       .values({
@@ -531,6 +545,10 @@ export async function POST(request: Request) {
         description: String(body.description),
         amountCents: Math.round(Number(body.amount) * 100),
         date: String(body.date),
+        clientEmail: linkedClient?.email || "",
+        clientName: linkedClient?.name || "",
+        serviceId: linkedService?.id || null,
+        serviceName: linkedService?.name || "",
         collaboratorId: body.collaboratorId ? Number(body.collaboratorId) : null,
         paymentMethod: String(body.paymentMethod || ""),
         createdAt: now,
