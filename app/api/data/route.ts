@@ -480,9 +480,37 @@ export async function POST(request: Request) {
     const informedEmail = String(body.email || "").trim().toLowerCase();
     if (!name || !phone) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
     const phoneKey = phone.replace(/\D/g, "") || String(Date.now());
-    const email = informedEmail || `cliente-${phoneKey}@cadastro.local`;
-    await db.insert(profiles).values({ email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name, phone, birthDate: String(body.birthDate || "") } });
+    const profileRows = await db.select().from(profiles);
+    const existing = profileRows.find((profile) => String(profile.phone || "").replace(/\D/g, "") === phoneKey);
+    const email = existing?.email || informedEmail || `cliente-${phoneKey}@cadastro.local`;
+    const update: { name: string; phone: string; birthDate?: string } = { name, phone };
+    if (String(body.birthDate || "").trim()) update.birthDate = String(body.birthDate).trim();
+    if (existing) await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
+    else await db.insert(profiles).values({ email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: update });
     return Response.json({ ok: true, client: { email, name, phone } });
+  }
+  if (action === "client-import") {
+    const received = Array.isArray(body.contacts) ? body.contacts.slice(0, 500) : [];
+    const unique = new Map<string, { name: string; phone: string }>();
+    for (const item of received) {
+      const name = String(item?.name || "").trim().slice(0, 120);
+      const phone = String(item?.phone || "").trim().slice(0, 40);
+      const phoneKey = phone.replace(/\D/g, "");
+      if (name && phoneKey.length >= 8) unique.set(phoneKey, { name, phone });
+    }
+    if (!unique.size) return Response.json({ error: "Nenhum contato válido foi encontrado" }, { status: 400 });
+    const profileRows = await db.select().from(profiles);
+    const profilesByPhone = new Map(profileRows.map((profile) => [String(profile.phone || "").replace(/\D/g, ""), profile]));
+    for (const [phoneKey, contact] of unique) {
+      const existing = profilesByPhone.get(phoneKey);
+      if (existing) {
+        await db.update(profiles).set({ name: contact.name, phone: contact.phone }).where(eq(profiles.email, existing.email));
+      } else {
+        const email = `cliente-${phoneKey}@cadastro.local`;
+        await db.insert(profiles).values({ email, name: contact.name, phone: contact.phone, birthDate: "", createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name: contact.name, phone: contact.phone } });
+      }
+    }
+    return Response.json({ ok: true, imported: unique.size });
   }
   if (action === "service") {
     await db
