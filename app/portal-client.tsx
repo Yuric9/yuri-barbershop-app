@@ -430,7 +430,7 @@ function AdminView({
   if (section === "agenda") return <Agenda appointments={data.appointments || []} collaborators={data.collaborators || []} onRefresh={onRefresh} />;
   if (section === "caixa") return <Cash transactions={data.transactions || []} services={data.services || []} clients={data.clientSummaries || []} onRefresh={onRefresh} />;
   if (section === "clientes")
-    return <ClientsDatabase clients={data.clientSummaries || []} />;
+    return <ClientsDatabase clients={data.clientSummaries || []} onRefresh={onRefresh} />;
   if (section === "colaboradores") return <CollaboratorManager collaborators={data.collaborators || []} services={data.services || []} links={data.collaboratorServices || []} appointments={data.appointments || []} settlements={data.commissionSettlements || []} onRefresh={onRefresh} />;
   if (section === "remarketing") return <Remarketing clients={data.clientSummaries || []} initialContacts={data.marketingContacts || []} onRefresh={onRefresh} />;
   if (section === "servicos") return <ServiceManager items={data.services || []} onRefresh={onRefresh}/>;
@@ -1110,9 +1110,48 @@ function localDateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 function formatDate(value:string|null){return value ? new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR") : "Sem atendimento"}
-function ClientsDatabase({clients}:any){
-  return <section><div className="section-title"><div><small>BASE DE RELACIONAMENTO</small><h2>Clientes cadastrados</h2></div><span className="client-count">{clients.length} clientes</span></div>
-    <div className="table-card"><table><thead><tr><th>Cliente</th><th>Assinatura</th><th>Telefone</th><th>Aniversário</th><th>Último atendimento</th><th>Serviço</th><th>Atendimentos</th><th>Total</th></tr></thead><tbody>{clients.length ? clients.map((c:any)=><tr key={c.email}><td><strong>{c.name}</strong><small className="cell-email">{c.email}</small></td><td><span className={`client-subscription-badge ${c.subscriptionStatus.toLowerCase().replaceAll(" ","-")}`}>{c.subscriptionStatus==="Sem assinatura"?"Cliente avulso":`♛ ${c.subscriptionStatus}`}</span>{c.subscriptionEndDate&&<small className="subscription-expiry">até {formatDate(c.subscriptionEndDate)}</small>}</td><td>{c.phone||"Não informado"}</td><td>{formatDate(c.birthDate)}</td><td>{formatDate(c.lastVisit)}</td><td>{c.lastService||"—"}</td><td>{c.appointmentsCount}</td><td>{money(c.totalSpentCents)}</td></tr>) : <tr><td colSpan={8} className="empty-table">Os clientes cadastrados aparecerão aqui.</td></tr>}</tbody></table></div>
+function ClientsDatabase({clients,onRefresh}:any){
+  const [showQuick,setShowQuick]=useState(false);
+  const [showImport,setShowImport]=useState(false);
+  const [form,setForm]=useState({name:"",phone:""});
+  const [candidates,setCandidates]=useState<any[]>([]);
+  const [saving,setSaving]=useState(false);
+  const [message,setMessage]=useState("");
+  const contactPickerAvailable=typeof navigator!=="undefined"&&typeof (navigator as any).contacts?.select==="function";
+  const cleanPhone=(value:string)=>value.replace(/[^\d+]/g,"").trim();
+  function prepareContacts(rows:any[]){
+    const unique=new Map<string,any>();
+    rows.forEach((row:any)=>{const name=String(row.name||"").trim();const phone=cleanPhone(String(row.phone||""));if(name&&phone){const key=phone.replace(/\D/g,"");unique.set(key,{id:key,name,phone,selected:true});}});
+    const list=[...unique.values()];setCandidates(list);setMessage(list.length?`${list.length} contato(s) pronto(s) para revisão.`:"Nenhum contato com nome e telefone foi encontrado.");setShowImport(true);
+  }
+  async function saveQuick(){
+    if(!form.name.trim()||!form.phone.trim()){setMessage("Informe o nome e o telefone do cliente.");return;}
+    setSaving(true);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"client-create",...form})});const result=await response.json().catch(()=>({}));setSaving(false);
+    if(!response.ok){setMessage(result.error||"Não foi possível cadastrar o cliente.");return;}setForm({name:"",phone:""});setShowQuick(false);setMessage("Cliente cadastrado com sucesso.");await onRefresh();
+  }
+  async function pickPhoneContacts(){
+    try{const picked=await (navigator as any).contacts.select(["name","tel"],{multiple:true});prepareContacts(picked.map((item:any)=>({name:item.name?.[0]||"",phone:item.tel?.[0]||""})));}
+    catch(error:any){if(error?.name!=="AbortError")setMessage("O celular não liberou os contatos. Use a opção de arquivo abaixo.");}
+  }
+  async function readContactFile(file:File){
+    const text=await file.text();let rows:any[]=[];
+    if(/\.vcf$/i.test(file.name)||/BEGIN:VCARD/i.test(text)){
+      rows=text.split(/END:VCARD/i).map(card=>({name:(card.match(/(?:^|\n)FN[^:]*:(.*)/i)?.[1]||"").trim(),phone:(card.match(/(?:^|\n)TEL[^:]*:(.*)/i)?.[1]||"").trim()}));
+    }else{
+      const lines=text.split(/\r?\n/).filter(Boolean);const separator=(lines[0]?.match(/;/g)||[]).length>(lines[0]?.match(/,/g)||[]).length?";":",";const headers=lines[0]?.split(separator).map(v=>v.trim().toLowerCase())||[];const nameIndex=headers.findIndex(h=>/nome|name/.test(h));const phoneIndex=headers.findIndex(h=>/telefone|celular|phone|tel|whatsapp/.test(h));const start=nameIndex>=0&&phoneIndex>=0?1:0;
+      rows=lines.slice(start).map(line=>{const cells=line.split(separator).map(v=>v.replace(/^\s*["']|["']\s*$/g,"").trim());return {name:cells[nameIndex>=0?nameIndex:0]||"",phone:cells[phoneIndex>=0?phoneIndex:1]||""};});
+    }
+    prepareContacts(rows);
+  }
+  async function importSelected(){
+    const selected=candidates.filter(item=>item.selected).map(({name,phone})=>({name,phone}));if(!selected.length){setMessage("Selecione pelo menos um contato para importar.");return;}setSaving(true);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"client-import",contacts:selected})});const result=await response.json().catch(()=>({}));setSaving(false);
+    if(!response.ok){setMessage(result.error||"Não foi possível importar os contatos.");return;}setCandidates([]);setShowImport(false);setMessage(`${result.imported} cliente(s) importado(s) com sucesso.`);await onRefresh();
+  }
+  return <section><div className="section-title"><div><small>BASE DE RELACIONAMENTO</small><h2>Clientes cadastrados</h2><p className="section-description">Cadastre rapidamente ou importe contatos do celular. Nome e telefone são suficientes.</p></div><div className="client-header-actions"><span className="client-count">{clients.length} clientes</span><button className="secondary-button" onClick={()=>{setShowImport(!showImport);setShowQuick(false);setMessage("")}}>Importar contatos</button><button className="primary-button small" onClick={()=>{setShowQuick(!showQuick);setShowImport(false);setMessage("")}}>+ Novo cliente</button></div></div>
+    {showQuick&&<div className="client-quick-form"><div><strong>Cadastro rápido</strong><small>O cliente poderá completar os demais dados futuramente.</small></div><label>Nome<input autoFocus value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Nome do cliente"/></label><label>Telefone / WhatsApp<input inputMode="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="(62) 99999-9999"/></label><button className="primary-button small" disabled={saving} onClick={saveQuick}>{saving?"Salvando...":"Cadastrar cliente"}</button></div>}
+    {showImport&&<div className="contact-import-panel"><div className="contact-import-head"><div><strong>Importar contatos</strong><small>Escolha os contatos no celular ou carregue um arquivo CSV/VCF. Nada será salvo antes da sua confirmação.</small></div><div>{contactPickerAvailable&&<button className="primary-button small" onClick={pickPhoneContacts}>Selecionar do celular</button>}<label className="secondary-button file-button">Carregar arquivo<input type="file" accept=".csv,.txt,.vcf,text/csv,text/vcard" onChange={e=>e.target.files?.[0]&&readContactFile(e.target.files[0])}/></label></div></div>{!contactPickerAvailable&&<p className="import-tip">Neste navegador, use um arquivo exportado dos contatos. Em celulares Android compatíveis, a seleção direta também aparece.</p>}{candidates.length>0&&<><div className="contact-review"><div className="contact-review-title"><strong>Revise antes de importar</strong><button onClick={()=>setCandidates(candidates.map(item=>({...item,selected:true})))}>Selecionar todos</button></div>{candidates.map((item,index)=><label key={item.id||index}><input type="checkbox" checked={item.selected} onChange={e=>setCandidates(candidates.map((current,i)=>i===index?{...current,selected:e.target.checked}:current))}/><span><b>{item.name}</b><small>{item.phone}</small></span></label>)}</div><button className="primary-button small import-confirm" disabled={saving} onClick={importSelected}>{saving?"Importando...":`Importar ${candidates.filter(item=>item.selected).length} selecionado(s)`}</button></>}</div>}
+    {message&&<p className="form-message" role="status">{message}</p>}
+    <div className="table-card"><table><thead><tr><th>Cliente</th><th>Assinatura</th><th>Telefone</th><th>Aniversário</th><th>Último atendimento</th><th>Serviço</th><th>Atendimentos</th><th>Total</th></tr></thead><tbody>{clients.length ? clients.map((c:any)=><tr key={c.email}><td><strong>{c.name}</strong>{!c.email.endsWith("@cadastro.local")&&<small className="cell-email">{c.email}</small>}</td><td><span className={`client-subscription-badge ${c.subscriptionStatus.toLowerCase().replaceAll(" ","-")}`}>{c.subscriptionStatus==="Sem assinatura"?"Cliente avulso":`♛ ${c.subscriptionStatus}`}</span>{c.subscriptionEndDate&&<small className="subscription-expiry">até {formatDate(c.subscriptionEndDate)}</small>}</td><td>{c.phone||"Não informado"}</td><td>{formatDate(c.birthDate)}</td><td>{formatDate(c.lastVisit)}</td><td>{c.lastService||"—"}</td><td>{c.appointmentsCount}</td><td>{money(c.totalSpentCents)}</td></tr>) : <tr><td colSpan={8} className="empty-table">Os clientes cadastrados aparecerão aqui.</td></tr>}</tbody></table></div>
   </section>
 }
 function Remarketing({clients,initialContacts}:any){
