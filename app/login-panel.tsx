@@ -41,7 +41,6 @@ export default function LoginPanel() {
       {message && <p className="login-message">{message}</p>}
       <button className="primary-button login-submit" disabled={loading}>{loading ? "Aguarde..." : view === "register" ? "Criar cadastro" : "Entrar"}</button>
     </form>
-    <a className="visitor-link" href="/demo"><span>◇</span><div><strong>Continuar como visitante</strong><small>Conheça serviços, produtos e promoções</small></div></a>
     <div className="login-help"><b>Horários de atendimento</b><span>Segunda a sexta: 18h às 20h30</span><span>Sábado: 8h às 20h30 • Domingo: 8h às 12h</span><small>O pedido de horário será confirmado pessoalmente pelo WhatsApp.</small></div>
     <a className="privacy-link" href="/privacidade">Privacidade e proteção de dados</a>
   </div>;
