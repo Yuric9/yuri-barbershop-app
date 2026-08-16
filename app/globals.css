@@ -1054,6 +1054,28 @@ a {
 .cash-client-form small { color: var(--muted); line-height: 1.4; }
 .cash-client-form label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 9px; font-weight: 800; }
 .cash-client-form input { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.client-header-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:9px; }
+.client-header-actions .secondary-button { min-height:42px; padding:0 15px; }
+.client-quick-form { display:grid; grid-template-columns:1.2fr 1fr 1fr auto; align-items:end; gap:12px; margin-bottom:18px; padding:18px; border:1px solid #d1a23d66; border-radius:15px; background:#fffaf0; }
+.client-quick-form>div,.contact-import-head>div:first-child { display:flex; flex-direction:column; gap:4px; }
+.client-quick-form small,.contact-import-head small { color:var(--muted); line-height:1.4; }
+.client-quick-form label { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:10px; font-weight:800; }
+.client-quick-form input { width:100%; min-height:44px; padding:11px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.contact-import-panel { margin-bottom:18px; padding:20px; border:1px solid var(--line); border-radius:16px; background:#fff; }
+.contact-import-head { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.contact-import-head>div:last-child { display:flex; flex-wrap:wrap; gap:8px; }
+.file-button { cursor:pointer; display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 15px; }
+.file-button input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.import-tip { margin:14px 0 0; padding:11px 13px; border-radius:9px; background:#f6f2e8; color:var(--muted); font-size:12px; line-height:1.5; }
+.contact-review { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:330px; margin-top:16px; padding:12px; overflow:auto; border:1px solid var(--line); border-radius:12px; background:#faf9f5; }
+.contact-review-title { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
+.contact-review-title button { border:0; background:transparent; color:#8a6518; font-weight:800; }
+.contact-review>label { display:flex; align-items:center; gap:9px; min-height:54px; padding:9px; border:1px solid #e7e2d8; border-radius:9px; background:#fff; }
+.contact-review>label input { width:18px; height:18px; min-height:18px; accent-color:var(--gold); }
+.contact-review>label span { display:flex; flex-direction:column; min-width:0; }
+.contact-review>label b,.contact-review>label small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.contact-review>label small { color:var(--muted); margin-top:3px; }
+.import-confirm { margin-top:12px; }
 .catalog-form { display: grid; grid-template-columns: 1.4fr .8fr .8fr 1.4fr auto; align-items: end; gap: 10px; margin-bottom: 18px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: white; }
 .catalog-form label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 9px; font-weight: 800; }
 .catalog-form input { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: #faf9f5; }
@@ -1334,6 +1356,9 @@ a {
   .cash-form > button { grid-column: 1 / -1; }
   .cash-client-form { grid-template-columns: 1fr 1fr; }
   .cash-client-form > div,.cash-client-form > button { grid-column: 1 / -1; }
+  .client-quick-form { grid-template-columns:1fr 1fr; }
+  .client-quick-form>div,.client-quick-form>button { grid-column:1/-1; }
+  .contact-review { grid-template-columns:1fr 1fr; }
   .hero {
     grid-template-columns: 1fr;
     text-align: center;
@@ -1558,4 +1583,13 @@ a {
   .app-shell .pending,
   .app-shell .section-title .primary-button { font-size: 12px; }
   .app-shell .section-title .primary-button { min-height: 44px; }
+  .client-header-actions { width:100%; display:grid; grid-template-columns:1fr 1fr; }
+  .client-header-actions .client-count { grid-column:1/-1; }
+  .client-header-actions button { width:100%; min-height:44px; }
+  .client-quick-form { grid-template-columns:1fr; padding:14px; }
+  .contact-import-head { align-items:stretch; }
+  .contact-import-head>div:last-child { display:grid; grid-template-columns:1fr; }
+  .contact-import-head button,.contact-import-head .file-button { width:100%; justify-content:center; min-height:44px; }
+  .contact-review { grid-template-columns:1fr; }
+  .import-confirm { width:100%; min-height:44px; }
 }
