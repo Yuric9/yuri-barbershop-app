@@ -1,5 +1,5 @@
-import PortalClient from "../portal-client";
+import { redirect } from "next/navigation";
 
 export default function Demo() {
-  return <PortalClient user={{ name: "Visitante", email: "" }} role="client" demo />;
+  redirect("/");
 }
