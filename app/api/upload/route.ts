@@ -3,6 +3,12 @@ import { isAdminEmail } from "../../admin-access";
 
 export const dynamic = "force-dynamic";
 
+const ALLOWED_IMAGE_TYPES = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+
 function bucket() {
   const binding = (globalThis as typeof globalThis & { __YURI_BUCKET?: R2Bucket }).__YURI_BUCKET;
   if (!binding) throw new Error("Armazenamento de imagens indisponível");
@@ -18,18 +24,33 @@ export async function GET(request: Request) {
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("cache-control", "public, max-age=86400");
+  headers.set("x-content-type-options", "nosniff");
   return new Response(object.body, { headers });
 }
 
 export async function POST(request: Request) {
   const user = await getChatGPTUser();
-  if (!user || (user.role !== "admin" && !isAdminEmail(user.email))) return Response.json({ error: "Não autorizado" }, { status: 403 });
+  if (!user || (user.role !== "admin" && !isAdminEmail(user.email))) {
+    return Response.json({ error: "Não autorizado" }, { status: 403 });
+  }
+
   const data = await request.formData();
   const file = data.get("file");
-  if (!(file instanceof File)) return Response.json({ error: "Selecione uma imagem" }, { status: 400 });
-  if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) return Response.json({ error: "Use uma imagem de até 5 MB" }, { status: 400 });
-  const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "jpg";
+  if (!(file instanceof File)) {
+    return Response.json({ error: "Selecione uma imagem" }, { status: 400 });
+  }
+
+  const extension = ALLOWED_IMAGE_TYPES.get(file.type);
+  if (!extension || file.size <= 0 || file.size > 5 * 1024 * 1024) {
+    return Response.json(
+      { error: "Use uma imagem JPEG, PNG ou WebP de até 5 MB" },
+      { status: 400 },
+    );
+  }
+
   const key = `catalog/${crypto.randomUUID()}.${extension}`;
-  await bucket().put(key, file.stream(), { httpMetadata: { contentType: file.type } });
+  await bucket().put(key, file.stream(), {
+    httpMetadata: { contentType: file.type },
+  });
   return Response.json({ key, url: `/api/upload?key=${encodeURIComponent(key)}` });
 }
