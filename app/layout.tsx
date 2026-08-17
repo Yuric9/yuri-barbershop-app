@@ -5,6 +5,7 @@ import "./login-logo-fix.css";
 import "./mobile-booking.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
+import CatalogAdminEnhancer from "./catalog-admin-enhancer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,6 +54,7 @@ export default function RootLayout({
         <BookingDateGuard />
         {children}
         <MobileBookingBridge />
+        <CatalogAdminEnhancer />
       </body>
     </html>
   );
