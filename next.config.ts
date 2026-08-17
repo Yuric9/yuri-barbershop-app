@@ -18,12 +18,25 @@ const securityHeaders = [
   },
 ];
 
+const noStoreHeaders = [
+  { key: "Cache-Control", value: "private, no-store, max-age=0" },
+  { key: "Pragma", value: "no-cache" },
+];
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        source: "/api/data",
+        headers: noStoreHeaders,
+      },
+      {
+        source: "/api/auth/:path*",
+        headers: noStoreHeaders,
       },
     ];
   },

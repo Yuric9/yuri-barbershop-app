@@ -16,7 +16,9 @@ export async function POST(request: Request) {
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
   const requestedArea = body.area === "admin" ? "admin" : "client";
-  if (!/^\S+@\S+\.\S+$/.test(email) || !password) return Response.json({ error: "Informe e-mail e senha." }, { status: 400 });
+  if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email) || !password || password.length > 256) {
+    return Response.json({ error: "Informe e-mail e senha válidos." }, { status: 400 });
+  }
 
   stage = "proteção de acesso";
   const loginLimit = await checkLoginLimit(request, email);
@@ -34,8 +36,6 @@ export async function POST(request: Request) {
   let role = account?.role || "client";
 
   if (isRuntimeAdmin) {
-    // O segredo da Cloudflare é a fonte oficial do acesso administrativo.
-    // Validá-lo primeiro evita que um hash antigo salvo no D1 bloqueie o login.
     stage = "validação da senha administrativa";
     valid = await verifyPassword(password, admin.passwordHash);
     if (!valid && account?.active && account.passwordHash !== admin.passwordHash) {
