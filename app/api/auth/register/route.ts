@@ -6,10 +6,14 @@ import { hashPassword } from "../../../password-security";
 import { createSession, SESSION_COOKIE } from "../../../session-auth";
 import { adminRuntimeConfig } from "../../../runtime-config";
 import { consumeRegistrationLimit } from "../../../auth-rate-limit";
+import { rejectCrossSiteWrite } from "../../../request-security";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const originError = rejectCrossSiteWrite(request);
+  if (originError) return originError;
+
   if (await consumeRegistrationLimit(request)) {
     return Response.json({ error: "Muitos cadastros realizados desta conexão. Aguarde 15 minutos e tente novamente." }, { status: 429 });
   }

@@ -1,13 +1,31 @@
-import { and, eq, gt } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { and, eq, gt, lt } from "drizzle-orm";
+import { cookies, headers } from "next/headers";
 import { getDb } from "../db";
 import { accounts, authSessions, profiles } from "../db/schema";
 import { createSessionToken, hashSessionToken } from "./password-security";
 
 export const SESSION_COOKIE = "yuri_session";
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 14;
+
+async function isCrossSiteSessionRequest() {
+  const requestHeaders = await headers();
+  if (requestHeaders.get("sec-fetch-site") === "cross-site") return true;
+
+  const origin = requestHeaders.get("origin");
+  if (!origin) return false;
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
+  if (!host) return false;
+
+  try {
+    return new URL(origin).host !== host;
+  } catch {
+    return true;
+  }
+}
 
 export async function getSessionUser() {
+  if (await isCrossSiteSessionRequest()) return null;
+
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const tokenHash = await hashSessionToken(token);
@@ -29,7 +47,9 @@ export async function createSession(email: string) {
   const tokenHash = await hashSessionToken(token);
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + SESSION_DAYS * 86400000);
-  await getDb().insert(authSessions).values({ tokenHash, accountEmail: email, createdAt: createdAt.toISOString(), expiresAt: expiresAt.toISOString() });
+  const db = getDb();
+  await db.delete(authSessions).where(lt(authSessions.expiresAt, createdAt.toISOString()));
+  await db.insert(authSessions).values({ tokenHash, accountEmail: email, createdAt: createdAt.toISOString(), expiresAt: expiresAt.toISOString() });
   return { token, expiresAt };
 }
 

@@ -1,5 +1,5 @@
 import { getChatGPTUser } from "../../chatgpt-auth";
-import { isAdminEmail } from "../../admin-access";
+import { rejectCrossSiteWrite } from "../../request-security";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +29,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const originError = rejectCrossSiteWrite(request);
+  if (originError) return originError;
+
   const user = await getChatGPTUser();
-  if (!user || (user.role !== "admin" && !isAdminEmail(user.email))) {
+  if (!user || user.role !== "admin") {
     return Response.json({ error: "Não autorizado" }, { status: 403 });
   }
 
