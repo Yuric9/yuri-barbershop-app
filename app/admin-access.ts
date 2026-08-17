@@ -1,8 +1,10 @@
-const ADMIN_EMAILS = new Set([
-  "yure-c@hotmail.com",
-  "jesika.yure@gmail.com",
-]);
-
-export function isAdminEmail(email: string) {
-  return ADMIN_EMAILS.has(email.trim().toLowerCase());
+/**
+ * Administrative access must be granted by the authenticated account role,
+ * never by matching an e-mail address supplied by the request.
+ *
+ * Kept temporarily for compatibility with existing imports. All callers now
+ * receive false and therefore must rely on user.role === "admin".
+ */
+export function isAdminEmail(_email: string) {
+  return false;
 }
