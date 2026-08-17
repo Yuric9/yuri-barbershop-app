@@ -269,7 +269,7 @@ export async function GET(request: Request) {
     services: serviceRows,
     products: productRows,
     appointments: appointmentRows,
-    profiles: profileRows,
+    profiles: profileRows.filter((profile) => profile.email === user.email),
     transactions: transactionRows,
     occupiedTimes,
     clientSummaries,
