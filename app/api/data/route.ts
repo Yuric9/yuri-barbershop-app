@@ -22,7 +22,6 @@ import {
   commissionSettlements,
 } from "../../../db/schema";
 import { getChatGPTUser } from "../../chatgpt-auth";
-import { isAdminEmail } from "../../admin-access";
 import { hashPassword } from "../../password-security";
 
 export const dynamic = "force-dynamic";
@@ -136,7 +135,7 @@ export async function GET(request: Request) {
   if (!user) return unauthorized();
   await seedServices();
   const db = getDb();
-  const isAdmin = user.role === "admin" || isAdminEmail(user.email);
+  const isAdmin = user.role === "admin";
   const isBarber = user.role === "barber";
   if (isAdmin) {
     const owner = await db.select().from(collaborators).where(eq(collaborators.email, user.email)).limit(1);
@@ -166,31 +165,20 @@ export async function GET(request: Request) {
     db.select().from(services).where(eq(services.active, true)),
     db.select().from(products).where(eq(products.active, true)),
     isAdmin
-      ? db
-          .select()
-          .from(appointments)
-          .orderBy(desc(appointments.date), desc(appointments.time))
+      ? db.select().from(appointments).orderBy(desc(appointments.date), desc(appointments.time))
       : isBarber && currentCollaborator
         ? db.select().from(appointments).where(eq(appointments.collaboratorId, currentCollaborator.id)).orderBy(desc(appointments.date), desc(appointments.time))
-      : db
-          .select()
-          .from(appointments)
-          .where(eq(appointments.clientEmail, user.email))
-          .orderBy(desc(appointments.date)),
-    isAdmin
-      ? db.select().from(profiles).orderBy(profiles.name)
-      : db.select().from(profiles).where(eq(profiles.email, user.email)),
+        : db.select().from(appointments).where(eq(appointments.clientEmail, user.email)).orderBy(desc(appointments.date)),
+    isAdmin ? db.select().from(profiles).orderBy(profiles.name) : db.select().from(profiles).where(eq(profiles.email, user.email)),
     isAdmin
       ? db.select().from(transactions).orderBy(desc(transactions.date))
-      : isBarber && currentCollaborator ? db.select().from(transactions).where(eq(transactions.collaboratorId, currentCollaborator.id)).orderBy(desc(transactions.date)) : Promise.resolve([]),
+      : isBarber && currentCollaborator
+        ? db.select().from(transactions).where(eq(transactions.collaboratorId, currentCollaborator.id)).orderBy(desc(transactions.date))
+        : Promise.resolve([]),
     db.select().from(promotions).where(eq(promotions.active, true)).orderBy(desc(promotions.id)),
     db.select().from(catalogItems).where(eq(catalogItems.active, true)).orderBy(desc(catalogItems.id)),
-    isAdmin
-      ? db.select().from(subscriptions).orderBy(desc(subscriptions.id))
-      : db.select().from(subscriptions).where(eq(subscriptions.clientEmail, user.email)).orderBy(desc(subscriptions.id)),
-    isAdmin
-      ? db.select().from(messages).where(eq(messages.recipientEmail, "admin")).orderBy(desc(messages.id))
-      : db.select().from(messages).where(eq(messages.recipientEmail, user.email)).orderBy(desc(messages.id)),
+    isAdmin ? db.select().from(subscriptions).orderBy(desc(subscriptions.id)) : db.select().from(subscriptions).where(eq(subscriptions.clientEmail, user.email)).orderBy(desc(subscriptions.id)),
+    isAdmin ? db.select().from(messages).where(eq(messages.recipientEmail, "admin")).orderBy(desc(messages.id)) : db.select().from(messages).where(eq(messages.recipientEmail, user.email)).orderBy(desc(messages.id)),
     isAdmin ? db.select().from(reviews).orderBy(desc(reviews.id)) : db.select().from(reviews).where(eq(reviews.clientEmail, user.email)).orderBy(desc(reviews.id)),
     isAdmin ? db.select().from(waitlist).orderBy(desc(waitlist.id)) : db.select().from(waitlist).where(eq(waitlist.clientEmail, user.email)).orderBy(desc(waitlist.id)),
     db.select().from(scheduleBlocks).orderBy(desc(scheduleBlocks.date)),
@@ -199,7 +187,11 @@ export async function GET(request: Request) {
     isAdmin ? db.select().from(marketingContacts).orderBy(desc(marketingContacts.updatedAt)) : Promise.resolve([]),
     isAdmin ? db.select().from(collaborators).orderBy(collaborators.name) : db.select().from(collaborators).where(eq(collaborators.active, true)).orderBy(collaborators.name),
     db.select().from(collaboratorServices).where(eq(collaboratorServices.active, true)),
-    isAdmin || (isBarber && currentCollaborator) ? db.select().from(commissionSettlements).orderBy(desc(commissionSettlements.id)) : Promise.resolve([]),
+    isAdmin
+      ? db.select().from(commissionSettlements).orderBy(desc(commissionSettlements.id))
+      : isBarber && currentCollaborator
+        ? db.select().from(commissionSettlements).where(eq(commissionSettlements.collaboratorId, currentCollaborator.id)).orderBy(desc(commissionSettlements.id))
+        : Promise.resolve([]),
   ]);
   const requestUrl = new URL(request.url);
   const selectedDate = requestUrl.searchParams.get("date");
@@ -256,6 +248,20 @@ export async function GET(request: Request) {
         };
       })
     : [];
+  const publicCollaborators = collaboratorRows.map((item) => ({ id: item.id, name: item.name, active: item.active }));
+  const visibleCollaboratorServices = isAdmin
+    ? collaboratorServiceRows
+    : isBarber && currentCollaborator
+      ? collaboratorServiceRows.filter((item) => item.collaboratorId === currentCollaborator.id)
+      : collaboratorServiceRows.map((item) => ({ id: item.id, collaboratorId: item.collaboratorId, serviceId: item.serviceId, active: item.active }));
+  const visibleBlocks = isAdmin
+    ? blockRows
+    : isBarber && currentCollaborator
+      ? blockRows.filter((item) => !item.collaboratorId || item.collaboratorId === currentCollaborator.id)
+      : [];
+  const settings = settingsRows[0] || { monthlyGoalCents: 500000, loyaltyTarget: 10, loyaltyReward: "1 atendimento grátis" };
+  const visibleSettings = isAdmin ? settings : { loyaltyTarget: settings.loyaltyTarget, loyaltyReward: settings.loyaltyReward };
+
   return Response.json({
     isAdmin,
     isBarber,
@@ -273,12 +279,12 @@ export async function GET(request: Request) {
     messages: messageRows,
     reviews: reviewRows,
     waitlist: waitlistRows,
-    scheduleBlocks: blockRows,
-    settings: settingsRows[0] || { monthlyGoalCents: 500000, loyaltyTarget: 10, loyaltyReward: "1 atendimento grátis" },
+    scheduleBlocks: visibleBlocks,
+    settings: visibleSettings,
     subscriptionCampaigns: subscriptionCampaignRows,
     marketingContacts: marketingContactRows,
-    collaborators: collaboratorRows,
-    collaboratorServices: collaboratorServiceRows,
+    collaborators: isAdmin ? collaboratorRows : publicCollaborators,
+    collaboratorServices: visibleCollaboratorServices,
     commissionSettlements: settlementRows,
   });
 }
@@ -289,49 +295,22 @@ export async function POST(request: Request) {
   const db = getDb();
   const body = (await request.json()) as Record<string, unknown>;
   const action = String(body.action || "");
-  const isAdmin = user.role === "admin" || isAdminEmail(user.email);
+  const isAdmin = user.role === "admin";
   const isBarber = user.role === "barber";
   const [currentCollaborator] = isBarber ? await db.select().from(collaborators).where(eq(collaborators.email, user.email)).limit(1) : [];
   const now = new Date().toISOString();
 
   if (action === "profile") {
     const name = String(body.name || user.displayName).trim();
-    await db
-      .insert(profiles)
-      .values({
-        email: user.email,
-        name,
-        phone: String(body.phone || ""),
-        birthDate: String(body.birthDate || ""),
-        createdAt: now,
-      })
-      .onConflictDoUpdate({
-        target: profiles.email,
-        set: {
-          name,
-          phone: String(body.phone || ""),
-          birthDate: String(body.birthDate || ""),
-        },
-      });
+    await db.insert(profiles).values({ email: user.email, name, phone: String(body.phone || ""), birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name, phone: String(body.phone || ""), birthDate: String(body.birthDate || "") } });
     return Response.json({ ok: true });
   }
   if (action === "appointment") {
     const serviceId = Number(body.serviceId);
-    const [service] = await db
-      .select()
-      .from(services)
-      .where(and(eq(services.id, serviceId), eq(services.active, true)))
-      .limit(1);
-    if (!service)
-      return Response.json({ error: "Serviço inválido" }, { status: 400 });
+    const [service] = await db.select().from(services).where(and(eq(services.id, serviceId), eq(services.active, true))).limit(1);
+    if (!service) return Response.json({ error: "Serviço inválido" }, { status: 400 });
     const productId = body.productId ? Number(body.productId) : null;
-    const [product] = productId
-      ? await db
-          .select()
-          .from(products)
-          .where(and(eq(products.id, productId), eq(products.active, true)))
-          .limit(1)
-      : [undefined];
+    const [product] = productId ? await db.select().from(products).where(and(eq(products.id, productId), eq(products.active, true))).limit(1) : [undefined];
     const date = String(body.date || "");
     const time = String(body.time || "");
     const requestedCollaboratorId = Number(body.collaboratorId || 0);
@@ -339,21 +318,9 @@ export async function POST(request: Request) {
     let collaborator = requestedCollaboratorId ? activeCollaborators.find((item) => item.id === requestedCollaboratorId) : undefined;
     if (!collaborator && activeCollaborators.length === 1) collaborator = activeCollaborators[0];
     if (requestedCollaboratorId && !collaborator) return Response.json({ error: "Profissional indisponível" }, { status: 400 });
-    if (!date || !time)
-      return Response.json(
-        { error: "Escolha uma data e um horário" },
-        { status: 400 },
-      );
-    if (date < localToday())
-      return Response.json(
-        { error: "Não é possível solicitar um horário em uma data passada." },
-        { status: 400 },
-      );
-    if (!allowedBookingTimes(date, service.durationMin).includes(time))
-      return Response.json(
-        { error: "Este serviço não cabe neste horário antes do fechamento. Escolha outro." },
-        { status: 400 },
-      );
+    if (!date || !time) return Response.json({ error: "Escolha uma data e um horário" }, { status: 400 });
+    if (date < localToday()) return Response.json({ error: "Não é possível solicitar um horário em uma data passada." }, { status: 400 });
+    if (!allowedBookingTimes(date, service.durationMin).includes(time)) return Response.json({ error: "Este serviço não cabe neste horário antes do fechamento. Escolha outro." }, { status: 400 });
 
     const requestedStart = timeToMinutes(time);
     const dayBlocks = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.date, date));
@@ -363,65 +330,38 @@ export async function POST(request: Request) {
       const blockStart = timeToMinutes(block.time);
       return Number.isFinite(blockStart) && overlaps(requestedStart, service.durationMin, blockStart, 30);
     });
-    if (blocked)
-      return Response.json(
-        { error: "Este período está bloqueado na agenda. Escolha outro horário." },
-        { status: 409 },
-      );
+    if (blocked) return Response.json({ error: "Este período está bloqueado na agenda. Escolha outro horário." }, { status: 409 });
     const dayAppointments = await db.select().from(appointments).where(eq(appointments.date, date));
     const activeAppointments = dayAppointments.filter((item) => item.status !== "Cancelado" && (!collaborator || !item.collaboratorId || item.collaboratorId === collaborator.id));
-    const durationRows = activeAppointments.length
-      ? await db.select({ id: services.id, durationMin: services.durationMin }).from(services)
-      : [];
+    const durationRows = activeAppointments.length ? await db.select({ id: services.id, durationMin: services.durationMin }).from(services) : [];
     const durationByService = new Map(durationRows.map((item) => [item.id, item.durationMin]));
     const conflict = activeAppointments.some((item) => {
       const existingStart = timeToMinutes(item.time);
-      return Number.isFinite(existingStart) && overlaps(
-        requestedStart,
-        service.durationMin,
-        existingStart,
-        durationByService.get(item.serviceId) || 30,
-      );
+      return Number.isFinite(existingStart) && overlaps(requestedStart, service.durationMin, existingStart, durationByService.get(item.serviceId) || 30);
     });
-    if (conflict)
-      return Response.json(
-        { error: "Este período acabou de ser reservado. Escolha outro horário." },
-        { status: 409 },
-      );
-    const profile = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.email, user.email))
-      .limit(1);
-    const [created] = await db
-      .insert(appointments)
-      .values({
-        clientEmail: user.email,
-        clientName: profile[0]?.name || user.displayName,
-        serviceId,
-        serviceName: service.name,
-        productId: product?.id,
-        productName: product?.name,
-        date,
-        time,
-        totalCents: service.priceCents + (product?.priceCents || 0),
-        collaboratorId: collaborator?.id,
-        collaboratorName: collaborator?.name || "A definir",
-        createdAt: now,
-      })
-      .returning();
+    if (conflict) return Response.json({ error: "Este período acabou de ser reservado. Escolha outro horário." }, { status: 409 });
+    const profile = await db.select().from(profiles).where(eq(profiles.email, user.email)).limit(1);
+    const [created] = await db.insert(appointments).values({
+      clientEmail: user.email,
+      clientName: profile[0]?.name || user.displayName,
+      serviceId,
+      serviceName: service.name,
+      productId: product?.id,
+      productName: product?.name,
+      date,
+      time,
+      totalCents: service.priceCents + (product?.priceCents || 0),
+      collaboratorId: collaborator?.id,
+      collaboratorName: collaborator?.name || "A definir",
+      createdAt: now,
+    }).returning();
     return Response.json({ ok: true, appointment: created });
   }
   if (action === "subscription-request") {
     const existing = await db.select().from(subscriptions).where(eq(subscriptions.clientEmail, user.email));
-    if (existing.some((item) => item.status === "Ativa" || item.status === "Aguardando pagamento"))
-      return Response.json({ error: "Você já possui uma assinatura ativa ou em análise." }, { status: 409 });
+    if (existing.some((item) => item.status === "Ativa" || item.status === "Aguardando pagamento")) return Response.json({ error: "Você já possui uma assinatura ativa ou em análise." }, { status: 409 });
     const profile = await db.select().from(profiles).where(eq(profiles.email, user.email)).limit(1);
-    await db.insert(subscriptions).values({
-      clientEmail: user.email,
-      clientName: profile[0]?.name || user.displayName,
-      createdAt: now,
-    });
+    await db.insert(subscriptions).values({ clientEmail: user.email, clientName: profile[0]?.name || user.displayName, createdAt: now });
     return Response.json({ ok: true });
   }
   if (action === "message-send") {
@@ -430,14 +370,7 @@ export async function POST(request: Request) {
     if (!messageBody) return Response.json({ error: "Escreva uma mensagem" }, { status: 400 });
     const recipientEmail = isAdmin ? String(body.recipientEmail || "").trim().toLowerCase() : "admin";
     if (!recipientEmail) return Response.json({ error: "Escolha um cliente" }, { status: 400 });
-    await db.insert(messages).values({
-      senderEmail: user.email,
-      senderName: isAdmin ? "Yuri Barbershop" : user.displayName,
-      recipientEmail,
-      subject,
-      body: messageBody,
-      createdAt: now,
-    });
+    await db.insert(messages).values({ senderEmail: user.email, senderName: isAdmin ? "Yuri Barbershop" : user.displayName, recipientEmail, subject, body: messageBody, createdAt: now });
     return Response.json({ ok: true });
   }
   if (action === "message-read") {
@@ -457,11 +390,8 @@ export async function POST(request: Request) {
   if (action === "promotion-engagement") {
     const id = Number(body.id);
     if (!id) return Response.json({ error: "Promoção inválida" }, { status: 400 });
-    if (body.kind === "click") {
-      await db.update(promotions).set({ clicks: sql`${promotions.clicks} + 1` }).where(eq(promotions.id, id));
-    } else {
-      await db.update(promotions).set({ views: sql`${promotions.views} + 1` }).where(eq(promotions.id, id));
-    }
+    if (body.kind === "click") await db.update(promotions).set({ clicks: sql`${promotions.clicks} + 1` }).where(eq(promotions.id, id));
+    else await db.update(promotions).set({ views: sql`${promotions.views} + 1` }).where(eq(promotions.id, id));
     return Response.json({ ok: true });
   }
   if (isBarber && action === "appointment-status") {
@@ -503,9 +433,8 @@ export async function POST(request: Request) {
     const profilesByPhone = new Map(profileRows.map((profile) => [String(profile.phone || "").replace(/\D/g, ""), profile]));
     for (const [phoneKey, contact] of unique) {
       const existing = profilesByPhone.get(phoneKey);
-      if (existing) {
-        await db.update(profiles).set({ name: contact.name, phone: contact.phone }).where(eq(profiles.email, existing.email));
-      } else {
+      if (existing) await db.update(profiles).set({ name: contact.name, phone: contact.phone }).where(eq(profiles.email, existing.email));
+      else {
         const email = `cliente-${phoneKey}@cadastro.local`;
         await db.insert(profiles).values({ email, name: contact.name, phone: contact.phone, birthDate: "", createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name: contact.name, phone: contact.phone } });
       }
@@ -513,74 +442,29 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, imported: unique.size });
   }
   if (action === "service") {
-    await db
-      .insert(services)
-      .values({
-        name: String(body.name),
-        priceCents: Math.round(Number(body.price) * 100),
-        durationMin: Number(body.duration),
-      });
+    await db.insert(services).values({ name: String(body.name), priceCents: Math.round(Number(body.price) * 100), durationMin: Number(body.duration) });
   } else if (action === "service-update") {
     const name = String(body.name || "").trim();
     const priceCents = Math.round(Number(body.price) * 100);
     const durationMin = Number(body.duration);
-    if (!name || priceCents <= 0 || durationMin < 5)
-      return Response.json({ error: "Dados do serviço inválidos" }, { status: 400 });
+    if (!name || priceCents <= 0 || durationMin < 5) return Response.json({ error: "Dados do serviço inválidos" }, { status: 400 });
     await db.update(services).set({ name, priceCents, durationMin, active: body.active !== false }).where(eq(services.id, Number(body.id)));
   } else if (action === "product") {
-    await db
-      .insert(products)
-      .values({
-        name: String(body.name),
-        description: String(body.description || ""),
-        priceCents: Math.round(Number(body.price) * 100),
-        stock: Number(body.stock || 0),
-        imageKey: String(body.imageKey || ""),
-        featured: body.featured === true,
-        showOnLogin: body.showOnLogin === true,
-      });
+    await db.insert(products).values({ name: String(body.name), description: String(body.description || ""), priceCents: Math.round(Number(body.price) * 100), stock: Number(body.stock || 0), imageKey: String(body.imageKey || ""), featured: body.featured === true, showOnLogin: body.showOnLogin === true });
   } else if (action === "promotion") {
-    await db.insert(promotions).values({
-      title: String(body.title || "").trim(),
-      description: String(body.description || "").trim(),
-      validUntil: String(body.validUntil || ""),
-      imageKey: String(body.imageKey || ""),
-      showOnLogin: false,
-      audience: body.audience === "Assinantes" ? "Assinantes" : "Todos",
-      createdAt: now,
-    });
+    await db.insert(promotions).values({ title: String(body.title || "").trim(), description: String(body.description || "").trim(), validUntil: String(body.validUntil || ""), imageKey: String(body.imageKey || ""), showOnLogin: false, audience: body.audience === "Assinantes" ? "Assinantes" : "Todos", createdAt: now });
   } else if (action === "product-campaign") {
     await db.update(products).set({ featured: body.featured === true, showOnLogin: body.showOnLogin === true }).where(eq(products.id, Number(body.id)));
   } else if (action === "subscription-campaign") {
     await db.insert(subscriptionCampaigns).values({ title: String(body.title || "Clube Yuri").trim(), description: String(body.description || "").trim(), imageKey: String(body.imageKey || ""), showOnLogin: body.showOnLogin === true, createdAt: now });
   } else if (action === "catalog-item") {
-    await db.insert(catalogItems).values({
-      name: String(body.name || "").trim(),
-      category: String(body.category || "corte"),
-      description: String(body.description || "").trim(),
-      imageKey: String(body.imageKey || ""),
-      createdAt: now,
-    });
+    await db.insert(catalogItems).values({ name: String(body.name || "").trim(), category: String(body.category || "corte"), description: String(body.description || "").trim(), imageKey: String(body.imageKey || ""), createdAt: now });
   } else if (action === "transaction") {
     const serviceId = body.serviceId ? Number(body.serviceId) : null;
     const [linkedService] = serviceId ? await db.select().from(services).where(eq(services.id, serviceId)).limit(1) : [];
     const clientEmail = String(body.clientEmail || "").trim().toLowerCase();
     const [linkedClient] = clientEmail ? await db.select().from(profiles).where(eq(profiles.email, clientEmail)).limit(1) : [];
-    await db
-      .insert(transactions)
-      .values({
-        kind: String(body.kind),
-        description: String(body.description),
-        amountCents: Math.round(Number(body.amount) * 100),
-        date: String(body.date),
-        clientEmail: linkedClient?.email || "",
-        clientName: linkedClient?.name || "",
-        serviceId: linkedService?.id || null,
-        serviceName: linkedService?.name || "",
-        collaboratorId: body.collaboratorId ? Number(body.collaboratorId) : null,
-        paymentMethod: String(body.paymentMethod || ""),
-        createdAt: now,
-      });
+    await db.insert(transactions).values({ kind: String(body.kind), description: String(body.description), amountCents: Math.round(Number(body.amount) * 100), date: String(body.date), clientEmail: linkedClient?.email || "", clientName: linkedClient?.name || "", serviceId: linkedService?.id || null, serviceName: linkedService?.name || "", collaboratorId: body.collaboratorId ? Number(body.collaboratorId) : null, paymentMethod: String(body.paymentMethod || ""), createdAt: now });
   } else if (action === "appointment-status") {
     const [appointment] = await db.select().from(appointments).where(eq(appointments.id, Number(body.id))).limit(1);
     if (!appointment) return Response.json({ error: "Agendamento não encontrado" }, { status: 404 });
@@ -597,11 +481,11 @@ export async function POST(request: Request) {
     if (!current) return Response.json({ error: "Assinatura não encontrada" }, { status: 404 });
     if (operation === "extend") {
       const base = current.endDate && current.endDate >= new Date().toISOString().slice(0, 10) ? current.endDate : new Date().toISOString().slice(0, 10);
-      const end = new Date(`${base}T12:00:00`); end.setDate(end.getDate() + 30);
+      const end = new Date(`${base}T12:00:00`);
+      end.setDate(end.getDate() + 30);
       await db.update(subscriptions).set({ status: "Ativa", endDate: end.toISOString().slice(0, 10) }).where(eq(subscriptions.id, id));
-    } else if (["Bloqueada", "Ativa", "Cancelada"].includes(operation)) {
-      await db.update(subscriptions).set({ status: operation }).where(eq(subscriptions.id, id));
-    } else if (operation === "message") {
+    } else if (["Bloqueada", "Ativa", "Cancelada"].includes(operation)) await db.update(subscriptions).set({ status: operation }).where(eq(subscriptions.id, id));
+    else if (operation === "message") {
       await db.update(subscriptions).set({ adminMessage: String(body.message || "").trim() }).where(eq(subscriptions.id, id));
       const internalMessage = String(body.message || "").trim();
       if (internalMessage) await db.insert(messages).values({ senderEmail: user.email, senderName: "Yuri Barbershop", recipientEmail: current.clientEmail, subject: "Mensagem sobre sua assinatura", body: internalMessage, createdAt: now });
@@ -621,16 +505,20 @@ export async function POST(request: Request) {
       const password = String(body.password || "");
       if (password.length < 8) return Response.json({ error: "Crie uma senha temporária com pelo menos 8 caracteres" }, { status: 400 });
       await db.insert(collaborators).values({ email, name, phone: String(body.phone || ""), defaultCommissionPercent: percent, active: true, owner: false, createdAt: now });
-      await db.insert(accounts).values({ email, passwordHash: await hashPassword(password), role: "barber", active: true, createdAt: now }).onConflictDoUpdate({ target: accounts.email, set: { passwordHash: await hashPassword(password), role: "barber", active: true } });
+      const passwordHash = await hashPassword(password);
+      await db.insert(accounts).values({ email, passwordHash, role: "barber", active: true, createdAt: now }).onConflictDoUpdate({ target: accounts.email, set: { passwordHash, role: "barber", active: true } });
     }
   } else if (action === "collaborator-service") {
-    const collaboratorId = Number(body.collaboratorId); const serviceId = Number(body.serviceId);
+    const collaboratorId = Number(body.collaboratorId);
+    const serviceId = Number(body.serviceId);
     const value = body.commissionPercent === "" || body.commissionPercent == null ? null : Math.max(0, Math.min(100, Math.round(Number(body.commissionPercent))));
     const [existing] = await db.select().from(collaboratorServices).where(and(eq(collaboratorServices.collaboratorId, collaboratorId), eq(collaboratorServices.serviceId, serviceId))).limit(1);
     if (existing) await db.update(collaboratorServices).set({ commissionPercent: value, active: body.active !== false }).where(eq(collaboratorServices.id, existing.id));
     else await db.insert(collaboratorServices).values({ collaboratorId, serviceId, commissionPercent: value, active: body.active !== false });
   } else if (action === "commission-settle") {
-    const collaboratorId = Number(body.collaboratorId); const periodStart = String(body.periodStart); const periodEnd = String(body.periodEnd);
+    const collaboratorId = Number(body.collaboratorId);
+    const periodStart = String(body.periodStart);
+    const periodEnd = String(body.periodEnd);
     const rows = await db.select().from(appointments).where(eq(appointments.collaboratorId, collaboratorId));
     const amountCents = rows.filter((item) => item.status === "Finalizado" && item.date >= periodStart && item.date <= periodEnd).reduce((sum, item) => sum + item.commissionCents, 0);
     await db.insert(commissionSettlements).values({ collaboratorId, periodStart, periodEnd, amountCents, note: String(body.note || ""), paidAt: now, createdAt: now });
