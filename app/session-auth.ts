@@ -1,11 +1,11 @@
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getDb } from "../db";
 import { accounts, authSessions, profiles } from "../db/schema";
 import { createSessionToken, hashSessionToken } from "./password-security";
 
 export const SESSION_COOKIE = "yuri_session";
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 14;
 
 export async function getSessionUser() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
@@ -29,7 +29,9 @@ export async function createSession(email: string) {
   const tokenHash = await hashSessionToken(token);
   const createdAt = new Date();
   const expiresAt = new Date(createdAt.getTime() + SESSION_DAYS * 86400000);
-  await getDb().insert(authSessions).values({ tokenHash, accountEmail: email, createdAt: createdAt.toISOString(), expiresAt: expiresAt.toISOString() });
+  const db = getDb();
+  await db.delete(authSessions).where(lt(authSessions.expiresAt, createdAt.toISOString()));
+  await db.insert(authSessions).values({ tokenHash, accountEmail: email, createdAt: createdAt.toISOString(), expiresAt: expiresAt.toISOString() });
   return { token, expiresAt };
 }
 
