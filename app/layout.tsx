@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./login-logo-fix.css";
+import "./mobile-booking.css";
 import BookingDateGuard from "./booking-date-guard";
+import MobileBookingBridge from "./mobile-booking-bridge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,6 +52,7 @@ export default function RootLayout({
       >
         <BookingDateGuard />
         {children}
+        <MobileBookingBridge />
       </body>
     </html>
   );
