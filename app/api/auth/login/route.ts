@@ -6,12 +6,16 @@ import { verifyPassword } from "../../../password-security";
 import { adminRuntimeConfig } from "../../../runtime-config";
 import { checkLoginLimit, clearLoginFailures, recordLoginFailure } from "../../../auth-rate-limit";
 import { createSession, SESSION_COOKIE } from "../../../session-auth";
+import { rejectCrossSiteWrite } from "../../../request-security";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
  let stage = "entrada";
  try {
+  const originError = rejectCrossSiteWrite(request);
+  if (originError) return originError;
+
   const body = await request.json() as Record<string, unknown>;
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
