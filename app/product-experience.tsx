@@ -138,7 +138,7 @@ export default function ProductExperience(){
     if(e.touches.length!==2||!pinchStart.current)return;
     const [a,b]=[e.touches[0],e.touches[1]];
     const distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-    const next=Math.min(4,Math.max(1,pinchStart.current.scale*(distance/pinchStart.current.distance)));
+    const next=Math.min(2.2,Math.max(1,pinchStart.current.scale*(distance/pinchStart.current.distance)));
     setScale(next);
   }
 
@@ -154,7 +154,7 @@ export default function ProductExperience(){
         <button onClick={()=>setScale(s=>Math.min(4,s+.25))} aria-label="Aumentar zoom">+</button>
         <button onClick={()=>setScale(1)}>Ajustar</button>
       </div>
-      <p className="product-zoom-hint">Toque com dois dedos para ampliar. No computador, use a roda do mouse ou os controles.</p>
+      <p className="product-zoom-hint">No computador, use a roda do mouse ou os controles para ampliar.</p>
     </div>}
 
     {editing&&<div className="product-edit-overlay" role="dialog" aria-modal="true" aria-label={`Editar ${editing.name}`} onClick={()=>setEditing(null)}>
