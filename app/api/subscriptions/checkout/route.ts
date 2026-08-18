@@ -14,8 +14,20 @@ import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
+const CLUBE_YURI_TEST_APP_ID = "8874721750108093";
+const CLUBE_YURI_TEST_SELLER_ID = "3625511764";
+
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function tokenIdentity(accessToken: string) {
+  const parts = accessToken.trim().split("-");
+  if (parts.length < 4 || parts[0] !== "APP_USR") return { appId: "", sellerId: "" };
+  return {
+    appId: parts[1] || "",
+    sellerId: parts[parts.length - 1] || "",
+  };
 }
 
 export async function POST(request: Request) {
@@ -48,7 +60,23 @@ export async function POST(request: Request) {
     current = created;
   }
 
-  const { testPayerEmail } = mercadoPagoRuntimeConfig();
+  const { testPayerEmail, accessToken } = mercadoPagoRuntimeConfig();
+
+  // Durante este teste controlado, pare antes de abrir o Mercado Pago se o
+  // Worker ainda estiver usando a credencial da aplicação/conta real.
+  // Apenas IDs públicos são comparados; o token nunca é devolvido ao navegador.
+  if (testPayerEmail) {
+    const identity = tokenIdentity(accessToken);
+    if (identity.appId !== CLUBE_YURI_TEST_APP_ID || identity.sellerId !== CLUBE_YURI_TEST_SELLER_ID) {
+      return Response.json(
+        {
+          error: `Credencial de teste ainda não está ativa no servidor. Aplicação em uso: ${identity.appId || "não identificada"}; vendedor em uso: ${identity.sellerId || "não identificado"}. O Clube Yuri Teste deve usar aplicação ${CLUBE_YURI_TEST_APP_ID} e vendedor ${CLUBE_YURI_TEST_SELLER_ID}.`,
+        },
+        { status: 503 },
+      );
+    }
+  }
+
   const existingPayment = await getPaymentLinkBySubscription(current.id);
   // Em produção, reaproveitamos um checkout pendente. Durante o teste, sempre
   // criamos um novo preapproval para não reutilizar links gerados com payer_email real.
