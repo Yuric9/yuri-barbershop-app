@@ -6,7 +6,28 @@ type CatalogItem = {
   src: string;
   title: string;
   description: string;
+  category: string;
 };
+
+const WHATSAPP_NUMBER = "5562981007636";
+
+function normalizeCategory(value: string) {
+  const text = value.toLowerCase();
+  if (text.includes("barba")) return "barba";
+  if (text.includes("quím") || text.includes("quim") || text.includes("procedimento")) return "quimica";
+  return "corte";
+}
+
+function whatsappMessage(item: CatalogItem) {
+  const category = normalizeCategory(item.category);
+  if (category === "barba") {
+    return `Olá! Vi a barba ${item.title} no catálogo da Yuri Barbershop e gostei desse estilo. Podemos fazer essa barba em mim? Gostaria de saber se combina comigo e como podemos agendar.`;
+  }
+  if (category === "quimica") {
+    return `Olá! Vi o procedimento ${item.title} no catálogo da Yuri Barbershop e gostei do resultado. Gostaria de saber se ele é indicado para o meu cabelo e como podemos agendar uma avaliação.`;
+  }
+  return `Olá! Vi o corte ${item.title} no catálogo da Yuri Barbershop e gostei desse estilo. Podemos fazer esse corte em mim? Gostaria de saber se combina comigo e como podemos agendar.`;
+}
 
 export default function CatalogImageViewer() {
   const [gallery, setGallery] = useState<CatalogItem[]>([]);
@@ -58,6 +79,7 @@ export default function CatalogImageViewer() {
             src: image.src,
             title: card.querySelector("h3")?.textContent?.trim() || image.alt || "Estilo",
             description: card.querySelector("p")?.textContent?.trim() || "",
+            category: card.querySelector("small")?.textContent?.trim() || "corte",
           } satisfies CatalogItem;
         })
         .filter((item): item is CatalogItem => Boolean(item));
@@ -122,6 +144,10 @@ export default function CatalogImageViewer() {
 
   if (!current || currentIndex === null) return null;
 
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage(current))}`;
+  const category = normalizeCategory(current.category);
+  const whatsappLabel = category === "barba" ? "Quero esta barba" : category === "quimica" ? "Quero este procedimento" : "Quero este corte";
+
   return (
     <div
       className="catalog-lightbox"
@@ -171,7 +197,15 @@ export default function CatalogImageViewer() {
           <small>REFERÊNCIA DO CATÁLOGO</small>
           <h2>{current.title}</h2>
           {current.description && <p>{current.description}</p>}
-          <span>Deslize para o lado para ver o próximo modelo. Use dois dedos para ampliar a imagem.</span>
+          <a className="catalog-whatsapp-action" href={whatsappUrl} target="_blank" rel="noreferrer">
+            <span className="catalog-whatsapp-icon" aria-hidden="true">◉</span>
+            <span className="catalog-whatsapp-text">
+              <strong>{whatsappLabel}</strong>
+              <small>Conversar pelo WhatsApp</small>
+            </span>
+            <b aria-hidden="true">›</b>
+          </a>
+          <span className="catalog-lightbox-hint">Deslize para o lado para ver o próximo modelo. Use dois dedos para ampliar a imagem.</span>
         </div>
       </div>
     </div>
