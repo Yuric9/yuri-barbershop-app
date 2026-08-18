@@ -71,7 +71,7 @@ export default function CatalogImageViewer() {
           <img src={current.src} alt={current.title} />
         </div>
         <div className="catalog-lightbox-copy">
-          <small>REFERÊNCIA DE CORTE</small>
+          <small>REFERÊNCIA DO CATÁLOGO</small>
           <h2>{current.title}</h2>
           {current.description && <p>{current.description}</p>}
           <span>Toque na imagem e use dois dedos para ampliar.</span>
