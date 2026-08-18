@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
+import {
+  mercadoPagoRequest,
+  syncLocalSubscriptionFromMercadoPago,
+  type MercadoPagoPreapproval,
+} from "../../../mercadopago-subscriptions";
 
 export const runtime = "edge";
 
@@ -49,7 +54,6 @@ async function validMercadoPagoSignature(request: Request, dataId: string) {
   const { ts, v1 } = parseSignature(xSignature);
   if (!ts || !v1) return { ok: false, reason: "invalid_signature_header" } as const;
 
-  // Formato oficial do Mercado Pago para validação de Webhooks.
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const expected = await hmacSha256Hex(webhookSecret, manifest);
   return constantTimeEqual(expected.toLowerCase(), v1.toLowerCase())
@@ -66,7 +70,8 @@ function acceptedSubscriptionTopic(type: string) {
 }
 
 export async function GET() {
-  const configured = Boolean(mercadoPagoRuntimeConfig().webhookSecret);
+  const config = mercadoPagoRuntimeConfig();
+  const configured = Boolean(config.webhookSecret && config.accessToken);
   return NextResponse.json(
     { service: "mercadopago-webhook", ready: configured },
     { status: configured ? 200 : 503, headers: { "cache-control": "no-store" } },
@@ -97,17 +102,44 @@ export async function POST(request: Request) {
   }
 
   if (!acceptedSubscriptionTopic(type)) {
-    // O endpoint é exclusivo do Clube Yuri; eventos não relacionados são
-    // reconhecidos sem gerar qualquer alteração interna.
     return NextResponse.json({ ok: true, ignored: true }, { status: 200 });
   }
 
-  // Segurança por desenho: nesta primeira etapa o webhook apenas autentica e
-  // reconhece o evento. A sincronização de assinatura será habilitada quando o
-  // Access Token de teste estiver configurado e o recurso puder ser consultado
-  // diretamente na API do Mercado Pago antes de qualquer mudança no banco.
+  const { accessToken } = mercadoPagoRuntimeConfig();
+  if (!accessToken) {
+    return NextResponse.json({ ok: false, error: "access_token_not_configured" }, { status: 503 });
+  }
+
+  let providerResponse: Response;
+  try {
+    providerResponse = await mercadoPagoRequest(`/preapproval/${encodeURIComponent(dataId)}`);
+  } catch {
+    return NextResponse.json({ ok: false, error: "provider_unavailable" }, { status: 503 });
+  }
+
+  // O simulador oficial usa um ID fictício. Mantemos o teste do endpoint em
+  // 200 sem permitir que uma simulação altere qualquer assinatura local.
+  if (providerResponse.status === 404 && dataId === "123456") {
+    return NextResponse.json({ ok: true, simulated: true }, { status: 200 });
+  }
+
+  if (!providerResponse.ok) {
+    return NextResponse.json({ ok: false, error: "provider_lookup_failed" }, { status: 502 });
+  }
+
+  const preapproval = (await providerResponse.json()) as MercadoPagoPreapproval;
+  const synced = await syncLocalSubscriptionFromMercadoPago(preapproval);
+  if (!synced.ok) {
+    // Eventos válidos, porém não pertencentes ao Clube Yuri, são reconhecidos
+    // sem causar mudanças internas. Divergências de pagador/plano são rejeitadas.
+    if (["foreign_subscription", "local_subscription_not_found"].includes(synced.reason)) {
+      return NextResponse.json({ ok: true, ignored: true }, { status: 200 });
+    }
+    return NextResponse.json({ ok: false, error: synced.reason }, { status: 409 });
+  }
+
   return NextResponse.json(
-    { ok: true, received: true, type, resourceId: dataId },
+    { ok: true, received: true, type, resourceId: dataId, subscriptionId: synced.subscriptionId, status: synced.status },
     { status: 200, headers: { "cache-control": "no-store" } },
   );
 }
