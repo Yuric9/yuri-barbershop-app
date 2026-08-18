@@ -58,10 +58,14 @@ export async function POST(request: Request) {
   }
 
   const origin = new URL(request.url).origin;
+  // Em testes do Mercado Pago, o pagador também precisa ser um usuário de teste.
+  // O e-mail real do cliente continua salvo no nosso banco; apenas o payer_email
+  // enviado ao Mercado Pago pode ser substituído por MP_TEST_PAYER_EMAIL.
+  const mercadoPagoPayerEmail = process.env.MP_TEST_PAYER_EMAIL?.trim() || user.email;
   const payload = {
     reason: "Clube Yuri - Yuri Barbershop",
     external_reference: `clube-yuri:${current.id}`,
-    payer_email: user.email,
+    payer_email: mercadoPagoPayerEmail,
     auto_recurring: {
       frequency: 1,
       frequency_type: "months",
