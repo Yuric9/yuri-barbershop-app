@@ -170,7 +170,9 @@ export async function syncLocalSubscriptionFromMercadoPago(preapproval: MercadoP
   if (!local) return { ok: false, reason: "local_subscription_not_found" } as const;
 
   const payerEmail = String(preapproval.payer_email || "").trim().toLowerCase();
-  if (payerEmail && payerEmail !== local.clientEmail.trim().toLowerCase()) {
+  const { testPayerEmail } = mercadoPagoRuntimeConfig();
+  const acceptedPayerEmails = [local.clientEmail.trim().toLowerCase(), testPayerEmail].filter(Boolean);
+  if (payerEmail && !acceptedPayerEmails.includes(payerEmail)) {
     return { ok: false, reason: "payer_mismatch" } as const;
   }
 
@@ -205,5 +207,21 @@ export async function syncLocalSubscriptionFromMercadoPago(preapproval: MercadoP
     providerStatus,
     nextPaymentDate: preapproval.next_payment_date || "",
   });
-  return { ok: true, subscriptionId, status: localStatus } as const;
+  return { ok: true, subscriptionId, status: localStatus, previousStatus: local.status } as const;
+}
+
+export async function syncSubscriptionByLocalId(subscriptionId: number) {
+  const payment = await getPaymentLinkBySubscription(subscriptionId);
+  if (!payment?.mercado_pago_id) return { ok: false, reason: "payment_link_not_found" } as const;
+
+  let providerResponse: Response;
+  try {
+    providerResponse = await mercadoPagoRequest(`/preapproval/${encodeURIComponent(payment.mercado_pago_id)}`);
+  } catch {
+    return { ok: false, reason: "provider_unavailable" } as const;
+  }
+  if (!providerResponse.ok) return { ok: false, reason: "provider_lookup_failed" } as const;
+
+  const preapproval = (await providerResponse.json()) as MercadoPagoPreapproval;
+  return syncLocalSubscriptionFromMercadoPago(preapproval);
 }
