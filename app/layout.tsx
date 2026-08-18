@@ -7,6 +7,7 @@ import "./catalog-image-viewer.css";
 import "./mobile-experience.css";
 import "./menu-icons.css";
 import "./product-admin.css";
+import "./product-experience.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
@@ -15,6 +16,7 @@ import CatalogOrderEnhancer from "./catalog-order-enhancer";
 import MobileExperience from "./mobile-experience";
 import MenuIconEnhancer from "./menu-icon-enhancer";
 import ProductAdminEnhancer from "./product-admin-enhancer";
+import ProductExperience from "./product-experience";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -76,6 +78,7 @@ export default function RootLayout({
         <MobileExperience />
         <MenuIconEnhancer />
         <ProductAdminEnhancer />
+        <ProductExperience />
       </body>
     </html>
   );
