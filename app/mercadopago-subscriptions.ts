@@ -50,6 +50,43 @@ export async function ensureSubscriptionPaymentStore() {
   `).run();
 }
 
+export async function runOneTimeSubscriptionTestReset() {
+  await ensureSubscriptionPaymentStore();
+  await d1().prepare(`
+    CREATE TABLE IF NOT EXISTS app_flags (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL
+    )
+  `).run();
+
+  const key = "subscription_test_reset_2026_08_18_v1";
+  const existing = await d1()
+    .prepare("SELECT key FROM app_flags WHERE key = ? LIMIT 1")
+    .bind(key)
+    .first<{ key: string }>();
+
+  if (existing?.key) return { reset: false } as const;
+
+  const db = getDb();
+  const pending = await db.select().from(subscriptions).where(eq(subscriptions.status, "Aguardando pagamento"));
+
+  for (const item of pending) {
+    await db
+      .update(subscriptions)
+      .set({ status: "Cancelada", startDate: "", endDate: "" })
+      .where(eq(subscriptions.id, item.id));
+  }
+
+  await d1().prepare("DELETE FROM subscription_payments").run();
+  await d1()
+    .prepare("INSERT INTO app_flags (key, value, updated_at) VALUES (?, ?, ?)")
+    .bind(key, `canceladas:${pending.length}`, new Date().toISOString())
+    .run();
+
+  return { reset: true, cancelled: pending.length } as const;
+}
+
 export async function getPaymentLinkBySubscription(subscriptionId: number) {
   await ensureSubscriptionPaymentStore();
   return d1()
