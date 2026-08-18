@@ -7,6 +7,7 @@ import {
   mercadoPagoRequest,
   runOneTimeSubscriptionTestReset,
   savePaymentLink,
+  syncLocalSubscriptionFromMercadoPago,
   type MercadoPagoPreapproval,
 } from "../../../mercadopago-subscriptions";
 import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
@@ -16,6 +17,7 @@ export const runtime = "edge";
 
 const CLUBE_YURI_TEST_APP_ID = "8874721750108093";
 const CLUBE_YURI_TEST_SELLER_ID = "3625511764";
+const CLUBE_YURI_TEST_PUBLIC_KEY = "APP_USR-09006eaf-14fa-4961-b1ac-e01d5cd3db92";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -35,6 +37,9 @@ export async function POST(request: Request) {
   if (!user || user.role !== "client") {
     return Response.json({ error: "Entre como cliente para assinar o Clube Yuri." }, { status: 401 });
   }
+
+  const body = (await request.json().catch(() => ({}))) as { cardTokenId?: string };
+  const cardTokenId = String(body.cardTokenId || "").trim();
 
   await runOneTimeSubscriptionTestReset();
 
@@ -64,10 +69,24 @@ export async function POST(request: Request) {
     if (identity.appId !== CLUBE_YURI_TEST_APP_ID || identity.sellerId !== CLUBE_YURI_TEST_SELLER_ID) {
       return Response.json(
         {
-          error: `Credencial de teste ainda não está ativa no servidor. Aplicação em uso: ${identity.appId || "não identificada"}; vendedor em uso: ${identity.sellerId || "não identificado"}. O Clube Yuri Teste deve usar aplicação ${CLUBE_YURI_TEST_APP_ID} e vendedor ${CLUBE_YURI_TEST_SELLER_ID}.`,
+          error: `Credencial de teste ainda não está ativa no servidor. Aplicação em uso: ${identity.appId || "não identificada"}; vendedor em uso: ${identity.sellerId || "não identificado"}.`,
         },
         { status: 503 },
       );
+    }
+
+    // O checkout hospedado do Mercado Pago estava misturando a sessão do navegador
+    // com o ambiente de teste. Em teste usamos o fluxo oficial de CardToken +
+    // preapproval authorized, que não depende de login/sessão no checkout hospedado.
+    if (!cardTokenId) {
+      return Response.json({
+        ok: true,
+        testMode: true,
+        publicKey: CLUBE_YURI_TEST_PUBLIC_KEY,
+        amount: current.priceCents / 100,
+        payerEmail: testPayerEmail,
+        subscriptionId: current.id,
+      });
     }
   }
 
@@ -83,7 +102,7 @@ export async function POST(request: Request) {
 
   const origin = new URL(request.url).origin;
   const mercadoPagoPayerEmail = testPayerEmail || user.email;
-  const payload = {
+  const payload: Record<string, unknown> = {
     reason: "Clube Yuri - Yuri Barbershop",
     external_reference: `clube-yuri:${current.id}`,
     payer_email: mercadoPagoPayerEmail,
@@ -94,8 +113,10 @@ export async function POST(request: Request) {
       currency_id: "BRL",
     },
     back_url: `${origin}/?clube_yuri=retorno`,
-    status: "pending",
+    status: testPayerEmail ? "authorized" : "pending",
   };
+
+  if (testPayerEmail && cardTokenId) payload.card_token_id = cardTokenId;
 
   let response: Response;
   try {
@@ -110,12 +131,13 @@ export async function POST(request: Request) {
   const data = (await response.json().catch(() => ({}))) as MercadoPagoPreapproval & {
     application_id?: number | string;
     collector_id?: number | string;
+    payer_id?: number | string;
     message?: string;
     error?: string;
     cause?: Array<{ code?: number | string; description?: string }>;
   };
 
-  if (!response.ok || !data.id || !data.init_point) {
+  if (!response.ok || !data.id || (!testPayerEmail && !data.init_point)) {
     const providerDetail = [data.message, data.error, data.cause?.[0]?.description].filter(Boolean).join(" — ");
     const error = testPayerEmail && providerDetail
       ? `Mercado Pago (teste): ${providerDetail}`
@@ -132,7 +154,7 @@ export async function POST(request: Request) {
     if (returnedAppId !== CLUBE_YURI_TEST_APP_ID || returnedSellerId !== CLUBE_YURI_TEST_SELLER_ID) {
       return Response.json(
         {
-          error: `Mercado Pago criou o checkout com a conta errada. Aplicação retornada: ${returnedAppId || "não informada"}; vendedor retornado: ${returnedSellerId || "não informado"}. Esperado: aplicação ${CLUBE_YURI_TEST_APP_ID} e vendedor ${CLUBE_YURI_TEST_SELLER_ID}.`,
+          error: `Mercado Pago criou a assinatura com a conta errada. Aplicação retornada: ${returnedAppId || "não informada"}; vendedor retornado: ${returnedSellerId || "não informado"}.`,
         },
         { status: 503 },
       );
@@ -142,10 +164,23 @@ export async function POST(request: Request) {
   await savePaymentLink({
     subscriptionId: current.id,
     mercadoPagoId: data.id,
-    initPoint: data.init_point,
+    initPoint: data.init_point || "",
     providerStatus: data.status || "pending",
     nextPaymentDate: data.next_payment_date || "",
   });
+
+  if (testPayerEmail) {
+    const sync = await syncLocalSubscriptionFromMercadoPago(data);
+    return Response.json({
+      ok: true,
+      testMode: true,
+      authorized: String(data.status || "").toLowerCase() === "authorized",
+      providerStatus: data.status || "",
+      payerId: data.payer_id || null,
+      subscriptionId: current.id,
+      localStatus: sync.ok ? sync.status : "",
+    });
+  }
 
   return Response.json({ ok: true, checkoutUrl: data.init_point, subscriptionId: current.id });
 }
