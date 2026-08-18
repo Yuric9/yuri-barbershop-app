@@ -55,6 +55,19 @@ function makeSvg(def: IconDef) {
   return svg;
 }
 
+function googleBusinessIcon() {
+  return `
+    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" class="google-business-svg">
+      <rect x="10" y="25" width="44" height="30" rx="3" fill="#4285F4"/>
+      <path d="M8 25 13 10h38l5 15Z" fill="#7BAAF7"/>
+      <path d="M20 10h11v15H16Z" fill="#4F63B7"/>
+      <path d="M42 10h9l5 15H45Z" fill="#4F63B7"/>
+      <path d="M8 25h12c0 5-2.7 9-6 9s-6-4-6-9Zm12 0h12c0 5-2.7 9-6 9s-6-4-6-9Zm12 0h12c0 5-2.7 9-6 9s-6-4-6-9Zm12 0h12c0 5-2.7 9-6 9s-6-4-6-9Z" fill="#6F9EE8"/>
+      <path d="M20 25h12c0 5-2.7 9-6 9s-6-4-6-9Zm24 0h12c0 5-2.7 9-6 9s-6-4-6-9Z" fill="#4F63B7"/>
+      <path d="M36.8 47.1c0-5.7 4.3-9.8 9.7-9.8 2.7 0 4.7 1 6.2 2.5l-2.5 2.4c-.9-.9-2.1-1.6-3.7-1.6-3.2 0-5.8 2.7-5.8 6.4s2.6 6.4 5.8 6.4c2.1 0 3.4-.9 4.2-1.7.6-.6 1.1-1.5 1.3-2.8h-5.5v-3.2h9c.1.5.2 1.2.2 1.9 0 2.8-.8 5-2.4 6.7-1.7 1.7-4 2.7-6.8 2.7-5.4 0-9.7-4.1-9.7-9.9Z" fill="#fff"/>
+    </svg>`;
+}
+
 export default function MenuIconEnhancer() {
   useEffect(() => {
     function enhance() {
@@ -67,6 +80,13 @@ export default function MenuIconEnhancer() {
         iconHost.replaceChildren(makeSvg(def));
         iconHost.dataset.vectorIcon = label;
         iconHost.classList.add("menu-vector-icon");
+      });
+
+      document.querySelectorAll<HTMLElement>(".menu-google .google-business-icon").forEach((host) => {
+        if (host.dataset.googleBusinessReady === "true") return;
+        host.innerHTML = googleBusinessIcon();
+        host.dataset.googleBusinessReady = "true";
+        host.setAttribute("aria-hidden", "true");
       });
     }
     enhance();
