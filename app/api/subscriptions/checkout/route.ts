@@ -9,6 +9,7 @@ import {
   savePaymentLink,
   type MercadoPagoPreapproval,
 } from "../../../mercadopago-subscriptions";
+import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     current = created;
   }
 
-  const testPayerEmail = process.env.MP_TEST_PAYER_EMAIL?.trim();
+  const { testPayerEmail } = mercadoPagoRuntimeConfig();
   const existingPayment = await getPaymentLinkBySubscription(current.id);
   // Em produção, reaproveitamos um checkout pendente. Durante o teste, sempre
   // criamos um novo preapproval para não reutilizar links gerados com payer_email real.
@@ -61,9 +62,8 @@ export async function POST(request: Request) {
   }
 
   const origin = new URL(request.url).origin;
-  // Em testes do Mercado Pago, o pagador também precisa ser um usuário de teste.
-  // O e-mail real do cliente continua salvo no nosso banco; apenas o payer_email
-  // enviado ao Mercado Pago pode ser substituído por MP_TEST_PAYER_EMAIL.
+  // O e-mail real continua salvo no nosso banco. Em testes, o Mercado Pago
+  // recebe o e-mail fictício configurado no Worker para não misturar ambientes.
   const mercadoPagoPayerEmail = testPayerEmail || user.email;
   const payload = {
     reason: "Clube Yuri - Yuri Barbershop",
@@ -89,10 +89,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "O pagamento do Clube Yuri ainda não está disponível." }, { status: 503 });
   }
 
-  const data = (await response.json().catch(() => ({}))) as MercadoPagoPreapproval & { message?: string };
+  const data = (await response.json().catch(() => ({}))) as MercadoPagoPreapproval & {
+    message?: string;
+    error?: string;
+    cause?: Array<{ code?: number | string; description?: string }>;
+  };
   if (!response.ok || !data.id || !data.init_point) {
+    const providerDetail = [data.message, data.error, data.cause?.[0]?.description].filter(Boolean).join(" — ");
+    const error = testPayerEmail && providerDetail
+      ? `Mercado Pago (teste): ${providerDetail}`
+      : "Não foi possível abrir o pagamento agora. Tente novamente em instantes.";
     return Response.json(
-      { error: "Não foi possível abrir o pagamento agora. Tente novamente em instantes." },
+      { error },
       { status: response.status >= 400 && response.status < 500 ? 400 : 502 },
     );
   }
