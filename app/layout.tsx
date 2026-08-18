@@ -9,6 +9,7 @@ import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
 import CatalogImageViewer from "./catalog-image-viewer";
+import CatalogOrderEnhancer from "./catalog-order-enhancer";
 import MobileExperience from "./mobile-experience";
 
 const geistSans = Geist({
@@ -66,6 +67,7 @@ export default function RootLayout({
         {children}
         <MobileBookingBridge />
         <CatalogAdminEnhancer />
+        <CatalogOrderEnhancer />
         <CatalogImageViewer />
         <MobileExperience />
       </body>
