@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 
+const OPEN_CLUBE_YURI_KEY = "yuri:open-clube-yuri";
+let syncingSubscription = false;
+
 function findClubeYuriMenuButton() {
   return [...document.querySelectorAll<HTMLButtonElement>("aside button")].find((button) =>
     button.textContent?.toLowerCase().includes("clube yuri"),
@@ -18,6 +21,30 @@ function showMembershipMessage(text: string) {
     hero.appendChild(message);
   }
   message.textContent = text;
+}
+
+async function syncSubscriptionStatus(options?: { reloadWhenChanged?: boolean }) {
+  if (syncingSubscription) return false;
+  syncingSubscription = true;
+  try {
+    const response = await fetch("/api/subscriptions/sync", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return false;
+    const data = await response.json().catch(() => ({}));
+    if (data.changed && options?.reloadWhenChanged !== false) {
+      window.sessionStorage.setItem(OPEN_CLUBE_YURI_KEY, "1");
+      window.location.reload();
+      return true;
+    }
+    return Boolean(data.changed);
+  } catch {
+    return false;
+  } finally {
+    syncingSubscription = false;
+  }
 }
 
 async function openMercadoPago(button: HTMLButtonElement) {
@@ -97,6 +124,11 @@ export default function SubscriptionPaymentEnhancer() {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
+      const asideButton = target?.closest<HTMLButtonElement>("aside button");
+      if (asideButton?.textContent?.toLowerCase().includes("clube yuri")) {
+        window.setTimeout(() => void syncSubscriptionStatus(), 250);
+      }
+
       const button = target?.closest<HTMLButtonElement>("button.membership-action");
       if (!button) return;
       if (button.classList.contains("membership-payment-resume") || button.classList.contains("membership-payment-restart")) return;
@@ -112,13 +144,24 @@ export default function SubscriptionPaymentEnhancer() {
     observer.observe(document.body, { childList: true, subtree: true });
     enhanceMembershipPayment();
 
+    if (window.sessionStorage.getItem(OPEN_CLUBE_YURI_KEY) === "1") {
+      window.sessionStorage.removeItem(OPEN_CLUBE_YURI_KEY);
+      window.setTimeout(() => findClubeYuriMenuButton()?.click(), 350);
+    }
+
     const url = new URL(window.location.href);
     if (url.searchParams.get("clube_yuri") === "retorno") {
-      window.setTimeout(() => {
-        findClubeYuriMenuButton()?.click();
-        url.searchParams.delete("clube_yuri");
-        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-      }, 350);
+      url.searchParams.delete("clube_yuri");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      window.sessionStorage.setItem(OPEN_CLUBE_YURI_KEY, "1");
+      void syncSubscriptionStatus({ reloadWhenChanged: true }).then((changed) => {
+        if (!changed) {
+          window.sessionStorage.removeItem(OPEN_CLUBE_YURI_KEY);
+          window.setTimeout(() => findClubeYuriMenuButton()?.click(), 200);
+        }
+      });
+    } else {
+      void syncSubscriptionStatus();
     }
 
     return () => {
