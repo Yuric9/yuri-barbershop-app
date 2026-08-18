@@ -4,6 +4,23 @@
 .catalog-photo-trigger:hover img{transform:scale(1.025)}
 .catalog-zoom-badge{position:absolute;right:12px;bottom:12px;width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:rgba(15,15,13,.82);color:#fff;font-size:21px;line-height:1;box-shadow:0 8px 18px rgba(0,0,0,.25);pointer-events:none;backdrop-filter:blur(6px)}
 
+.catalog-lightbox{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:rgba(8,8,7,.94);backdrop-filter:blur(12px)}
+.catalog-lightbox-close{position:fixed;top:max(18px,env(safe-area-inset-top));right:18px;z-index:4;width:48px;height:48px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:rgba(255,255,255,.08);color:white;font-size:31px;line-height:1;cursor:pointer}
+.catalog-lightbox-content{width:min(1100px,100%);max-height:92dvh;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.5fr);overflow:hidden;border:1px solid rgba(197,154,61,.28);border-radius:24px;background:#171714;box-shadow:0 30px 90px rgba(0,0,0,.45)}
+.catalog-lightbox-image-wrap{position:relative;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;background:#d5d3cf;touch-action:pinch-zoom}
+.catalog-lightbox-image-wrap img{display:block;width:100%;height:auto;max-height:92dvh;object-fit:contain;touch-action:pinch-zoom;-webkit-user-select:none;user-select:none}
+.catalog-lightbox-copy{padding:30px;color:#f3eee5;overflow:auto}
+.catalog-lightbox-copy small{color:#c59a3d;font-size:10px;font-weight:900;letter-spacing:.15em}
+.catalog-lightbox-copy h2{margin:8px 0 14px;font:32px/1.05 Georgia,serif}
+.catalog-lightbox-copy p{margin:0;color:#c9c3b8;font-size:14px;line-height:1.6}
+.catalog-lightbox-copy span{display:block;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#8e887e;font-size:11px;line-height:1.45}
+
+.catalog-nav{position:absolute;top:50%;z-index:3;transform:translateY(-50%);width:52px;height:52px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(12,12,11,.72);color:#fff;font:42px/1 Arial,sans-serif;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.28);backdrop-filter:blur(8px);transition:background .18s ease,transform .18s ease}
+.catalog-nav:hover{background:rgba(12,12,11,.9);transform:translateY(-50%) scale(1.04)}
+.catalog-nav-prev{left:18px}
+.catalog-nav-next{right:18px}
+.catalog-counter{position:absolute;left:50%;bottom:18px;z-index:3;transform:translateX(-50%);padding:7px 11px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(12,12,11,.72);color:#fff;font-size:12px;font-weight:700;letter-spacing:.04em;backdrop-filter:blur(8px)}
+
 /* Desktop: imagem passa a ser o foco principal do card */
 @media (min-width:761px){
   .style-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important;gap:24px!important;align-items:start!important}
@@ -24,17 +41,6 @@
   .catalog-lightbox-close{top:24px!important;right:24px!important;width:52px!important;height:52px!important;font-size:34px!important}
 }
 
-.catalog-lightbox{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:rgba(8,8,7,.94);backdrop-filter:blur(12px)}
-.catalog-lightbox-close{position:fixed;top:max(18px,env(safe-area-inset-top));right:18px;z-index:2;width:48px;height:48px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:rgba(255,255,255,.08);color:white;font-size:31px;line-height:1;cursor:pointer}
-.catalog-lightbox-content{width:min(1100px,100%);max-height:92dvh;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.5fr);overflow:hidden;border:1px solid rgba(197,154,61,.28);border-radius:24px;background:#171714;box-shadow:0 30px 90px rgba(0,0,0,.45)}
-.catalog-lightbox-image-wrap{min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;background:#d5d3cf;touch-action:pinch-zoom}
-.catalog-lightbox-image-wrap img{display:block;width:100%;height:auto;max-height:92dvh;object-fit:contain;touch-action:pinch-zoom;-webkit-user-select:none;user-select:none}
-.catalog-lightbox-copy{padding:30px;color:#f3eee5;overflow:auto}
-.catalog-lightbox-copy small{color:#c59a3d;font-size:10px;font-weight:900;letter-spacing:.15em}
-.catalog-lightbox-copy h2{margin:8px 0 14px;font:32px/1.05 Georgia,serif}
-.catalog-lightbox-copy p{margin:0;color:#c9c3b8;font-size:14px;line-height:1.6}
-.catalog-lightbox-copy span{display:block;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#8e887e;font-size:11px;line-height:1.45}
-
 @media (max-width:760px){
   /* Mobile: card limpo. Mostra somente foto + nome; descrição fica no lightbox. */
   .style-grid{grid-template-columns:1fr!important;gap:18px!important;align-items:start!important}
@@ -52,7 +58,7 @@
 
   /* Ao abrir: imagem grande + nome + descrição completa. */
   .catalog-lightbox{padding:0;background:rgba(5,5,5,.98)}
-  .catalog-lightbox-content{width:100%;height:100dvh;max-height:none;display:flex;flex-direction:column;border:0;border-radius:0;background:#11110f;overflow:auto}
+  .catalog-lightbox-content{width:100%;height:100dvh;max-height:none;display:flex;flex-direction:column;border:0;border-radius:0;background:#11110f;overflow:auto;overscroll-behavior:contain}
   .catalog-lightbox-image-wrap{flex:0 0 auto;min-height:0;max-height:none;overflow:auto;background:#d0cfcc;touch-action:pinch-zoom}
   .catalog-lightbox-image-wrap img{width:100%;height:auto;max-height:none;object-fit:contain;touch-action:pinch-zoom}
   .catalog-lightbox-copy{flex:0 0 auto;padding:22px 20px calc(28px + env(safe-area-inset-bottom))}
@@ -60,4 +66,8 @@
   .catalog-lightbox-copy p{font-size:14px;line-height:1.6;color:#d3cec5}
   .catalog-lightbox-copy span{margin-top:18px;padding-top:15px}
   .catalog-lightbox-close{top:calc(12px + env(safe-area-inset-top));right:12px;background:rgba(0,0,0,.66);border-color:rgba(255,255,255,.25)}
+  .catalog-nav{width:46px;height:46px;font-size:36px;background:rgba(8,8,8,.66);border-color:rgba(255,255,255,.25)}
+  .catalog-nav-prev{left:10px}
+  .catalog-nav-next{right:10px}
+  .catalog-counter{bottom:12px;padding:6px 10px;font-size:11px}
 }
