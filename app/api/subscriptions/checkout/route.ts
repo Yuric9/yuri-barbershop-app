@@ -5,6 +5,7 @@ import { getChatGPTUser } from "../../../chatgpt-auth";
 import {
   getPaymentLinkBySubscription,
   mercadoPagoRequest,
+  runOneTimeSubscriptionTestReset,
   savePaymentLink,
   type MercadoPagoPreapproval,
 } from "../../../mercadopago-subscriptions";
@@ -21,6 +22,11 @@ export async function POST(request: Request) {
   if (!user || user.role !== "client") {
     return Response.json({ error: "Entre como cliente para assinar o Clube Yuri." }, { status: 401 });
   }
+
+  // Limpeza controlada para reiniciar o teste do Clube Yuri do zero.
+  // Executa apenas uma vez: cancela solicitações ainda pendentes e remove
+  // vínculos antigos de checkout, preservando assinaturas já ativas.
+  await runOneTimeSubscriptionTestReset();
 
   const db = getDb();
   const rows = await db
