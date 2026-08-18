@@ -10,6 +10,7 @@ interface Env {
   ADMIN_PASSWORD_HASH?: string;
   MP_WEBHOOK_SECRET?: string;
   MP_ACCESS_TOKEN?: string;
+  MP_TEST_PAYER_EMAIL?: string;
   IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -38,6 +39,7 @@ const worker = {
     (globalThis as typeof globalThis & { __YURI_ADMIN_PASSWORD_HASH?: string }).__YURI_ADMIN_PASSWORD_HASH = env.ADMIN_PASSWORD_HASH;
     (globalThis as typeof globalThis & { __YURI_MP_WEBHOOK_SECRET?: string }).__YURI_MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET;
     (globalThis as typeof globalThis & { __YURI_MP_ACCESS_TOKEN?: string }).__YURI_MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN;
+    (globalThis as typeof globalThis & { __YURI_MP_TEST_PAYER_EMAIL?: string }).__YURI_MP_TEST_PAYER_EMAIL = env.MP_TEST_PAYER_EMAIL;
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
