@@ -8,6 +8,8 @@ interface Env {
   BUCKET: R2Bucket;
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD_HASH?: string;
+  MP_WEBHOOK_SECRET?: string;
+  MP_ACCESS_TOKEN?: string;
   IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -34,6 +36,8 @@ const worker = {
     (globalThis as typeof globalThis & { __YURI_BUCKET?: R2Bucket }).__YURI_BUCKET = env.BUCKET;
     (globalThis as typeof globalThis & { __YURI_ADMIN_EMAIL?: string }).__YURI_ADMIN_EMAIL = env.ADMIN_EMAIL;
     (globalThis as typeof globalThis & { __YURI_ADMIN_PASSWORD_HASH?: string }).__YURI_ADMIN_PASSWORD_HASH = env.ADMIN_PASSWORD_HASH;
+    (globalThis as typeof globalThis & { __YURI_MP_WEBHOOK_SECRET?: string }).__YURI_MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET;
+    (globalThis as typeof globalThis & { __YURI_MP_ACCESS_TOKEN?: string }).__YURI_MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN;
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
