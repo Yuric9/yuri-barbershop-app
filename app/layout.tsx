@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./login-logo-fix.css";
 import "./mobile-booking.css";
 import "./catalog-image-viewer.css";
+import "./mobile-experience.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
 import CatalogImageViewer from "./catalog-image-viewer";
+import MobileExperience from "./mobile-experience";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +20,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#11110f",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://yuricbarbershop.com"),
@@ -58,6 +67,7 @@ export default function RootLayout({
         <MobileBookingBridge />
         <CatalogAdminEnhancer />
         <CatalogImageViewer />
+        <MobileExperience />
       </body>
     </html>
   );
