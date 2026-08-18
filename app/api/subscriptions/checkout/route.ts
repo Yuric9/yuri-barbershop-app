@@ -47,8 +47,11 @@ export async function POST(request: Request) {
     current = created;
   }
 
+  const testPayerEmail = process.env.MP_TEST_PAYER_EMAIL?.trim();
   const existingPayment = await getPaymentLinkBySubscription(current.id);
-  if (existingPayment?.init_point && ["pending", "authorized"].includes(existingPayment.provider_status)) {
+  // Em produção, reaproveitamos um checkout pendente. Durante o teste, sempre
+  // criamos um novo preapproval para não reutilizar links gerados com payer_email real.
+  if (!testPayerEmail && existingPayment?.init_point && ["pending", "authorized"].includes(existingPayment.provider_status)) {
     return Response.json({
       ok: true,
       checkoutUrl: existingPayment.init_point,
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
   // Em testes do Mercado Pago, o pagador também precisa ser um usuário de teste.
   // O e-mail real do cliente continua salvo no nosso banco; apenas o payer_email
   // enviado ao Mercado Pago pode ser substituído por MP_TEST_PAYER_EMAIL.
-  const mercadoPagoPayerEmail = process.env.MP_TEST_PAYER_EMAIL?.trim() || user.email;
+  const mercadoPagoPayerEmail = testPayerEmail || user.email;
   const payload = {
     reason: "Clube Yuri - Yuri Barbershop",
     external_reference: `clube-yuri:${current.id}`,
