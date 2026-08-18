@@ -17,6 +17,7 @@ import MobileExperience from "./mobile-experience";
 import MenuIconEnhancer from "./menu-icon-enhancer";
 import ProductAdminEnhancer from "./product-admin-enhancer";
 import ProductExperience from "./product-experience";
+import SubscriptionPaymentEnhancer from "./subscription-payment-enhancer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -79,6 +80,7 @@ export default function RootLayout({
         <MenuIconEnhancer />
         <ProductAdminEnhancer />
         <ProductExperience />
+        <SubscriptionPaymentEnhancer />
       </body>
     </html>
   );
