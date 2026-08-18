@@ -36,9 +36,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "Entre como cliente para assinar o Clube Yuri." }, { status: 401 });
   }
 
-  // Limpeza controlada para reiniciar o teste do Clube Yuri do zero.
-  // Executa apenas uma vez: cancela solicitações ainda pendentes e remove
-  // vínculos antigos de checkout, preservando assinaturas já ativas.
   await runOneTimeSubscriptionTestReset();
 
   const db = getDb();
@@ -62,9 +59,6 @@ export async function POST(request: Request) {
 
   const { testPayerEmail, accessToken } = mercadoPagoRuntimeConfig();
 
-  // Durante este teste controlado, pare antes de abrir o Mercado Pago se o
-  // Worker ainda estiver usando a credencial da aplicação/conta real.
-  // Apenas IDs públicos são comparados; o token nunca é devolvido ao navegador.
   if (testPayerEmail) {
     const identity = tokenIdentity(accessToken);
     if (identity.appId !== CLUBE_YURI_TEST_APP_ID || identity.sellerId !== CLUBE_YURI_TEST_SELLER_ID) {
@@ -78,8 +72,6 @@ export async function POST(request: Request) {
   }
 
   const existingPayment = await getPaymentLinkBySubscription(current.id);
-  // Em produção, reaproveitamos um checkout pendente. Durante o teste, sempre
-  // criamos um novo preapproval para não reutilizar links gerados com payer_email real.
   if (!testPayerEmail && existingPayment?.init_point && ["pending", "authorized"].includes(existingPayment.provider_status)) {
     return Response.json({
       ok: true,
@@ -90,8 +82,6 @@ export async function POST(request: Request) {
   }
 
   const origin = new URL(request.url).origin;
-  // O e-mail real continua salvo no nosso banco. Em testes, o Mercado Pago
-  // recebe o e-mail fictício configurado no Worker para não misturar ambientes.
   const mercadoPagoPayerEmail = testPayerEmail || user.email;
   const payload = {
     reason: "Clube Yuri - Yuri Barbershop",
@@ -118,10 +108,13 @@ export async function POST(request: Request) {
   }
 
   const data = (await response.json().catch(() => ({}))) as MercadoPagoPreapproval & {
+    application_id?: number | string;
+    collector_id?: number | string;
     message?: string;
     error?: string;
     cause?: Array<{ code?: number | string; description?: string }>;
   };
+
   if (!response.ok || !data.id || !data.init_point) {
     const providerDetail = [data.message, data.error, data.cause?.[0]?.description].filter(Boolean).join(" — ");
     const error = testPayerEmail && providerDetail
@@ -131,6 +124,19 @@ export async function POST(request: Request) {
       { error },
       { status: response.status >= 400 && response.status < 500 ? 400 : 502 },
     );
+  }
+
+  if (testPayerEmail) {
+    const returnedAppId = String(data.application_id || "");
+    const returnedSellerId = String(data.collector_id || "");
+    if (returnedAppId !== CLUBE_YURI_TEST_APP_ID || returnedSellerId !== CLUBE_YURI_TEST_SELLER_ID) {
+      return Response.json(
+        {
+          error: `Mercado Pago criou o checkout com a conta errada. Aplicação retornada: ${returnedAppId || "não informada"}; vendedor retornado: ${returnedSellerId || "não informado"}. Esperado: aplicação ${CLUBE_YURI_TEST_APP_ID} e vendedor ${CLUBE_YURI_TEST_SELLER_ID}.`,
+        },
+        { status: 503 },
+      );
+    }
   }
 
   await savePaymentLink({
