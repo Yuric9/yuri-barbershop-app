@@ -10,10 +10,19 @@
 .catalog-lightbox-image-wrap{position:relative;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;background:#d5d3cf;touch-action:pinch-zoom}
 .catalog-lightbox-image-wrap img{display:block;width:100%;height:auto;max-height:92dvh;object-fit:contain;touch-action:pinch-zoom;-webkit-user-select:none;user-select:none}
 .catalog-lightbox-copy{padding:30px;color:#f3eee5;overflow:auto}
-.catalog-lightbox-copy small{color:#c59a3d;font-size:10px;font-weight:900;letter-spacing:.15em}
+.catalog-lightbox-copy>small{color:#c59a3d;font-size:10px;font-weight:900;letter-spacing:.15em}
 .catalog-lightbox-copy h2{margin:8px 0 14px;font:32px/1.05 Georgia,serif}
 .catalog-lightbox-copy p{margin:0;color:#c9c3b8;font-size:14px;line-height:1.6}
-.catalog-lightbox-copy span{display:block;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);color:#8e887e;font-size:11px;line-height:1.45}
+.catalog-lightbox-hint{display:block;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);color:#8e887e;font-size:11px;line-height:1.45}
+
+.catalog-whatsapp-action{display:grid;grid-template-columns:42px 1fr 18px;gap:12px;align-items:center;margin-top:22px;padding:13px 14px;border:1px solid rgba(73,213,115,.32);border-radius:15px;background:linear-gradient(135deg,rgba(37,211,102,.16),rgba(37,211,102,.08));color:#f4fff7;text-decoration:none;box-shadow:0 12px 28px rgba(0,0,0,.16);transition:transform .18s ease,background .18s ease,border-color .18s ease}
+.catalog-whatsapp-action:hover{transform:translateY(-1px);background:linear-gradient(135deg,rgba(37,211,102,.23),rgba(37,211,102,.11));border-color:rgba(73,213,115,.5)}
+.catalog-whatsapp-action:active{transform:scale(.99)}
+.catalog-whatsapp-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#25d366;color:#fff;font-size:20px;box-shadow:0 8px 18px rgba(37,211,102,.25)}
+.catalog-whatsapp-text{min-width:0;display:flex;flex-direction:column;gap:3px}
+.catalog-whatsapp-text strong{font-size:13px;line-height:1.2}
+.catalog-whatsapp-text small{color:#a9b6ad;font-size:9px;line-height:1.2}
+.catalog-whatsapp-action>b{color:#7ee6a0;font-size:22px;font-weight:400}
 
 .catalog-nav{position:absolute;top:50%;z-index:3;transform:translateY(-50%);width:52px;height:52px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(12,12,11,.72);color:#fff;font:42px/1 Arial,sans-serif;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.28);backdrop-filter:blur(8px);transition:background .18s ease,transform .18s ease}
 .catalog-nav:hover{background:rgba(12,12,11,.9);transform:translateY(-50%) scale(1.04)}
@@ -37,7 +46,7 @@
   .catalog-lightbox-copy{padding:38px 34px!important}
   .catalog-lightbox-copy h2{font-size:38px!important}
   .catalog-lightbox-copy p{font-size:15px!important;line-height:1.65!important}
-  .catalog-lightbox-copy span{font-size:12px!important}
+  .catalog-lightbox-hint{font-size:12px!important}
   .catalog-lightbox-close{top:24px!important;right:24px!important;width:52px!important;height:52px!important;font-size:34px!important}
 }
 
@@ -56,7 +65,7 @@
   .catalog-tabs button{flex:0 0 auto!important;white-space:nowrap!important;padding:12px 16px!important;font-size:13px!important}
   .catalog-zoom-badge{width:42px;height:42px;right:12px;bottom:12px;font-size:23px}
 
-  /* Ao abrir: imagem grande + nome + descrição completa. */
+  /* Ao abrir: imagem grande + nome + descrição completa + ação contextual. */
   .catalog-lightbox{padding:0;background:rgba(5,5,5,.98)}
   .catalog-lightbox-content{width:100%;height:100dvh;max-height:none;display:flex;flex-direction:column;border:0;border-radius:0;background:#11110f;overflow:auto;overscroll-behavior:contain}
   .catalog-lightbox-image-wrap{flex:0 0 auto;min-height:0;max-height:none;overflow:auto;background:#d0cfcc;touch-action:pinch-zoom}
@@ -64,7 +73,11 @@
   .catalog-lightbox-copy{flex:0 0 auto;padding:22px 20px calc(28px + env(safe-area-inset-bottom))}
   .catalog-lightbox-copy h2{font-size:30px;margin-bottom:12px}
   .catalog-lightbox-copy p{font-size:14px;line-height:1.6;color:#d3cec5}
-  .catalog-lightbox-copy span{margin-top:18px;padding-top:15px}
+  .catalog-lightbox-hint{margin-top:16px;padding-top:14px}
+  .catalog-whatsapp-action{grid-template-columns:44px 1fr 18px;margin-top:20px;padding:14px;border-radius:16px}
+  .catalog-whatsapp-icon{width:44px;height:44px}
+  .catalog-whatsapp-text strong{font-size:14px}
+  .catalog-whatsapp-text small{font-size:10px}
   .catalog-lightbox-close{top:calc(12px + env(safe-area-inset-top));right:12px;background:rgba(0,0,0,.66);border-color:rgba(255,255,255,.25)}
   .catalog-nav{width:46px;height:46px;font-size:36px;background:rgba(8,8,8,.66);border-color:rgba(255,255,255,.25)}
   .catalog-nav-prev{left:10px}
