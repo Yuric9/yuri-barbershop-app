@@ -42,23 +42,55 @@ async function openMercadoPago(button: HTMLButtonElement) {
   }
 }
 
-function enhancePendingMembership() {
-  const hero = document.querySelector<HTMLElement>(".membership-hero");
-  const status = hero?.querySelector<HTMLElement>(".membership-status");
-  if (!hero || !status || !/aguardando pagamento/i.test(status.textContent || "")) return;
-  if (hero.querySelector(".membership-payment-resume")) return;
+function addPaymentButton(options: {
+  hero: HTMLElement;
+  status: HTMLElement;
+  className: string;
+  label: string;
+  note: string;
+}) {
+  if (options.hero.querySelector(`.${options.className}`)) return;
 
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "membership-action membership-payment-resume";
-  button.textContent = "Continuar pagamento no Mercado Pago";
+  button.className = `membership-action ${options.className}`;
+  button.textContent = options.label;
   button.addEventListener("click", () => openMercadoPago(button));
-  status.insertAdjacentElement("afterend", button);
+  options.status.insertAdjacentElement("afterend", button);
 
   const note = document.createElement("small");
   note.className = "membership-payment-note";
-  note.textContent = "Pagamento recorrente processado com segurança pelo Mercado Pago.";
+  note.textContent = options.note;
   button.insertAdjacentElement("afterend", note);
+}
+
+function enhanceMembershipPayment() {
+  const hero = document.querySelector<HTMLElement>(".membership-hero");
+  const status = hero?.querySelector<HTMLElement>(".membership-status");
+  if (!hero || !status) return;
+
+  const statusText = status.textContent || "";
+
+  if (/aguardando pagamento/i.test(statusText)) {
+    addPaymentButton({
+      hero,
+      status,
+      className: "membership-payment-resume",
+      label: "Continuar pagamento no Mercado Pago",
+      note: "Pagamento recorrente processado com segurança pelo Mercado Pago.",
+    });
+    return;
+  }
+
+  if (/cancelad[ao]/i.test(statusText)) {
+    addPaymentButton({
+      hero,
+      status,
+      className: "membership-payment-restart",
+      label: "Assinar Clube Yuri",
+      note: "Você pode assinar novamente a qualquer momento. Uma nova assinatura será criada.",
+    });
+  }
 }
 
 export default function SubscriptionPaymentEnhancer() {
@@ -66,7 +98,8 @@ export default function SubscriptionPaymentEnhancer() {
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const button = target?.closest<HTMLButtonElement>("button.membership-action");
-      if (!button || button.classList.contains("membership-payment-resume")) return;
+      if (!button) return;
+      if (button.classList.contains("membership-payment-resume") || button.classList.contains("membership-payment-restart")) return;
       if (!/quero assinar/i.test(button.textContent || "")) return;
       event.preventDefault();
       event.stopPropagation();
@@ -75,9 +108,9 @@ export default function SubscriptionPaymentEnhancer() {
     };
 
     document.addEventListener("click", onClick, true);
-    const observer = new MutationObserver(enhancePendingMembership);
+    const observer = new MutationObserver(enhanceMembershipPayment);
     observer.observe(document.body, { childList: true, subtree: true });
-    enhancePendingMembership();
+    enhanceMembershipPayment();
 
     const url = new URL(window.location.href);
     if (url.searchParams.get("clube_yuri") === "retorno") {
