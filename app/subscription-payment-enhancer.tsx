@@ -18,6 +18,8 @@ function showMembershipMessage(text: string) {
   if (!message) {
     message = document.createElement("p");
     message.className = "membership-message membership-payment-feedback";
+    message.setAttribute("role", "status");
+    message.setAttribute("aria-live", "polite");
     hero.appendChild(message);
   }
   message.textContent = text;
@@ -225,16 +227,27 @@ function enhanceMembershipPayment() {
   if (!hero || !status) return;
   const statusText = status.textContent || "";
   if (/aguardando pagamento/i.test(statusText)) {
-    addPaymentButton({ hero, status, className: "membership-payment-resume", label: "Continuar pagamento no Mercado Pago", note: "Pagamento recorrente processado com segurança pelo Mercado Pago." });
+    addPaymentButton({ hero, status, className: "membership-payment-resume", label: "Continuar pagamento no Mercado Pago", note: "Pagamento processado com segurança pelo Mercado Pago." });
     return;
   }
   if (/cancelad[ao]/i.test(statusText)) {
-    addPaymentButton({ hero, status, className: "membership-payment-restart", label: "Assinar Clube Yuri", note: "Você pode assinar novamente a qualquer momento. Uma nova assinatura será criada." });
+    addPaymentButton({ hero, status, className: "membership-payment-restart", label: "Assinar Clube Yuri", note: "Você pode entrar novamente no Clube a qualquer momento." });
   }
 }
 
 export default function SubscriptionPaymentEnhancer() {
   useEffect(() => {
+    let scanScheduled = false;
+
+    function scheduleEnhance() {
+      if (scanScheduled) return;
+      scanScheduled = true;
+      window.requestAnimationFrame(() => {
+        scanScheduled = false;
+        enhanceMembershipPayment();
+      });
+    }
+
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const asideButton = target?.closest<HTMLButtonElement>("aside button");
@@ -246,24 +259,34 @@ export default function SubscriptionPaymentEnhancer() {
       event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
       void openMercadoPago(button);
     };
+
     document.addEventListener("click", onClick, true);
-    const observer = new MutationObserver(enhanceMembershipPayment);
+    const observer = new MutationObserver(scheduleEnhance);
     observer.observe(document.body, { childList: true, subtree: true });
-    enhanceMembershipPayment();
+    scheduleEnhance();
+
     if (window.sessionStorage.getItem(OPEN_CLUBE_YURI_KEY) === "1") {
       window.sessionStorage.removeItem(OPEN_CLUBE_YURI_KEY);
       window.setTimeout(() => findClubeYuriMenuButton()?.click(), 350);
     }
+
     const url = new URL(window.location.href);
     if (url.searchParams.get("clube_yuri") === "retorno") {
       url.searchParams.delete("clube_yuri");
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
       window.sessionStorage.setItem(OPEN_CLUBE_YURI_KEY, "1");
       void syncSubscriptionStatus({ reloadWhenChanged: true }).then((changed) => {
-        if (!changed) { window.sessionStorage.removeItem(OPEN_CLUBE_YURI_KEY); window.setTimeout(() => findClubeYuriMenuButton()?.click(), 200); }
+        if (!changed) {
+          window.sessionStorage.removeItem(OPEN_CLUBE_YURI_KEY);
+          window.setTimeout(() => findClubeYuriMenuButton()?.click(), 200);
+        }
       });
-    } else void syncSubscriptionStatus();
-    return () => { document.removeEventListener("click", onClick, true); observer.disconnect(); };
+    }
+
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      observer.disconnect();
+    };
   }, []);
   return null;
 }
