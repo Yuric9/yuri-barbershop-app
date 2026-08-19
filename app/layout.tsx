@@ -21,6 +21,7 @@ import "./barber-preview-interactive.css";
 import "./barber-manual-service.css";
 import "./barber-nav-icons.css";
 import "./design-system.css";
+import "./app-feel.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
