@@ -25,6 +25,7 @@ import SubscriptionPaymentModeEnhancer from "./subscription-payment-mode-enhance
 import SubscriptionPaymentEnhancer from "./subscription-payment-enhancer";
 import SubscriptionSalesEnhancer from "./subscription-sales-enhancer";
 import SubscriptionAdminEnhancer from "./subscription-admin-enhancer";
+import SubscriptionAdminPaymentModeEnhancer from "./subscription-admin-payment-mode-enhancer";
 import SubscriptionArchiveEnhancer from "./subscription-archive-enhancer";
 
 const geistSans = Geist({
@@ -92,6 +93,7 @@ export default function RootLayout({
         <SubscriptionPaymentEnhancer />
         <SubscriptionSalesEnhancer />
         <SubscriptionAdminEnhancer />
+        <SubscriptionAdminPaymentModeEnhancer />
         <SubscriptionArchiveEnhancer />
       </body>
     </html>
