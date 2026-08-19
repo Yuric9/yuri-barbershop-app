@@ -3,6 +3,9 @@ import { getDb } from "../../../../../db";
 import { appointments, profiles, subscriptions } from "../../../../../db/schema";
 import { getChatGPTUser } from "../../../../chatgpt-auth";
 import { rejectCrossSiteWrite } from "../../../../request-security";
+import { deletePaymentLinkBySubscription } from "../../../../mercadopago-subscriptions";
+import { deleteOneTimePaymentBySubscription } from "../../../../subscription-one-time";
+import { expirePendingSubscriptionById } from "../../../../subscription-pending-expiration";
 import {
   archiveSubscription,
   getSubscriptionArchiveRows,
@@ -52,7 +55,6 @@ export async function GET() {
     const subscription = subscriptionsById.get(Number(archive.subscription_id));
     if (!subscription) return [];
     const status = effectiveStatus(subscription);
-    // Se uma assinatura arquivada voltar a ficar ativa pelo provedor, ela não deve ficar escondida.
     if (status === "Ativa") return [];
     const email = subscription.clientEmail.toLowerCase();
     const profile = profilesByEmail.get(email);
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
   if (!id) return Response.json({ error: "Assinatura inválida" }, { status: 400 });
 
   const db = getDb();
-  const [current] = await db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
+  let [current] = await db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
   if (!current) return Response.json({ error: "Assinatura não encontrada" }, { status: 404 });
 
   if (action === "archive") {
@@ -106,6 +108,31 @@ export async function POST(request: Request) {
   if (action === "restore") {
     await unarchiveSubscription(id);
     return Response.json({ ok: true, archived: false });
+  }
+
+  if (action === "delete") {
+    if (current.status === "Aguardando pagamento") {
+      const expiration = await expirePendingSubscriptionById(id, { force: true });
+      if (!expiration.expired) {
+        return Response.json({
+          error: "Este pagamento ainda pode estar em processamento. Por segurança, não foi apagado.",
+        }, { status: 409 });
+      }
+      [current] = await db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
+      if (!current) return Response.json({ ok: true, deleted: true });
+    }
+
+    const status = effectiveStatus(current);
+    if (!["Cancelada", "Expirada", "Vencida"].includes(status)) {
+      return Response.json({ error: "Somente assinaturas canceladas, expiradas ou vencidas podem ser excluídas." }, { status: 409 });
+    }
+
+    await unarchiveSubscription(id);
+    await deletePaymentLinkBySubscription(id);
+    await deleteOneTimePaymentBySubscription(id);
+    await db.delete(subscriptions).where(eq(subscriptions.id, id));
+
+    return Response.json({ ok: true, deleted: true });
   }
 
   return Response.json({ error: "Ação inválida" }, { status: 400 });
