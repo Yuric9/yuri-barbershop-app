@@ -45,6 +45,7 @@ import BarberExperience from "./barber-experience";
 import AdminBarberPreviewLink from "./admin-barber-preview-link";
 import BarberManualServiceEnhancer from "./barber-manual-service-enhancer";
 import BarberNavIconEnhancer from "./barber-nav-icon-enhancer";
+import LogoHomeEnhancer from "./logo-home-enhancer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -121,6 +122,7 @@ export default function RootLayout({
         <AdminBarberPreviewLink />
         <BarberManualServiceEnhancer />
         <BarberNavIconEnhancer />
+        <LogoHomeEnhancer />
       </body>
     </html>
   );
