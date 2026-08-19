@@ -43,13 +43,9 @@ async function expireOneTimeAttempt(item: typeof subscriptions.$inferSelect) {
     const refreshed = await getOneTimePaymentBySubscription(item.id);
     const providerStatus = String(refreshed?.provider_status || "").toLowerCase();
 
-    // Se já existe um pagamento real aguardando compensação, não expiramos a
-    // tentativa local. Isso protege Pix ou outro meio que já tenha sido gerado.
     if (refreshed?.payment_id && !isTerminalPaymentStatus(providerStatus)) return false;
     if (sync.status !== "Aguardando pagamento" && sync.status !== "Cancelada") return false;
   } else if (!["payment_not_created_yet", "one_time_payment_not_found"].includes(String(sync.reason || ""))) {
-    // Em indisponibilidade do provedor, é mais seguro manter pendente do que
-    // liberar uma nova tentativa que poderia duplicar um pagamento existente.
     return false;
   }
 
@@ -129,6 +125,22 @@ async function expireRecurringAttempt(item: typeof subscriptions.$inferSelect) {
     nextPaymentDate: stored.next_payment_date,
   });
   return true;
+}
+
+export async function expirePendingSubscriptionById(subscriptionId: number, options: { force?: boolean } = {}) {
+  const db = getDb();
+  const [item] = await db.select().from(subscriptions).where(eq(subscriptions.id, subscriptionId)).limit(1);
+  if (!item || item.status !== "Aguardando pagamento") return { expired: false, reason: "not_pending" } as const;
+
+  const createdAt = timestamp(item.createdAt);
+  const oldEnough = createdAt > 0 && Date.now() - createdAt >= PENDING_ATTEMPT_TTL_MS;
+  if (!options.force && !oldEnough) return { expired: false, reason: "not_expired_yet" } as const;
+
+  const oneTime = await getOneTimePaymentBySubscription(item.id);
+  const expired = oneTime ? await expireOneTimeAttempt(item) : await expireRecurringAttempt(item);
+  return expired
+    ? ({ expired: true, reason: "expired" } as const)
+    : ({ expired: false, reason: "provider_or_payment_still_active" } as const);
 }
 
 export async function expirePendingSubscriptionsForClient(clientEmail: string, options: ExpireOptions = {}) {
