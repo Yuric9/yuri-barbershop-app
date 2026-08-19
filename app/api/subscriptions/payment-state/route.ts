@@ -3,11 +3,18 @@ import { getDb } from "../../../../db";
 import { subscriptions } from "../../../../db/schema";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { getPaymentLinkBySubscription } from "../../../mercadopago-subscriptions";
-import { expirePendingSubscriptionsForClient } from "../../../subscription-pending-expiration";
+import { expirePendingSubscriptionsForClient, PENDING_ATTEMPT_TTL_MS } from "../../../subscription-pending-expiration";
 import { getOneTimePaymentBySubscription } from "../../../subscription-one-time";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
+
+function pendingExpiresAt(createdAt?: string | null) {
+  if (!createdAt) return "";
+  const created = new Date(createdAt).getTime();
+  if (!Number.isFinite(created)) return "";
+  return new Date(created + PENDING_ATTEMPT_TTL_MS).toISOString();
+}
 
 export async function GET() {
   const user = await getChatGPTUser();
@@ -33,6 +40,7 @@ export async function GET() {
         mode: "one_time",
         providerStatus: oneTime.provider_status,
         expiredAttempt: false,
+        pendingExpiresAt: item.status === "Aguardando pagamento" ? pendingExpiresAt(item.createdAt) : "",
       }, { headers: { "cache-control": "no-store" } });
     }
     const recurring = await getPaymentLinkBySubscription(item.id);
@@ -44,6 +52,7 @@ export async function GET() {
         mode: "recurring",
         providerStatus: recurring.provider_status,
         expiredAttempt: false,
+        pendingExpiresAt: item.status === "Aguardando pagamento" ? pendingExpiresAt(item.createdAt) : "",
       }, { headers: { "cache-control": "no-store" } });
     }
   }
@@ -55,5 +64,6 @@ export async function GET() {
     mode: "",
     providerStatus: "",
     expiredAttempt: expiration.expired > 0,
+    pendingExpiresAt: "",
   }, { headers: { "cache-control": "no-store" } });
 }
