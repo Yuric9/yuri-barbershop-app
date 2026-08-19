@@ -3,6 +3,7 @@ import { getDb } from "../../../../db";
 import { subscriptions } from "../../../../db/schema";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { getPaymentLinkBySubscription } from "../../../mercadopago-subscriptions";
+import { expirePendingSubscriptionsForClient } from "../../../subscription-pending-expiration";
 import { getOneTimePaymentBySubscription } from "../../../subscription-one-time";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export async function GET() {
     return Response.json({ error: "Entre como cliente para consultar o Clube Yuri." }, { status: 401 });
   }
 
+  const expiration = await expirePendingSubscriptionsForClient(user.email);
   const rows = await getDb()
     .select()
     .from(subscriptions)
@@ -30,6 +32,7 @@ export async function GET() {
         status: item.status,
         mode: "one_time",
         providerStatus: oneTime.provider_status,
+        expiredAttempt: false,
       }, { headers: { "cache-control": "no-store" } });
     }
     const recurring = await getPaymentLinkBySubscription(item.id);
@@ -40,9 +43,17 @@ export async function GET() {
         status: item.status,
         mode: "recurring",
         providerStatus: recurring.provider_status,
+        expiredAttempt: false,
       }, { headers: { "cache-control": "no-store" } });
     }
   }
 
-  return Response.json({ ok: true, subscriptionId: 0, status: "", mode: "", providerStatus: "" }, { headers: { "cache-control": "no-store" } });
+  return Response.json({
+    ok: true,
+    subscriptionId: 0,
+    status: "",
+    mode: "",
+    providerStatus: "",
+    expiredAttempt: expiration.expired > 0,
+  }, { headers: { "cache-control": "no-store" } });
 }
