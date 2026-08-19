@@ -10,6 +10,7 @@ type PaymentState = {
   mode?: PaymentMode;
   providerStatus?: string;
   expiredAttempt?: boolean;
+  pendingExpiresAt?: string;
 };
 
 type ReturnOutcome = "aprovado" | "pendente" | "falhou" | "";
@@ -233,6 +234,7 @@ export default function SubscriptionPaymentModeEnhancer() {
     let forceFreshChoice = false;
     let showExpiredNotice = false;
     let noticeTimer = 0;
+    let pendingExpiryTimer = 0;
 
     const currentUrl = new URL(window.location.href);
     const rawOutcome = currentUrl.searchParams.get("clube_pagamento") || "";
@@ -253,6 +255,16 @@ export default function SubscriptionPaymentModeEnhancer() {
       }, 7_000);
     }
 
+    function schedulePendingExpirationCheck() {
+      if (pendingExpiryTimer) window.clearTimeout(pendingExpiryTimer);
+      pendingExpiryTimer = 0;
+      if (paymentState?.status !== "Aguardando pagamento" || !paymentState.pendingExpiresAt) return;
+      const expiresAt = new Date(paymentState.pendingExpiresAt).getTime();
+      if (!Number.isFinite(expiresAt)) return;
+      const delay = Math.max(250, expiresAt - Date.now() + 250);
+      pendingExpiryTimer = window.setTimeout(() => void loadState(), Math.min(delay, 2_147_000_000));
+    }
+
     async function loadState() {
       if (loadingState) return;
       loadingState = true;
@@ -265,6 +277,7 @@ export default function SubscriptionPaymentModeEnhancer() {
             showExpiredNotice = true;
             scheduleNoticeRemoval();
           }
+          schedulePendingExpirationCheck();
         }
       } catch {
         paymentState = null;
@@ -346,6 +359,7 @@ export default function SubscriptionPaymentModeEnhancer() {
       observer.disconnect();
       document.removeEventListener("click", onCapture, true);
       if (noticeTimer) window.clearTimeout(noticeTimer);
+      if (pendingExpiryTimer) window.clearTimeout(pendingExpiryTimer);
     };
   }, []);
 
