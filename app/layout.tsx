@@ -14,6 +14,8 @@ import "./subscription-qa.css";
 import "./subscription-admin.css";
 import "./subscription-archive.css";
 import "./cash-today.css";
+import "./barber-experience.css";
+import "./barber-preview.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
@@ -33,6 +35,8 @@ import SubscriptionAdminPaymentModeEnhancer from "./subscription-admin-payment-m
 import SubscriptionArchiveEnhancer from "./subscription-archive-enhancer";
 import AdminClubPreviewCleanup from "./admin-club-preview-cleanup";
 import CashTodayGuard from "./cash-today-guard";
+import BarberExperience from "./barber-experience";
+import AdminBarberPreviewLink from "./admin-barber-preview-link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,6 +109,8 @@ export default function RootLayout({
         <SubscriptionArchiveEnhancer />
         <AdminClubPreviewCleanup />
         <CashTodayGuard />
+        <BarberExperience />
+        <AdminBarberPreviewLink />
       </body>
     </html>
   );
