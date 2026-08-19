@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type View = "client" | "admin" | "register";
+type View = "client" | "register";
 
 export default function LoginPanel() {
   const [view, setView] = useState<View>("client");
@@ -15,7 +15,11 @@ export default function LoginPanel() {
     event.preventDefault(); setLoading(true); setMessage("");
     const endpoint = view === "register" ? "/api/auth/register" : "/api/auth/login";
     try {
-      const response = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...form, area: view }) });
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...form, area: "client" }),
+      });
       const data = await response.json() as { error?: string };
       if (!response.ok) setMessage(data.error || "Não foi possível entrar.");
       else window.location.assign("/");
@@ -25,12 +29,11 @@ export default function LoginPanel() {
 
   return <div className="access-box login-card" id="acesso">
     <span className="eyebrow">BEM-VINDO</span>
-    <h1>{view === "register" ? "Crie seu cadastro" : view === "admin" ? "Acesso administrativo" : "Entre na Yuri Barbershop"}</h1>
-    <p>{view === "register" ? "Cadastre-se uma vez para agendar e acompanhar seus atendimentos." : view === "admin" ? "Área exclusiva para a gestão da barbearia." : "Acesse sua conta para agendar e conferir novidades."}</p>
-    <div className="login-tabs">
+    <h1>{view === "register" ? "Crie seu cadastro" : "Entre na Yuri Barbershop"}</h1>
+    <p>{view === "register" ? "Cadastre-se uma vez para agendar e acompanhar seus atendimentos." : "Use seu e-mail e senha. O sistema abre automaticamente a área correspondente ao seu acesso."}</p>
+    <div className="login-tabs" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
       <button className={view === "client" ? "active" : ""} onClick={() => { setView("client"); setMessage(""); }}>Cliente</button>
       <button className={view === "register" ? "active" : ""} onClick={() => { setView("register"); setMessage(""); }}>Cadastrar</button>
-      <button className={view === "admin" ? "active" : ""} onClick={() => { setView("admin"); setMessage(""); }}>Administrador</button>
     </div>
     <form className="own-login-form" onSubmit={submit}>
       {view === "register" && <><label>Nome completo<input required autoComplete="name" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })}/></label><div className="login-form-row"><label>Telefone com DDD<input required inputMode="tel" autoComplete="tel" value={form.phone} onChange={event => setForm({ ...form, phone: event.target.value })}/></label><label>Data de aniversário<input type="date" value={form.birthDate} onChange={event => setForm({ ...form, birthDate: event.target.value })}/></label></div></>}
