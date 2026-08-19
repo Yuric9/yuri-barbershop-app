@@ -10,6 +10,7 @@ import "./product-admin.css";
 import "./product-experience.css";
 import "./subscription-sales.css";
 import "./subscription-payment-mode.css";
+import "./subscription-qa.css";
 import "./subscription-admin.css";
 import "./subscription-archive.css";
 import BookingDateGuard from "./booking-date-guard";
@@ -89,9 +90,9 @@ export default function RootLayout({
         <MenuIconEnhancer />
         <ProductAdminEnhancer />
         <ProductExperience />
+        <SubscriptionSalesEnhancer />
         <SubscriptionPaymentModeEnhancer />
         <SubscriptionPaymentEnhancer />
-        <SubscriptionSalesEnhancer />
         <SubscriptionAdminEnhancer />
         <SubscriptionAdminPaymentModeEnhancer />
         <SubscriptionArchiveEnhancer />
