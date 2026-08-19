@@ -110,6 +110,11 @@ export async function getPaymentLinkBySubscription(subscriptionId: number) {
     .first<PaymentLinkRow>();
 }
 
+export async function deletePaymentLinkBySubscription(subscriptionId: number) {
+  await ensureSubscriptionPaymentStore();
+  await d1().prepare("DELETE FROM subscription_payments WHERE subscription_id = ?").bind(subscriptionId).run();
+}
+
 export async function savePaymentLink(input: {
   subscriptionId: number;
   mercadoPagoId: string;
@@ -208,9 +213,6 @@ export async function syncLocalSubscriptionFromMercadoPago(preapproval: MercadoP
 
   const update: { status: string; startDate?: string; endDate?: string } = { status: localStatus };
   if (localStatus === "Ativa") {
-    // Mercado Pago devolve timestamps em UTC. Para o cliente da barbearia, a data
-    // deve seguir o dia civil de Trindade/GO (America/Sao_Paulo), evitando que uma
-    // aprovação à noite apareça como se tivesse começado no dia seguinte.
     const startDate =
       isoDate(preapproval.date_created) ||
       local.startDate ||
