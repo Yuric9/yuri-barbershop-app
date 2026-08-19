@@ -91,6 +91,11 @@ export async function getOneTimePaymentBySubscription(subscriptionId: number) {
     .first<OneTimePaymentRow>();
 }
 
+export async function deleteOneTimePaymentBySubscription(subscriptionId: number) {
+  await ensureOneTimePaymentStore();
+  await d1().prepare("DELETE FROM subscription_one_time_payments WHERE subscription_id = ?").bind(subscriptionId).run();
+}
+
 export async function saveOneTimePayment(input: {
   subscriptionId: number;
   preferenceId?: string;
