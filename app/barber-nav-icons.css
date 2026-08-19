@@ -1,0 +1,15 @@
+.barber-svg-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-grid !important;
+  place-items: center;
+  color: #c59a3d !important;
+  flex: 0 0 20px;
+}
+.barber-svg-icon svg { width: 18px; height: 18px; display: block; }
+.barber-preview-sidebar nav button.active .barber-svg-icon,
+.barber-portal .sidebar nav button.active .barber-svg-icon { color: #e1bd55 !important; }
+@media (max-width: 900px) {
+  .barber-preview-sidebar nav button .barber-svg-icon { width: 22px !important; height: 22px !important; }
+  .barber-preview-sidebar nav button .barber-svg-icon svg { width: 21px; height: 21px; }
+}
