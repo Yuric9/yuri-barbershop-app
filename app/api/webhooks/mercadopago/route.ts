@@ -43,6 +43,11 @@ function constantTimeEqual(a: string, b: string) {
   return diff === 0;
 }
 
+function signatureDataId(dataId: string) {
+  // O Mercado Pago exige data.id em minúsculas no manifesto quando o ID é alfanumérico.
+  return /[a-z]/i.test(dataId) ? dataId.toLowerCase() : dataId;
+}
+
 async function validMercadoPagoSignature(request: Request, dataId: string) {
   const { webhookSecret } = mercadoPagoRuntimeConfig();
   if (!webhookSecret) return { ok: false, reason: "webhook_not_configured" } as const;
@@ -54,7 +59,7 @@ async function validMercadoPagoSignature(request: Request, dataId: string) {
   const { ts, v1 } = parseSignature(xSignature);
   if (!ts || !v1) return { ok: false, reason: "invalid_signature_header" } as const;
 
-  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+  const manifest = `id:${signatureDataId(dataId)};request-id:${xRequestId};ts:${ts};`;
   const expected = await hmacSha256Hex(webhookSecret, manifest);
   return constantTimeEqual(expected.toLowerCase(), v1.toLowerCase())
     ? ({ ok: true } as const)
@@ -67,6 +72,10 @@ function acceptedSubscriptionTopic(type: string) {
     "subscription_preapproval_plan",
     "subscription_authorized_payment",
   ].includes(type);
+}
+
+async function fetchPreapproval(preapprovalId: string) {
+  return mercadoPagoRequest(`/preapproval/${encodeURIComponent(preapprovalId)}`);
 }
 
 export async function GET() {
@@ -105,24 +114,57 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ignored: true }, { status: 200 });
   }
 
+  // O Clube Yuri não usa plano associado; reconhecemos o evento de plano sem alterar dados locais.
+  if (type === "subscription_preapproval_plan") {
+    return NextResponse.json({ ok: true, ignored: true }, { status: 200 });
+  }
+
   const { accessToken } = mercadoPagoRuntimeConfig();
   if (!accessToken) {
     return NextResponse.json({ ok: false, error: "access_token_not_configured" }, { status: 503 });
   }
 
+  let preapprovalId = dataId;
+  let invoiceStatus = "";
+
+  if (type === "subscription_authorized_payment") {
+    let invoiceResponse: Response;
+    try {
+      invoiceResponse = await mercadoPagoRequest(`/authorized_payments/${encodeURIComponent(dataId)}`);
+    } catch {
+      return NextResponse.json({ ok: false, error: "provider_unavailable" }, { status: 503 });
+    }
+
+    if (invoiceResponse.status === 404 && dataId === "123456") {
+      return NextResponse.json({ ok: true, simulated: true }, { status: 200 });
+    }
+    if (!invoiceResponse.ok) {
+      return NextResponse.json({ ok: false, error: "authorized_payment_lookup_failed" }, { status: 502 });
+    }
+
+    const invoice = await invoiceResponse.json() as {
+      preapproval_id?: string;
+      status?: string;
+      summarized?: string;
+      payment?: { status?: string } | null;
+    };
+    preapprovalId = String(invoice.preapproval_id || "").trim();
+    invoiceStatus = String(invoice.payment?.status || invoice.summarized || invoice.status || "");
+    if (!preapprovalId) {
+      return NextResponse.json({ ok: false, error: "preapproval_id_missing" }, { status: 502 });
+    }
+  }
+
   let providerResponse: Response;
   try {
-    providerResponse = await mercadoPagoRequest(`/preapproval/${encodeURIComponent(dataId)}`);
+    providerResponse = await fetchPreapproval(preapprovalId);
   } catch {
     return NextResponse.json({ ok: false, error: "provider_unavailable" }, { status: 503 });
   }
 
-  // O simulador oficial usa um ID fictício. Mantemos o teste do endpoint em
-  // 200 sem permitir que uma simulação altere qualquer assinatura local.
   if (providerResponse.status === 404 && dataId === "123456") {
     return NextResponse.json({ ok: true, simulated: true }, { status: 200 });
   }
-
   if (!providerResponse.ok) {
     return NextResponse.json({ ok: false, error: "provider_lookup_failed" }, { status: 502 });
   }
@@ -130,8 +172,6 @@ export async function POST(request: Request) {
   const preapproval = (await providerResponse.json()) as MercadoPagoPreapproval;
   const synced = await syncLocalSubscriptionFromMercadoPago(preapproval);
   if (!synced.ok) {
-    // Eventos válidos, porém não pertencentes ao Clube Yuri, são reconhecidos
-    // sem causar mudanças internas. Divergências de pagador/plano são rejeitadas.
     if (["foreign_subscription", "local_subscription_not_found"].includes(synced.reason)) {
       return NextResponse.json({ ok: true, ignored: true }, { status: 200 });
     }
@@ -139,7 +179,15 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { ok: true, received: true, type, resourceId: dataId, subscriptionId: synced.subscriptionId, status: synced.status },
+    {
+      ok: true,
+      received: true,
+      type,
+      resourceId: dataId,
+      subscriptionId: synced.subscriptionId,
+      status: synced.status,
+      invoiceStatus: invoiceStatus || undefined,
+    },
     { status: 200, headers: { "cache-control": "no-store" } },
   );
 }
