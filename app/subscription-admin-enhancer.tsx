@@ -398,9 +398,13 @@ export default function SubscriptionAdminEnhancer() {
       if (destroyed) return;
       const campaign = legacyCampaign();
       const admin = findLegacyAdmin();
-      if (campaign && admin) {
+      if (!campaign || !admin) return;
+      const existingRoot = document.getElementById("clube-admin-pro");
+      if (!existingRoot) {
         render();
-        if (!payload && !loading) void load();
+        if (!loading) void load();
+      } else {
+        setLegacyVisibility();
       }
     }
 
