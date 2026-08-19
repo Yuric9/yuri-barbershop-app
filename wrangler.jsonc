@@ -5,7 +5,8 @@
   "compatibility_date": "2026-08-14",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "ADMIN_EMAIL": "yure-c@hotmail.com"
+    "ADMIN_EMAIL": "yure-c@hotmail.com",
+    "MP_TEST_PAYER_EMAIL": "test@testuser.com"
   },
   "assets": {
     "directory": "./dist/client",
