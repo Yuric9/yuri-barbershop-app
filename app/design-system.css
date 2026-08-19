@@ -118,6 +118,17 @@ button:disabled,
 .ui-badge--danger { background: #f3dfdc; color: var(--yuri-danger); }
 .ui-badge--gold { background: var(--yuri-gold-soft); color: #6b5016; }
 
+.ui-field { display: grid; gap: 6px; min-width: 0; }
+.ui-field__label { color: var(--yuri-muted); font-size: .75rem; font-weight: 800; }
+.ui-field__control { position: relative; display: flex; align-items: center; }
+.ui-field__control input { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid var(--yuri-line); border-radius: var(--radius-control); background: var(--yuri-surface); color: var(--yuri-ink); font-size: 1rem; }
+.ui-field__control input:focus { border-color: var(--yuri-gold); }
+.ui-field__trailing { position: absolute; right: 10px; display: grid; place-items: center; }
+.ui-field__hint,.ui-field__error { font-size: .72rem; line-height: 1.4; }
+.ui-field__hint { color: var(--yuri-muted); }
+.ui-field__error { color: var(--yuri-danger); }
+.ui-field--error .ui-field__control input { border-color: var(--yuri-danger); }
+
 /* Padronização progressiva da experiência do colaborador */
 .barber-preview-shell {
   font-family: var(--font-ui);
@@ -194,6 +205,7 @@ button:disabled,
   }
 
   .ui-card { padding: var(--space-4); }
+  .ui-field__control input { min-height: var(--touch-mobile); }
 }
 
 @media (max-width: 380px) {
