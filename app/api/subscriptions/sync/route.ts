@@ -6,6 +6,7 @@ import {
   getPaymentLinkBySubscription,
   syncSubscriptionByLocalId,
 } from "../../../mercadopago-subscriptions";
+import { expirePendingSubscriptionsForClient } from "../../../subscription-pending-expiration";
 import {
   getOneTimePaymentBySubscription,
   syncOneTimeSubscriptionByLocalId,
@@ -35,6 +36,7 @@ export async function POST() {
     return Response.json({ error: "Entre como cliente para atualizar o Clube Yuri." }, { status: 401 });
   }
 
+  const expiration = await expirePendingSubscriptionsForClient(user.email);
   const db = getDb();
   const rows = await db
     .select()
@@ -42,14 +44,15 @@ export async function POST() {
     .where(eq(subscriptions.clientEmail, user.email))
     .orderBy(desc(subscriptions.id));
 
-  let changed = false;
-  let syncedStatus = "";
-  let syncedSubscriptionId = 0;
+  let changed = expiration.expired > 0;
+  let syncedStatus = expiration.expired > 0 ? "Expirada" : "";
+  let syncedSubscriptionId = expiration.expiredIds[0] || 0;
   let syncedMode = "";
 
   // Identificamos primeiro qual tipo de pagamento pertence a cada registro. Assim,
   // um checkout de 30 dias nunca é confundido com uma assinatura recorrente antiga.
   for (const item of rows.slice(0, 8)) {
+    if (!["Ativa", "Aguardando pagamento"].includes(item.status)) continue;
     const oneTimeState = await getOneTimePaymentBySubscription(item.id);
     if (oneTimeState) {
       syncedMode = "one_time";
@@ -80,7 +83,7 @@ export async function POST() {
   }
 
   return Response.json(
-    { ok: true, changed, status: syncedStatus, subscriptionId: syncedSubscriptionId, mode: syncedMode },
+    { ok: true, changed, status: syncedStatus, subscriptionId: syncedSubscriptionId, mode: syncedMode, expired: expiration.expired > 0 },
     { headers: { "cache-control": "no-store" } },
   );
 }
