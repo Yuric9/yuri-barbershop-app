@@ -21,7 +21,12 @@ function saoPauloToday() {
 
 function activeAdminSection() {
   const active = document.querySelector<HTMLButtonElement>(".sidebar nav button.active");
-  return normalize(active?.textContent);
+  if (!active) return "";
+  const textOnly = Array.from(active.childNodes)
+    .filter((node) => node.nodeType === Node.TEXT_NODE)
+    .map((node) => node.textContent || "")
+    .join(" ");
+  return normalize(textOnly || active.textContent);
 }
 
 function lockCashDate() {
