@@ -14,6 +14,21 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function syncOneTimeWithShortRetry(subscriptionId: number) {
+  const first = await syncOneTimeSubscriptionByLocalId(subscriptionId);
+  if (first.ok || first.reason !== "payment_not_created_yet") return first;
+
+  // O Checkout Pro pode redirecionar o cliente alguns instantes antes de o
+  // pagamento aparecer na busca da API. Fazemos uma única tentativa curta para
+  // reduzir o risco de o cliente voltar ao site ainda vendo "Aguardando pagamento".
+  await wait(700);
+  return syncOneTimeSubscriptionByLocalId(subscriptionId);
+}
+
 export async function POST() {
   const user = await getChatGPTUser();
   if (!user || user.role !== "client") {
@@ -39,7 +54,7 @@ export async function POST() {
     if (oneTimeState) {
       syncedMode = "one_time";
       syncedSubscriptionId = item.id;
-      const result = await syncOneTimeSubscriptionByLocalId(item.id);
+      const result = await syncOneTimeWithShortRetry(item.id);
       if (result.ok) {
         syncedStatus = result.status;
         if (result.previousStatus !== result.status) changed = true;
