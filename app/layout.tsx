@@ -22,6 +22,7 @@ import MobileExperience from "./mobile-experience";
 import MenuIconEnhancer from "./menu-icon-enhancer";
 import ProductAdminEnhancer from "./product-admin-enhancer";
 import ProductExperience from "./product-experience";
+import SubscriptionClientStatusGuard from "./subscription-client-status-guard";
 import SubscriptionPaymentModeEnhancer from "./subscription-payment-mode-enhancer";
 import SubscriptionPaymentEnhancer from "./subscription-payment-enhancer";
 import SubscriptionSalesEnhancer from "./subscription-sales-enhancer";
@@ -90,6 +91,7 @@ export default function RootLayout({
         <MenuIconEnhancer />
         <ProductAdminEnhancer />
         <ProductExperience />
+        <SubscriptionClientStatusGuard />
         <SubscriptionSalesEnhancer />
         <SubscriptionPaymentModeEnhancer />
         <SubscriptionPaymentEnhancer />
