@@ -5,6 +5,10 @@ import {
   syncLocalSubscriptionFromMercadoPago,
   type MercadoPagoPreapproval,
 } from "../../../mercadopago-subscriptions";
+import {
+  syncLocalOneTimePayment,
+  type MercadoPagoOneTimePayment,
+} from "../../../subscription-one-time";
 
 export const runtime = "edge";
 
@@ -102,12 +106,50 @@ export async function POST(request: Request) {
       body?.data?.id ||
       "",
   ).trim();
-  const type = String(url.searchParams.get("type") || body?.type || "").trim();
+  const type = String(url.searchParams.get("type") || url.searchParams.get("topic") || body?.type || "").trim();
 
   const signature = await validMercadoPagoSignature(request, dataId);
   if (!signature.ok) {
     const status = signature.reason === "webhook_not_configured" ? 503 : 401;
     return NextResponse.json({ ok: false, error: signature.reason }, { status });
+  }
+
+  // Checkout Pro envia o tópico payment. Consultamos o pagamento no Mercado Pago
+  // e só ativamos 30 dias quando o provedor confirma status approved.
+  if (type === "payment") {
+    let paymentResponse: Response;
+    try {
+      paymentResponse = await mercadoPagoRequest(`/v1/payments/${encodeURIComponent(dataId)}`);
+    } catch {
+      return NextResponse.json({ ok: false, error: "provider_unavailable" }, { status: 503 });
+    }
+
+    if (paymentResponse.status === 404 && dataId === "123456") {
+      return NextResponse.json({ ok: true, simulated: true }, { status: 200 });
+    }
+    if (!paymentResponse.ok) {
+      return NextResponse.json({ ok: false, error: "payment_lookup_failed" }, { status: 502 });
+    }
+
+    const payment = await paymentResponse.json() as MercadoPagoOneTimePayment;
+    const synced = await syncLocalOneTimePayment(payment);
+    if (!synced.ok) {
+      if (["foreign_payment", "local_subscription_not_found"].includes(synced.reason)) {
+        return NextResponse.json({ ok: true, ignored: true }, { status: 200 });
+      }
+      return NextResponse.json({ ok: false, error: synced.reason }, { status: 409 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      received: true,
+      type,
+      resourceId: dataId,
+      subscriptionId: synced.subscriptionId,
+      status: synced.status,
+      paymentStatus: synced.providerStatus,
+      mode: "one_time",
+    }, { status: 200, headers: { "cache-control": "no-store" } });
   }
 
   if (!acceptedSubscriptionTopic(type)) {
@@ -187,6 +229,7 @@ export async function POST(request: Request) {
       subscriptionId: synced.subscriptionId,
       status: synced.status,
       invoiceStatus: invoiceStatus || undefined,
+      mode: "recurring",
     },
     { status: 200, headers: { "cache-control": "no-store" } },
   );
