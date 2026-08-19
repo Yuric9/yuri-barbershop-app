@@ -2,8 +2,14 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "../../../../db";
 import { subscriptions } from "../../../../db/schema";
 import { getChatGPTUser } from "../../../chatgpt-auth";
-import { syncSubscriptionByLocalId } from "../../../mercadopago-subscriptions";
-import { syncOneTimeSubscriptionByLocalId } from "../../../subscription-one-time";
+import {
+  getPaymentLinkBySubscription,
+  syncSubscriptionByLocalId,
+} from "../../../mercadopago-subscriptions";
+import {
+  getOneTimePaymentBySubscription,
+  syncOneTimeSubscriptionByLocalId,
+} from "../../../subscription-one-time";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
@@ -26,25 +32,36 @@ export async function POST() {
   let syncedSubscriptionId = 0;
   let syncedMode = "";
 
-  // Percorremos as tentativas mais recentes para recuperar tanto a assinatura
-  // recorrente quanto a compra única de 30 dias após o retorno do Mercado Pago.
+  // Identificamos primeiro qual tipo de pagamento pertence a cada registro. Assim,
+  // um checkout de 30 dias nunca é confundido com uma assinatura recorrente antiga.
   for (const item of rows.slice(0, 8)) {
-    const oneTime = await syncOneTimeSubscriptionByLocalId(item.id);
-    if (oneTime.ok) {
-      syncedStatus = oneTime.status;
-      syncedSubscriptionId = oneTime.subscriptionId;
+    const oneTimeState = await getOneTimePaymentBySubscription(item.id);
+    if (oneTimeState) {
       syncedMode = "one_time";
-      if (oneTime.previousStatus !== oneTime.status) changed = true;
+      syncedSubscriptionId = item.id;
+      const result = await syncOneTimeSubscriptionByLocalId(item.id);
+      if (result.ok) {
+        syncedStatus = result.status;
+        if (result.previousStatus !== result.status) changed = true;
+      } else {
+        syncedStatus = item.status;
+      }
       break;
     }
 
-    const recurring = await syncSubscriptionByLocalId(item.id);
-    if (!recurring.ok) continue;
-    syncedStatus = recurring.status;
-    syncedSubscriptionId = recurring.subscriptionId;
-    syncedMode = "recurring";
-    if (recurring.previousStatus !== recurring.status) changed = true;
-    break;
+    const recurringState = await getPaymentLinkBySubscription(item.id);
+    if (recurringState) {
+      syncedMode = "recurring";
+      syncedSubscriptionId = item.id;
+      const result = await syncSubscriptionByLocalId(item.id);
+      if (result.ok) {
+        syncedStatus = result.status;
+        if (result.previousStatus !== result.status) changed = true;
+      } else {
+        syncedStatus = item.status;
+      }
+      break;
+    }
   }
 
   return Response.json(
