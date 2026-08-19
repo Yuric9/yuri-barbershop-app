@@ -1,0 +1,218 @@
+.barber-portal {
+  --barber-panel: #151512;
+  --barber-panel-soft: #1e1d18;
+  --barber-gold: #c9a13b;
+  --barber-line: #d8cfbc;
+}
+
+.barber-portal .app-content {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(197,154,61,.10), transparent 28%),
+    #f7f4ed;
+}
+
+.barber-role-banner {
+  width: min(1080px, calc(100% - 48px));
+  margin: 18px auto 6px;
+  padding: 18px 22px;
+  border: 1px solid #2e2c25;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #11110f, #1d1b16);
+  color: #fff;
+  box-shadow: 0 18px 44px rgba(25,20,12,.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.barber-role-banner > div {
+  display: grid;
+  gap: 4px;
+}
+
+.barber-role-banner small {
+  color: var(--barber-gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.barber-role-banner strong {
+  font: 24px/1.15 Georgia, serif;
+}
+
+.barber-role-banner span {
+  color: #b8b2a5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.barber-role-banner em {
+  padding: 8px 11px;
+  border: 1px solid rgba(201,161,59,.35);
+  border-radius: 999px;
+  color: var(--barber-gold);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+
+.barber-portal .dashboard,
+.barber-portal .app-content > section:not(.app-header),
+.barber-portal .app-content > .dashboard {
+  width: min(1080px, calc(100% - 48px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.barber-portal .welcome-line {
+  margin-top: 24px;
+  padding: 25px 27px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #171714, #232019);
+  color: #fff;
+  border: 1px solid #2f2c25;
+  box-shadow: 0 18px 42px rgba(31,25,16,.12);
+}
+
+.barber-portal .welcome-line p {
+  margin: 0 0 6px;
+  color: var(--barber-gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.barber-portal .welcome-line h2 {
+  margin: 0;
+  font: 30px/1.12 Georgia, serif;
+}
+
+.barber-portal .metric-grid {
+  margin-top: 16px;
+  gap: 12px;
+}
+
+.barber-portal .metric {
+  min-height: 126px;
+  border-radius: 17px;
+  border: 1px solid #e0d9cc;
+  box-shadow: 0 9px 26px rgba(31,25,16,.055);
+}
+
+.barber-portal .metric.gold {
+  background: var(--barber-panel);
+  color: white;
+  border-color: #28271f;
+}
+
+.barber-portal .metric small {
+  font-size: 9px;
+  letter-spacing: .08em;
+  font-weight: 900;
+}
+
+.barber-portal .metric strong {
+  font-size: 24px;
+}
+
+.barber-portal .panel,
+.barber-portal .form-panel,
+.barber-portal .table-card {
+  border-radius: 18px;
+  border-color: #e1dacd;
+  box-shadow: 0 12px 32px rgba(31,25,16,.055);
+}
+
+.barber-portal .agenda-admin-row {
+  padding: 16px 0;
+}
+
+.barber-portal .agenda-actions button {
+  min-height: 42px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.barber-portal .section-title small {
+  color: #a97f1f;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.barber-portal .sidebar-user small {
+  color: #c7b67d;
+}
+
+.barber-preview-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border: 1px solid #2e2c25;
+  border-radius: 10px;
+  background: #171714;
+  color: #e1bd57;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.barber-preview-link:hover,
+.barber-preview-link:focus-visible {
+  background: #242117;
+  outline: 2px solid rgba(197,154,61,.25);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .barber-role-banner,
+  .barber-portal .dashboard,
+  .barber-portal .app-content > section:not(.app-header),
+  .barber-portal .app-content > .dashboard {
+    width: calc(100% - 28px);
+  }
+
+  .barber-role-banner {
+    margin-top: 12px;
+    padding: 16px;
+  }
+
+  .barber-role-banner strong {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 640px) {
+  .barber-role-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .barber-role-banner em {
+    align-self: flex-start;
+  }
+
+  .barber-portal .welcome-line {
+    padding: 20px;
+  }
+
+  .barber-portal .welcome-line h2 {
+    font-size: 25px;
+  }
+
+  .barber-portal .metric {
+    min-height: 105px;
+  }
+
+  .barber-preview-link {
+    width: 100%;
+  }
+}
