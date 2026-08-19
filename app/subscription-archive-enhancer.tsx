@@ -72,6 +72,8 @@ export default function SubscriptionArchiveEnhancer() {
     let destroyed = false;
     let archiveMode = false;
     let loading = false;
+    let loaded = false;
+    let scanScheduled = false;
     let archived: ArchivedSubscription[] = [];
     let search = "";
     let feedback = "";
@@ -81,7 +83,7 @@ export default function SubscriptionArchiveEnhancer() {
     }
 
     async function loadArchived() {
-      if (loading) return;
+      if (loading || !root()) return;
       loading = true;
       renderArchiveTab();
       try {
@@ -89,9 +91,11 @@ export default function SubscriptionArchiveEnhancer() {
         if (!response.ok) throw new Error();
         const data = await response.json();
         archived = data.archived || [];
+        feedback = "";
       } catch {
         feedback = "Não foi possível carregar os assinantes arquivados agora.";
       } finally {
+        loaded = true;
         loading = false;
         renderArchiveTab();
         if (archiveMode) renderArchiveView();
@@ -127,7 +131,7 @@ export default function SubscriptionArchiveEnhancer() {
           tabs.querySelectorAll("button").forEach((tabButton) => tabButton.classList.remove("active"));
           button?.classList.add("active");
           renderArchiveView();
-          if (!archived.length && !loading) void loadArchived();
+          if (!loading) void loadArchived();
         });
       }
       const label = `Arquivados${archived.length ? ` (${archived.length})` : ""}`;
@@ -238,10 +242,12 @@ export default function SubscriptionArchiveEnhancer() {
     }
 
     function scan() {
+      scanScheduled = false;
       if (destroyed) return;
       const host = root();
       if (!host) return;
       renderArchiveTab();
+      if (!loaded && !loading) void loadArchived();
       if (archiveMode) {
         if (!host.querySelector(".clube-admin-archive-view")) renderArchiveView();
       } else {
@@ -249,10 +255,15 @@ export default function SubscriptionArchiveEnhancer() {
       }
     }
 
-    const observer = new MutationObserver(scan);
+    function scheduleScan() {
+      if (destroyed || scanScheduled) return;
+      scanScheduled = true;
+      window.requestAnimationFrame(scan);
+    }
+
+    const observer = new MutationObserver(scheduleScan);
     observer.observe(document.body, { childList: true, subtree: true });
-    scan();
-    void loadArchived();
+    scheduleScan();
 
     return () => {
       destroyed = true;
