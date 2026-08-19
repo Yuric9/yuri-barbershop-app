@@ -29,6 +29,7 @@ import SubscriptionSalesEnhancer from "./subscription-sales-enhancer";
 import SubscriptionAdminEnhancer from "./subscription-admin-enhancer";
 import SubscriptionAdminPaymentModeEnhancer from "./subscription-admin-payment-mode-enhancer";
 import SubscriptionArchiveEnhancer from "./subscription-archive-enhancer";
+import AdminClubPreviewCleanup from "./admin-club-preview-cleanup";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,6 +99,7 @@ export default function RootLayout({
         <SubscriptionAdminEnhancer />
         <SubscriptionAdminPaymentModeEnhancer />
         <SubscriptionArchiveEnhancer />
+        <AdminClubPreviewCleanup />
       </body>
     </html>
   );
