@@ -1,0 +1,48 @@
+.cash-new-client-visible {
+  min-height: 44px !important;
+  padding: 10px 14px !important;
+  border: 1px solid #c59a3d !important;
+  border-radius: 10px !important;
+  background: #fffaf0 !important;
+  color: #5a4314 !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(31, 25, 16, .08);
+}
+
+.cash-new-client-visible:hover,
+.cash-new-client-visible:focus-visible {
+  background: #f4ead1 !important;
+  outline: 2px solid rgba(197, 154, 61, .28);
+  outline-offset: 2px;
+}
+
+.cash-today-date {
+  position: relative;
+}
+
+.cash-today-date::after {
+  content: "Somente hoje • para datas anteriores use Relatórios";
+  display: block;
+  margin-top: 5px;
+  color: #817b70;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.cash-today-date input:disabled {
+  opacity: 1 !important;
+  cursor: not-allowed;
+  background: #f3efe6 !important;
+  color: #5f5a51 !important;
+  border-color: #ddd4c4 !important;
+}
+
+@media (max-width: 720px) {
+  .cash-new-client-visible {
+    width: 100%;
+  }
+  .cash-today-date::after {
+    font-size: 11px;
+  }
+}
