@@ -130,7 +130,8 @@ export default function SubscriptionArchiveEnhancer() {
           if (!archived.length && !loading) void loadArchived();
         });
       }
-      button.textContent = `Arquivados${archived.length ? ` (${archived.length})` : ""}`;
+      const label = `Arquivados${archived.length ? ` (${archived.length})` : ""}`;
+      if (button.textContent !== label) button.textContent = label;
       button.classList.toggle("active", archiveMode);
     }
 
@@ -241,8 +242,11 @@ export default function SubscriptionArchiveEnhancer() {
       const host = root();
       if (!host) return;
       renderArchiveTab();
-      if (archiveMode) renderArchiveView();
-      else injectArchiveAction();
+      if (archiveMode) {
+        if (!host.querySelector(".clube-admin-archive-view")) renderArchiveView();
+      } else {
+        injectArchiveAction();
+      }
     }
 
     const observer = new MutationObserver(scan);
