@@ -32,6 +32,16 @@ function tokenIdentity(accessToken: string) {
   };
 }
 
+function testRecurringWindow() {
+  // A documentação de assinatura autorizada do Mercado Pago envia start_date e
+  // end_date no auto_recurring. Mantemos essas datas somente no ambiente de
+  // teste para reproduzir o payload oficial sem alterar o fluxo produtivo.
+  const start = new Date(Date.now() + 5 * 60 * 1000);
+  const end = new Date(start);
+  end.setUTCFullYear(end.getUTCFullYear() + 1);
+  return { start_date: start.toISOString(), end_date: end.toISOString() };
+}
+
 export async function POST(request: Request) {
   const user = await getChatGPTUser();
   if (!user || user.role !== "client") {
@@ -102,16 +112,19 @@ export async function POST(request: Request) {
 
   const origin = new URL(request.url).origin;
   const mercadoPagoPayerEmail = testPayerEmail || user.email;
+  const autoRecurring: Record<string, unknown> = {
+    frequency: 1,
+    frequency_type: "months",
+    transaction_amount: current.priceCents / 100,
+    currency_id: "BRL",
+  };
+  if (testPayerEmail) Object.assign(autoRecurring, testRecurringWindow());
+
   const payload: Record<string, unknown> = {
     reason: "Clube Yuri - Yuri Barbershop",
     external_reference: `clube-yuri:${current.id}`,
     payer_email: mercadoPagoPayerEmail,
-    auto_recurring: {
-      frequency: 1,
-      frequency_type: "months",
-      transaction_amount: current.priceCents / 100,
-      currency_id: "BRL",
-    },
+    auto_recurring: autoRecurring,
     back_url: `${origin}/?clube_yuri=retorno`,
     status: testPayerEmail ? "authorized" : "pending",
   };
@@ -139,8 +152,10 @@ export async function POST(request: Request) {
 
   if (!response.ok || !data.id || (!testPayerEmail && !data.init_point)) {
     const providerDetail = [data.message, data.error, data.cause?.[0]?.description].filter(Boolean).join(" — ");
-    const error = testPayerEmail && providerDetail
-      ? `Mercado Pago (teste): ${providerDetail}`
+    const providerRequestId = response.headers.get("x-request-id") || response.headers.get("x-correlation-id") || "";
+    const providerSuffix = `HTTP ${response.status}${providerRequestId ? ` • ref ${providerRequestId}` : ""}`;
+    const error = testPayerEmail
+      ? `Mercado Pago (teste): ${providerDetail || "falha ao criar a assinatura"} • ${providerSuffix}`
       : "Não foi possível abrir o pagamento agora. Tente novamente em instantes.";
     return Response.json(
       { error },
