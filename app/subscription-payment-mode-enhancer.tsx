@@ -11,6 +11,8 @@ type PaymentState = {
   providerStatus?: string;
 };
 
+type ReturnOutcome = "aprovado" | "pendente" | "falhou" | "";
+
 function membershipState(page: HTMLElement) {
   const status = page.querySelector<HTMLElement>(".membership-status")?.textContent || "";
   if (/assinatura ativa/i.test(status)) return "active" as const;
@@ -22,9 +24,15 @@ function membershipState(page: HTMLElement) {
 
 function feedback(page: HTMLElement, text: string) {
   let node = page.querySelector<HTMLElement>(".clube-payment-mode-feedback");
+  if (!text) {
+    node?.remove();
+    return;
+  }
   if (!node) {
     node = document.createElement("p");
     node.className = "clube-payment-mode-feedback";
+    node.setAttribute("role", "status");
+    node.setAttribute("aria-live", "polite");
     page.querySelector(".clube-payment-choice-panel")?.insertAdjacentElement("afterend", node);
   }
   node.textContent = text;
@@ -35,8 +43,9 @@ async function openCheckout(page: HTMLElement, mode: Exclude<PaymentMode, "">, b
   const original = button.textContent || "Continuar";
   button.dataset.loading = "1";
   button.disabled = true;
+  button.setAttribute("aria-busy", "true");
   button.textContent = "Preparando Mercado Pago...";
-  feedback(page, "");
+  feedback(page, "Abrindo o ambiente seguro do Mercado Pago...");
   try {
     const endpoint = mode === "one_time" ? "/api/subscriptions/checkout-once" : "/api/subscriptions/checkout";
     const response = await fetch(endpoint, {
@@ -52,6 +61,7 @@ async function openCheckout(page: HTMLElement, mode: Exclude<PaymentMode, "">, b
   } catch (error) {
     feedback(page, error instanceof Error ? error.message : "Não foi possível abrir o pagamento agora.");
     button.disabled = false;
+    button.removeAttribute("aria-busy");
     button.textContent = original;
     button.dataset.loading = "0";
   }
@@ -84,12 +94,30 @@ function hideLegacyPaymentButtons(page: HTMLElement) {
   });
 }
 
-function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null) {
+function showReturnOutcome(page: HTMLElement, outcome: ReturnOutcome) {
+  if (!outcome) return;
+  const state = membershipState(page);
+  if (outcome === "falhou") {
+    feedback(page, "O pagamento não foi concluído. Você pode escolher uma forma de pagamento e tentar novamente.");
+    return;
+  }
+  if (outcome === "pendente") {
+    feedback(page, "Seu pagamento está em processamento no Mercado Pago. Assim que for confirmado, o Clube será liberado automaticamente.");
+    return;
+  }
+  if (state === "active") {
+    feedback(page, "Pagamento confirmado. Seu Clube Yuri está ativo.");
+  } else {
+    feedback(page, "Pagamento recebido. Estamos confirmando o status com o Mercado Pago; isso pode levar alguns instantes.");
+  }
+}
+
+function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null, returnOutcome: ReturnOutcome) {
   const vip = page.querySelector<HTMLElement>(".membership-vip-card");
   if (!vip) return;
 
   const state = membershipState(page);
-  const renderKey = `${state}:${paymentState?.mode || ""}:${paymentState?.providerStatus || ""}`;
+  const renderKey = `${state}:${paymentState?.mode || ""}:${paymentState?.providerStatus || ""}:${returnOutcome}`;
   if (page.dataset.clubePaymentModeRender === renderKey && vip.querySelector(".clube-payment-choice-panel")) {
     hideLegacyPaymentButtons(page);
     return;
@@ -117,7 +145,7 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
       <small>${oneTime ? "30 DIAS • PAGAMENTO ÚNICO" : "MENSAL • RENOVAÇÃO AUTOMÁTICA"}</small>
       <strong>${oneTime ? "Seu pagamento de 30 dias está em andamento" : "Sua assinatura mensal está em andamento"}</strong>
       <p>${oneTime ? "Continue no Mercado Pago para concluir o pagamento. Não haverá renovação automática." : "Continue no Mercado Pago para concluir a autorização da cobrança recorrente mensal."}</p>
-      <button type="button" data-payment-mode="${paymentState.mode}">Continuar no Mercado Pago</button>
+      <button type="button" data-payment-mode="${paymentState.mode}" aria-label="Continuar pagamento no Mercado Pago">Continuar no Mercado Pago</button>
     </div>`;
   } else {
     panel.innerHTML = `
@@ -130,7 +158,7 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
           <h5>Renovação automática</h5>
           <p>Autorize uma vez e a cobrança se repete mensalmente pelo Mercado Pago.</p>
           <span class="clube-payment-assurance">Renovação automática mensal • cancelamento pode ser solicitado a qualquer momento.</span>
-          <button type="button" data-payment-mode="recurring">Assinar mensalmente</button>
+          <button type="button" data-payment-mode="recurring" aria-label="Assinar Clube Yuri com renovação automática mensal">Assinar mensalmente</button>
         </article>
         <article class="clube-payment-option">
           <span class="clube-payment-tag neutral">SEM RENOVAÇÃO</span>
@@ -139,7 +167,7 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
           <h5>Pagamento único</h5>
           <p>Pague uma vez e use o Clube pelo período contratado. Pix, cartão e outros meios podem aparecer conforme disponibilidade do Mercado Pago.</p>
           <span class="clube-payment-assurance">Pagamento único • não renova automaticamente.</span>
-          <button type="button" data-payment-mode="one_time">Comprar somente 30 dias</button>
+          <button type="button" data-payment-mode="one_time" aria-label="Comprar 30 dias do Clube Yuri sem renovação automática">Comprar somente 30 dias</button>
         </article>
       </div>
       <p class="clube-payment-method-note">Os meios de pagamento exibidos no checkout são definidos pelo Mercado Pago.</p>
@@ -169,6 +197,8 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
       });
     }
   }
+
+  showReturnOutcome(page, returnOutcome);
 }
 
 export default function SubscriptionPaymentModeEnhancer() {
@@ -176,6 +206,17 @@ export default function SubscriptionPaymentModeEnhancer() {
     let destroyed = false;
     let paymentState: PaymentState | null = null;
     let loadingState = false;
+    let scanScheduled = false;
+
+    const currentUrl = new URL(window.location.href);
+    const rawOutcome = currentUrl.searchParams.get("clube_pagamento") || "";
+    const returnOutcome: ReturnOutcome = ["aprovado", "pendente", "falhou"].includes(rawOutcome)
+      ? (rawOutcome as ReturnOutcome)
+      : "";
+    if (rawOutcome) {
+      currentUrl.searchParams.delete("clube_pagamento");
+      window.history.replaceState({}, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+    }
 
     async function loadState() {
       if (loadingState) return;
@@ -187,34 +228,59 @@ export default function SubscriptionPaymentModeEnhancer() {
         paymentState = null;
       } finally {
         loadingState = false;
-        scan();
+        scheduleScan();
       }
     }
 
     function scan() {
+      scanScheduled = false;
       if (destroyed) return;
       document.querySelectorAll<HTMLElement>(".membership-page.membership-sales-upgraded").forEach((page) => {
-        renderChoicePanel(page, paymentState);
+        renderChoicePanel(page, paymentState, returnOutcome);
       });
+    }
+
+    function scheduleScan() {
+      if (destroyed || scanScheduled) return;
+      scanScheduled = true;
+      window.requestAnimationFrame(scan);
+    }
+
+    function focusPaymentChoice(page: HTMLElement) {
+      scheduleScan();
+      window.setTimeout(() => {
+        const panel = page.querySelector<HTMLElement>(".clube-payment-choice-panel");
+        if (!panel) return;
+        panel.scrollIntoView({ behavior: "smooth", block: "center" });
+        panel.querySelector<HTMLButtonElement>("button[data-payment-mode]")?.focus({ preventScroll: true });
+      }, 80);
     }
 
     const onCapture = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
-      const legacy = target?.closest<HTMLButtonElement>(".membership-payment-resume, .membership-payment-restart");
+      const legacy = target?.closest<HTMLButtonElement>("button.membership-action");
       if (!legacy) return;
+      const page = legacy.closest<HTMLElement>(".membership-page");
+      if (!page) return;
+
+      // Bloqueia o fluxo antigo de "Quero assinar" para que nenhum clique rápido
+      // pule a escolha entre mensal recorrente e pagamento único de 30 dias.
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      const page = legacy.closest<HTMLElement>(".membership-page");
-      if (!page) return;
-      if (paymentState?.mode) void openCheckout(page, paymentState.mode, legacy);
-      else page.querySelector<HTMLElement>(".clube-payment-choice-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      if (membershipState(page) === "active") return;
+      if (paymentState?.mode && /continuar/i.test(legacy.textContent || "")) {
+        void openCheckout(page, paymentState.mode, legacy);
+        return;
+      }
+      focusPaymentChoice(page);
     };
 
     document.addEventListener("click", onCapture, true);
-    const observer = new MutationObserver(scan);
+    const observer = new MutationObserver(scheduleScan);
     observer.observe(document.body, { childList: true, subtree: true });
-    scan();
+    scheduleScan();
     void loadState();
 
     return () => {
