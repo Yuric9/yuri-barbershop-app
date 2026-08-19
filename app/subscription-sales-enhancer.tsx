@@ -107,11 +107,11 @@ function updateCalculator(page: HTMLElement, routineKey: RoutineKey, visits: num
   } else if (difference === 0) {
     if (resultLabel) resultLabel.textContent = "O PLANO JÁ SE PAGA";
     if (result) result.textContent = "R$ 120 = R$ 120";
-    if (summary) summary.textContent = `Sua rotina de ${routine.short.toLowerCase()} ${visits}x no mês já chega a R$ 120. No Clube, você mantém o mesmo valor mensal e ganha mais liberdade para cuidar do visual.`;
+    if (summary) summary.textContent = `Sua rotina de ${routine.short.toLowerCase()} ${visits}x no mês já chega a R$ 120. No Clube, você mantém o mesmo valor e ganha mais liberdade para cuidar do visual.`;
   } else {
     if (resultLabel) resultLabel.textContent = "SEU GASTO HOJE";
     if (result) result.textContent = money(monthlySpend);
-    if (summary) summary.textContent = `Hoje essa rotina custa ${money(monthlySpend)}. O Clube faz mais sentido quando você quer vir mais vezes no mês e manter cabelo, barba e sobrancelhas em dia por um valor fixo.`;
+    if (summary) summary.textContent = `Hoje essa rotina custa ${money(monthlySpend)}. O Clube faz mais sentido quando você quer vir mais vezes e manter cabelo, barba e sobrancelhas em dia por um valor fixo.`;
   }
 }
 
@@ -131,10 +131,10 @@ function enhanceMembershipPage(page: HTMLElement) {
   const originalAction = hero.querySelector<HTMLButtonElement>("button.membership-action");
 
   if (eyebrow) eyebrow.textContent = "♛ CLUBE YURI";
-  if (title) title.textContent = "Seu visual em dia. Um valor fixo por mês.";
-  if (intro) intro.textContent = "Corte, barba e sobrancelhas durante o mês, com até 6 atendimentos e pagamento recorrente seguro.";
+  if (title) title.textContent = "Seu visual em dia. Um único valor.";
+  if (intro) intro.textContent = "Corte, barba e sobrancelhas com até 6 atendimentos por ciclo. Na hora de pagar, você escolhe como quer renovar.";
   if (priceStrong) priceStrong.textContent = "R$ 120";
-  if (priceSmall) priceSmall.textContent = ",00 / mês";
+  if (priceSmall) priceSmall.textContent = ",00";
   if (originalAction && !originalAction.classList.contains("membership-payment-resume") && !originalAction.classList.contains("membership-payment-restart")) {
     originalAction.textContent = "Quero entrar para o Clube";
   }
@@ -142,14 +142,14 @@ function enhanceMembershipPage(page: HTMLElement) {
   if (!hero.querySelector(".membership-sales-limit")) {
     const heroLimit = document.createElement("div");
     heroLimit.className = "membership-sales-limit";
-    heroLimit.innerHTML = "<strong>ATÉ 6 ATENDIMENTOS</strong><span>em cada período de 30 dias</span>";
+    heroLimit.innerHTML = "<strong>ATÉ 6 ATENDIMENTOS</strong><span>por ciclo do Clube</span>";
     hero.querySelector(".membership-price")?.insertAdjacentElement("afterend", heroLimit);
   }
 
   if (!hero.querySelector(".membership-sales-trust")) {
     const trust = document.createElement("div");
     trust.className = "membership-sales-trust";
-    trust.innerHTML = "<span>🔒 Mercado Pago</span><span>↻ Mensal</span><span>✓ Plano individual</span>";
+    trust.innerHTML = "<span>🔒 Mercado Pago</span><span>✓ Escolha como pagar</span><span>✓ Plano individual</span>";
     hero.appendChild(trust);
   }
 
@@ -200,13 +200,13 @@ function enhanceMembershipPage(page: HTMLElement) {
       <div class="membership-vip-top">
         <div>
           <small>UM ÚNICO PLANO</small>
-          <h3 id="clube-vip-title">R$ 120 por mês</h3>
-          <p>Cabelo, barba e sobrancelhas em dia, sem ficar calculando cada visita.</p>
+          <h3 id="clube-vip-title">Clube Yuri por R$ 120</h3>
+          <p>O mesmo valor e os mesmos benefícios. Você escolhe a forma de renovação antes de pagar.</p>
         </div>
-        <div class="membership-vip-price"><strong>R$ 120</strong><span>/ mês</span></div>
+        <div class="membership-vip-price"><strong>R$ 120</strong><span>/ ciclo</span></div>
       </div>
       <div class="membership-vip-benefits compact">
-        <span>✓ Até 6 atendimentos em 30 dias</span>
+        <span>✓ Até 6 atendimentos por ciclo</span>
         <span>✓ Agendamento online</span>
         <span>✓ Plano pessoal e intransferível</span>
         <span>✓ Pagamento seguro pelo Mercado Pago</span>
@@ -214,7 +214,7 @@ function enhanceMembershipPage(page: HTMLElement) {
       <button type="button" class="membership-sales-trigger" ${state === "active" ? "disabled" : ""}>${primaryLabel(state)}</button>
       <details class="membership-mini-rules">
         <summary>Ver regras do Clube</summary>
-        <p>Atendimentos mediante agendamento e disponibilidade. O limite vale para cada período ativo de 30 dias e não acumula para o mês seguinte. Produtos não estão incluídos.</p>
+        <p>Atendimentos mediante agendamento e disponibilidade. O limite vale para cada ciclo ativo e não acumula para o período seguinte. Produtos não estão incluídos.</p>
       </details>
     </section>
   `;
@@ -251,7 +251,7 @@ function enhanceMembershipPage(page: HTMLElement) {
   if (state !== "active") {
     const sticky = document.createElement("div");
     sticky.className = "membership-sales-sticky";
-    sticky.innerHTML = `<div><small>CLUBE YURI</small><strong>R$ 120/mês</strong></div><button type="button">${primaryLabel(state)}</button>`;
+    sticky.innerHTML = `<div><small>CLUBE YURI</small><strong>R$ 120</strong></div><button type="button">${primaryLabel(state)}</button>`;
     const stickyButton = sticky.querySelector<HTMLButtonElement>("button");
     stickyButton?.addEventListener("click", () => triggerPrimaryAction(page, stickyButton));
     page.appendChild(sticky);
