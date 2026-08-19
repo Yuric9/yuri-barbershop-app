@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "./design-tokens.css";
 import "./globals.css";
 import "./login-logo-fix.css";
 import "./mobile-booking.css";
@@ -19,6 +20,7 @@ import "./barber-preview.css";
 import "./barber-preview-interactive.css";
 import "./barber-manual-service.css";
 import "./barber-nav-icons.css";
+import "./design-system.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
