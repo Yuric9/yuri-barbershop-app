@@ -1,0 +1,64 @@
+.membership-page > .membership-benefits,
+.membership-page > .membership-rules {
+  display: none !important;
+}
+
+.membership-page button,
+.membership-page summary,
+.membership-page a {
+  touch-action: manipulation;
+}
+
+.membership-page button:focus-visible,
+.membership-page a:focus-visible,
+.membership-page summary:focus-visible {
+  outline: 3px solid #f2d479;
+  outline-offset: 3px;
+}
+
+.membership-routine-picker button,
+.membership-visit-picker button,
+.clube-payment-option button,
+.clube-payment-current button,
+.membership-sales-sticky button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 360px) {
+  .membership-sales-upgraded .membership-hero > h2 {
+    font-size: 34px;
+  }
+
+  .membership-visit-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .membership-visit-picker button {
+    min-height: 48px;
+    font-size: 13px;
+  }
+
+  .membership-sales-sticky {
+    gap: 7px;
+    padding-left: 10px;
+  }
+
+  .membership-sales-sticky button {
+    min-height: 46px;
+    max-width: 62%;
+    padding: 0 10px;
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .membership-page *,
+  .membership-page *::before,
+  .membership-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
