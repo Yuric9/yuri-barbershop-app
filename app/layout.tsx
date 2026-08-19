@@ -16,6 +16,7 @@ import "./subscription-archive.css";
 import "./cash-today.css";
 import "./barber-experience.css";
 import "./barber-preview.css";
+import "./barber-preview-interactive.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
