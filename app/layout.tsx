@@ -27,6 +27,7 @@ import SubscriptionPaymentModeEnhancer from "./subscription-payment-mode-enhance
 import SubscriptionPaymentEnhancer from "./subscription-payment-enhancer";
 import SubscriptionSalesEnhancer from "./subscription-sales-enhancer";
 import SubscriptionAdminEnhancer from "./subscription-admin-enhancer";
+import AdminSubscriptionScopeGuard from "./admin-subscription-scope-guard";
 import SubscriptionAdminPaymentModeEnhancer from "./subscription-admin-payment-mode-enhancer";
 import SubscriptionArchiveEnhancer from "./subscription-archive-enhancer";
 import AdminClubPreviewCleanup from "./admin-club-preview-cleanup";
@@ -97,6 +98,7 @@ export default function RootLayout({
         <SubscriptionPaymentModeEnhancer />
         <SubscriptionPaymentEnhancer />
         <SubscriptionAdminEnhancer />
+        <AdminSubscriptionScopeGuard />
         <SubscriptionAdminPaymentModeEnhancer />
         <SubscriptionArchiveEnhancer />
         <AdminClubPreviewCleanup />
