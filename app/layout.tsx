@@ -8,6 +8,7 @@ import "./mobile-experience.css";
 import "./menu-icons.css";
 import "./product-admin.css";
 import "./product-experience.css";
+import "./subscription-sales.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
@@ -18,6 +19,7 @@ import MenuIconEnhancer from "./menu-icon-enhancer";
 import ProductAdminEnhancer from "./product-admin-enhancer";
 import ProductExperience from "./product-experience";
 import SubscriptionPaymentEnhancer from "./subscription-payment-enhancer";
+import SubscriptionSalesEnhancer from "./subscription-sales-enhancer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -81,6 +83,7 @@ export default function RootLayout({
         <ProductAdminEnhancer />
         <ProductExperience />
         <SubscriptionPaymentEnhancer />
+        <SubscriptionSalesEnhancer />
       </body>
     </html>
   );
