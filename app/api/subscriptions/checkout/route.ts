@@ -20,7 +20,16 @@ const CLUBE_YURI_TEST_SELLER_ID = "3625511764";
 const CLUBE_YURI_TEST_PUBLIC_KEY = "APP_USR-09006eaf-14fa-4961-b1ac-e01d5cd3db92";
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value || "";
+  const month = parts.find((part) => part.type === "month")?.value || "";
+  const day = parts.find((part) => part.type === "day")?.value || "";
+  return year && month && day ? `${year}-${month}-${day}` : new Date().toISOString().slice(0, 10);
 }
 
 function tokenIdentity(accessToken: string) {
@@ -33,9 +42,6 @@ function tokenIdentity(accessToken: string) {
 }
 
 function testRecurringWindow() {
-  // A documentação de assinatura autorizada do Mercado Pago envia start_date e
-  // end_date no auto_recurring. Mantemos essas datas somente no ambiente de
-  // teste para reproduzir o payload oficial sem alterar o fluxo produtivo.
   const start = new Date(Date.now() + 5 * 60 * 1000);
   const end = new Date(start);
   end.setUTCFullYear(end.getUTCFullYear() + 1);
@@ -85,9 +91,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // O checkout hospedado do Mercado Pago estava misturando a sessão do navegador
-    // com o ambiente de teste. Em teste usamos o fluxo oficial de CardToken +
-    // preapproval authorized, que não depende de login/sessão no checkout hospedado.
     if (!cardTokenId) {
       return Response.json({
         ok: true,
