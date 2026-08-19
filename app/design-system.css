@@ -5,6 +5,8 @@ html, body {
 body {
   background: var(--yuri-cream);
   color: var(--yuri-ink);
+  font-size: var(--text-sm);
+  line-height: var(--line-body);
 }
 
 h1, h2, h3,
@@ -19,12 +21,58 @@ h1, h2, h3,
   font-family: var(--font-display);
 }
 
+h1 { font-size: var(--text-h1); }
+h2 { font-size: var(--text-h2); }
+h3 { font-size: var(--text-h3); }
+
+p,
+li,
+.message-content,
+.section-description,
+.section-title p,
+.welcome-line p,
+.barber-preview-content p {
+  font-size: var(--text-sm);
+  line-height: var(--line-body);
+}
+
+label,
+.ui-field__label,
+.own-login-form label,
+.barber-preview-header-actions label {
+  font-size: var(--text-xs);
+}
+
+small,
+.form-hint,
+.commission-note,
+.barber-preview-content small,
+.barber-preview-content span,
+.barber-preview-content time {
+  line-height: 1.45;
+}
+
 button,
 a,
 input,
 select,
 textarea {
   font-family: var(--font-ui);
+}
+
+button,
+.primary-button,
+.secondary-button,
+.ghost-button,
+.danger-button,
+.submit-button,
+.action-button,
+.login-submit,
+.barber-preview-link,
+.barber-preview-back,
+.barber-manual-trigger,
+.ui-button {
+  font-size: var(--text-sm);
 }
 
 .primary-button,
@@ -88,6 +136,7 @@ button:disabled,
   padding: 10px 16px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
+  font-size: var(--text-button);
   font-weight: 800;
   line-height: 1;
   text-decoration: none;
@@ -111,7 +160,7 @@ button:disabled,
 .ui-card__header small { display: block; color: var(--yuri-gold-strong); font-size: var(--text-xs); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .ui-card__header h3 { margin: 4px 0 0; font-size: var(--text-h3); line-height: 1.1; }
 
-.ui-badge { min-height: 26px; display: inline-flex; align-items: center; padding: 5px 9px; border-radius: var(--radius-pill); font-size: .7rem; font-weight: 900; line-height: 1; }
+.ui-badge { min-height: 28px; display: inline-flex; align-items: center; padding: 6px 10px; border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: 900; line-height: 1; }
 .ui-badge--neutral { background: #ece8df; color: #625e55; }
 .ui-badge--success { background: #e3f0e7; color: var(--yuri-success); }
 .ui-badge--warning { background: #f6ecd0; color: var(--yuri-warning); }
@@ -119,12 +168,12 @@ button:disabled,
 .ui-badge--gold { background: var(--yuri-gold-soft); color: #6b5016; }
 
 .ui-field { display: grid; gap: 6px; min-width: 0; }
-.ui-field__label { color: var(--yuri-muted); font-size: .75rem; font-weight: 800; }
+.ui-field__label { color: var(--yuri-muted); font-size: var(--text-xs); font-weight: 800; }
 .ui-field__control { position: relative; display: flex; align-items: center; }
-.ui-field__control input { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid var(--yuri-line); border-radius: var(--radius-control); background: var(--yuri-surface); color: var(--yuri-ink); font-size: 1rem; }
+.ui-field__control input { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid var(--yuri-line); border-radius: var(--radius-control); background: var(--yuri-surface); color: var(--yuri-ink); font-size: var(--text-md); }
 .ui-field__control input:focus { border-color: var(--yuri-gold); }
 .ui-field__trailing { position: absolute; right: 10px; display: grid; place-items: center; }
-.ui-field__hint,.ui-field__error { font-size: .72rem; line-height: 1.4; }
+.ui-field__hint,.ui-field__error { font-size: var(--text-xs); line-height: 1.45; }
 .ui-field__hint { color: var(--yuri-muted); }
 .ui-field__error { color: var(--yuri-danger); }
 .ui-field--error .ui-field__control input { border-color: var(--yuri-danger); }
@@ -143,6 +192,7 @@ button:disabled,
 
 .barber-preview-sidebar nav button {
   border-radius: var(--radius-control);
+  font-size: var(--text-sm);
 }
 
 .barber-preview-sidebar nav button span svg {
@@ -152,6 +202,27 @@ button:disabled,
 }
 
 @media (max-width: 900px) {
+  body {
+    font-size: var(--text-md);
+  }
+
+  p,
+  li,
+  .message-content,
+  .section-description,
+  .section-title p,
+  .welcome-line p,
+  .barber-preview-content p {
+    font-size: var(--text-sm) !important;
+  }
+
+  label,
+  .ui-field__label,
+  .own-login-form label,
+  .barber-preview-header-actions label {
+    font-size: var(--text-xs) !important;
+  }
+
   .primary-button,
   .secondary-button,
   .ghost-button,
@@ -162,46 +233,71 @@ button:disabled,
   .barber-manual-trigger,
   .ui-button {
     min-height: var(--touch-mobile);
+    font-size: var(--text-button) !important;
   }
 
-  /* No celular o menu do colaborador mostra ícone + rótulo; não depende de símbolo isolado. */
+  .app-header h1,
+  .barber-preview-content > header h1 {
+    font-size: var(--text-h1) !important;
+  }
+
+  .section-title h2,
+  .welcome-line h2,
+  .barber-preview-hero h2,
+  .barber-preview-role strong {
+    font-size: var(--text-h2) !important;
+  }
+
+  .barber-preview-panel h3,
+  .ui-card__header h3 {
+    font-size: var(--text-h3) !important;
+  }
+
+  /* No celular o menu do colaborador mostra ícone + rótulo com leitura confortável. */
   .barber-preview-sidebar nav {
     display: grid !important;
-    grid-template-columns: repeat(5, minmax(64px, 1fr)) !important;
+    grid-template-columns: repeat(5, minmax(70px, 1fr)) !important;
     gap: 6px !important;
     overflow-x: auto !important;
     padding-bottom: 2px;
   }
 
   .barber-preview-sidebar nav button {
-    min-width: 64px;
-    min-height: 58px !important;
-    padding: 7px 4px !important;
+    min-width: 70px;
+    min-height: 62px !important;
+    padding: 8px 5px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
-    gap: 4px !important;
-    font-size: 9px !important;
-    line-height: 1.1 !important;
+    gap: 5px !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
     white-space: nowrap;
   }
 
   .barber-preview-sidebar nav button span {
-    width: 22px !important;
-    height: 22px !important;
+    width: 23px !important;
+    height: 23px !important;
     display: grid !important;
     place-items: center;
     font-size: 0 !important;
   }
 
   .barber-preview-sidebar nav button span svg {
-    width: 21px;
-    height: 21px;
+    width: 22px;
+    height: 22px;
   }
 
   .barber-preview-content {
     width: calc(100% - 28px);
+  }
+
+  .barber-preview-content small,
+  .barber-preview-content time,
+  .barber-preview-content .barber-preview-earning span,
+  .barber-preview-content .barber-preview-appointment small {
+    font-size: 12px !important;
   }
 
   .ui-card { padding: var(--space-4); }
@@ -210,7 +306,7 @@ button:disabled,
 
 @media (max-width: 380px) {
   .barber-preview-sidebar nav {
-    grid-template-columns: repeat(5, 64px) !important;
+    grid-template-columns: repeat(5, 70px) !important;
     justify-content: start;
   }
 }
