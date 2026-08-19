@@ -1,3 +1,4 @@
+import { getChatGPTUser } from "../../../chatgpt-auth";
 import { mercadoPagoRequest } from "../../../mercadopago-subscriptions";
 import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
 
@@ -11,6 +12,11 @@ function tokenIdentity(accessToken: string) {
 }
 
 export async function GET() {
+  const user = await getChatGPTUser();
+  if (!user || user.role !== "admin") {
+    return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
+  }
+
   const { accessToken, testPayerEmail } = mercadoPagoRuntimeConfig();
   const identity = tokenIdentity(accessToken);
 
@@ -19,12 +25,12 @@ export async function GET() {
   try {
     const userResponse = await mercadoPagoRequest("/users/me");
     if (userResponse.ok) {
-      const user = await userResponse.json() as Record<string, unknown>;
+      const api = await userResponse.json() as Record<string, unknown>;
       apiUser = {
-        id: user.id,
-        nickname: user.nickname,
-        site_id: user.site_id,
-        site_status: user.site_status,
+        id: api.id,
+        nickname: api.nickname,
+        site_id: api.site_id,
+        site_status: api.site_status,
       };
     }
   } catch {}
@@ -48,7 +54,8 @@ export async function GET() {
   }
 
   return Response.json({
-    build: "mp-debug-2026-08-18-01",
+    build: "mp-debug-2026-08-18-02",
+    mode: testPayerEmail ? "test" : "production",
     token: identity,
     testPayerEmail: testPayerEmail || "",
     apiUser,
