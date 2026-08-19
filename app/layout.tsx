@@ -13,6 +13,7 @@ import "./subscription-payment-mode.css";
 import "./subscription-qa.css";
 import "./subscription-admin.css";
 import "./subscription-archive.css";
+import "./cash-today.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
@@ -31,6 +32,7 @@ import AdminSubscriptionScopeGuard from "./admin-subscription-scope-guard";
 import SubscriptionAdminPaymentModeEnhancer from "./subscription-admin-payment-mode-enhancer";
 import SubscriptionArchiveEnhancer from "./subscription-archive-enhancer";
 import AdminClubPreviewCleanup from "./admin-club-preview-cleanup";
+import CashTodayGuard from "./cash-today-guard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,6 +104,7 @@ export default function RootLayout({
         <SubscriptionAdminPaymentModeEnhancer />
         <SubscriptionArchiveEnhancer />
         <AdminClubPreviewCleanup />
+        <CashTodayGuard />
       </body>
     </html>
   );
