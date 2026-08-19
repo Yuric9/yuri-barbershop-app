@@ -3,6 +3,7 @@ import { getDb } from "../../../../db";
 import { subscriptions } from "../../../../db/schema";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { syncSubscriptionByLocalId } from "../../../mercadopago-subscriptions";
+import { syncOneTimeSubscriptionByLocalId } from "../../../subscription-one-time";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
@@ -23,20 +24,31 @@ export async function POST() {
   let changed = false;
   let syncedStatus = "";
   let syncedSubscriptionId = 0;
+  let syncedMode = "";
 
-  // Normalmente só existe uma tentativa atual, mas percorremos algumas recentes
-  // para recuperar também retornos de checkout sem depender exclusivamente do webhook.
-  for (const item of rows.slice(0, 5)) {
-    const result = await syncSubscriptionByLocalId(item.id);
-    if (!result.ok) continue;
-    syncedStatus = result.status;
-    syncedSubscriptionId = result.subscriptionId;
-    if (result.previousStatus !== result.status) changed = true;
+  // Percorremos as tentativas mais recentes para recuperar tanto a assinatura
+  // recorrente quanto a compra única de 30 dias após o retorno do Mercado Pago.
+  for (const item of rows.slice(0, 8)) {
+    const oneTime = await syncOneTimeSubscriptionByLocalId(item.id);
+    if (oneTime.ok) {
+      syncedStatus = oneTime.status;
+      syncedSubscriptionId = oneTime.subscriptionId;
+      syncedMode = "one_time";
+      if (oneTime.previousStatus !== oneTime.status) changed = true;
+      break;
+    }
+
+    const recurring = await syncSubscriptionByLocalId(item.id);
+    if (!recurring.ok) continue;
+    syncedStatus = recurring.status;
+    syncedSubscriptionId = recurring.subscriptionId;
+    syncedMode = "recurring";
+    if (recurring.previousStatus !== recurring.status) changed = true;
     break;
   }
 
   return Response.json(
-    { ok: true, changed, status: syncedStatus, subscriptionId: syncedSubscriptionId },
+    { ok: true, changed, status: syncedStatus, subscriptionId: syncedSubscriptionId, mode: syncedMode },
     { headers: { "cache-control": "no-store" } },
   );
 }
