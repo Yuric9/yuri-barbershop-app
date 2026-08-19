@@ -9,6 +9,7 @@ type PaymentState = {
   status?: string;
   mode?: PaymentMode;
   providerStatus?: string;
+  expiredAttempt?: boolean;
 };
 
 type ReturnOutcome = "aprovado" | "pendente" | "falhou" | "";
@@ -20,6 +21,11 @@ function membershipState(page: HTMLElement) {
   if (/cancelad[ao]/i.test(status)) return "cancelled" as const;
   if (/bloquead[ao]/i.test(status)) return "blocked" as const;
   return "new" as const;
+}
+
+function legacyStatusExpired(page: HTMLElement) {
+  const status = page.querySelector<HTMLElement>(".membership-status")?.textContent || "";
+  return /expirad[ao]/i.test(status);
 }
 
 function feedback(page: HTMLElement, text: string) {
@@ -94,11 +100,18 @@ function hideLegacyPaymentButtons(page: HTMLElement) {
   });
 }
 
+function updateLegacyStatusVisibility(page: HTMLElement, freshChoice: boolean) {
+  const status = page.querySelector<HTMLElement>(".membership-status");
+  if (!status) return;
+  if (freshChoice || legacyStatusExpired(page)) status.style.display = "none";
+  else status.style.removeProperty("display");
+}
+
 function showReturnOutcome(page: HTMLElement, outcome: ReturnOutcome) {
   if (!outcome) return;
   const state = membershipState(page);
   if (outcome === "falhou") {
-    feedback(page, "O pagamento não foi concluído. Você pode escolher uma forma de pagamento e tentar novamente.");
+    feedback(page, "O pagamento não foi concluído. Você já pode tentar novamente.");
     return;
   }
   if (outcome === "pendente") {
@@ -112,20 +125,29 @@ function showReturnOutcome(page: HTMLElement, outcome: ReturnOutcome) {
   }
 }
 
-function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null, returnOutcome: ReturnOutcome) {
+function renderChoicePanel(
+  page: HTMLElement,
+  paymentState: PaymentState | null,
+  returnOutcome: ReturnOutcome,
+  forceFreshChoice: boolean,
+  showExpiredNotice: boolean,
+) {
   const vip = page.querySelector<HTMLElement>(".membership-vip-card");
   if (!vip) return;
 
-  const state = membershipState(page);
-  const renderKey = `${state}:${paymentState?.mode || ""}:${paymentState?.providerStatus || ""}:${returnOutcome}`;
+  const freshChoice = forceFreshChoice || Boolean(paymentState?.expiredAttempt) || legacyStatusExpired(page);
+  const state = freshChoice ? "new" : membershipState(page);
+  const renderKey = `${state}:${paymentState?.mode || ""}:${paymentState?.providerStatus || ""}:${returnOutcome}:${freshChoice}:${showExpiredNotice}`;
   if (page.dataset.clubePaymentModeRender === renderKey && vip.querySelector(".clube-payment-choice-panel")) {
     hideLegacyPaymentButtons(page);
+    updateLegacyStatusVisibility(page, freshChoice);
     return;
   }
   page.dataset.clubePaymentModeRender = renderKey;
 
   updateCopy(page);
   hideLegacyPaymentButtons(page);
+  updateLegacyStatusVisibility(page, freshChoice);
   vip.querySelector(".membership-sales-trigger")?.remove();
   vip.querySelector(".clube-payment-choice-panel")?.remove();
   page.querySelector(".clube-payment-mode-feedback")?.remove();
@@ -198,7 +220,8 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null,
     }
   }
 
-  showReturnOutcome(page, returnOutcome);
+  if (returnOutcome) showReturnOutcome(page, returnOutcome);
+  else if (showExpiredNotice) feedback(page, "A tentativa anterior expirou. Você já pode iniciar um novo pagamento.");
 }
 
 export default function SubscriptionPaymentModeEnhancer() {
@@ -207,10 +230,13 @@ export default function SubscriptionPaymentModeEnhancer() {
     let paymentState: PaymentState | null = null;
     let loadingState = false;
     let scanScheduled = false;
+    let forceFreshChoice = false;
+    let showExpiredNotice = false;
+    let noticeTimer = 0;
 
     const currentUrl = new URL(window.location.href);
     const rawOutcome = currentUrl.searchParams.get("clube_pagamento") || "";
-    const returnOutcome: ReturnOutcome = ["aprovado", "pendente", "falhou"].includes(rawOutcome)
+    let returnOutcome: ReturnOutcome = ["aprovado", "pendente", "falhou"].includes(rawOutcome)
       ? (rawOutcome as ReturnOutcome)
       : "";
     if (rawOutcome) {
@@ -218,12 +244,28 @@ export default function SubscriptionPaymentModeEnhancer() {
       window.history.replaceState({}, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
     }
 
+    function scheduleNoticeRemoval() {
+      if (noticeTimer) window.clearTimeout(noticeTimer);
+      noticeTimer = window.setTimeout(() => {
+        returnOutcome = "";
+        showExpiredNotice = false;
+        scheduleScan();
+      }, 7_000);
+    }
+
     async function loadState() {
       if (loadingState) return;
       loadingState = true;
       try {
         const response = await fetch("/api/subscriptions/payment-state", { cache: "no-store" });
-        if (response.ok) paymentState = await response.json();
+        if (response.ok) {
+          paymentState = await response.json();
+          if (paymentState?.expiredAttempt) {
+            forceFreshChoice = true;
+            showExpiredNotice = true;
+            scheduleNoticeRemoval();
+          }
+        }
       } catch {
         paymentState = null;
       } finally {
@@ -232,11 +274,25 @@ export default function SubscriptionPaymentModeEnhancer() {
       }
     }
 
+    async function expireFailedAttempt() {
+      try {
+        const response = await fetch("/api/subscriptions/expire-pending", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: "{}",
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.expired) forceFreshChoice = true;
+      } catch {}
+      scheduleNoticeRemoval();
+      await loadState();
+    }
+
     function scan() {
       scanScheduled = false;
       if (destroyed) return;
       document.querySelectorAll<HTMLElement>(".membership-page.membership-sales-upgraded").forEach((page) => {
-        renderChoicePanel(page, paymentState, returnOutcome);
+        renderChoicePanel(page, paymentState, returnOutcome, forceFreshChoice, showExpiredNotice);
       });
     }
 
@@ -270,7 +326,8 @@ export default function SubscriptionPaymentModeEnhancer() {
       event.stopImmediatePropagation();
 
       if (membershipState(page) === "active") return;
-      if (paymentState?.mode && /continuar/i.test(legacy.textContent || "")) {
+      const freshChoice = forceFreshChoice || Boolean(paymentState?.expiredAttempt) || legacyStatusExpired(page);
+      if (!freshChoice && paymentState?.mode && /continuar/i.test(legacy.textContent || "")) {
         void openCheckout(page, paymentState.mode, legacy);
         return;
       }
@@ -281,12 +338,14 @@ export default function SubscriptionPaymentModeEnhancer() {
     const observer = new MutationObserver(scheduleScan);
     observer.observe(document.body, { childList: true, subtree: true });
     scheduleScan();
-    void loadState();
+    if (returnOutcome === "falhou") void expireFailedAttempt();
+    else void loadState();
 
     return () => {
       destroyed = true;
       observer.disconnect();
       document.removeEventListener("click", onCapture, true);
+      if (noticeTimer) window.clearTimeout(noticeTimer);
     };
   }, []);
 
