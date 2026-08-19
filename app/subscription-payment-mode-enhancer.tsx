@@ -90,11 +90,15 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
   updateCopy(page);
   hideLegacyPaymentButtons(page);
 
+  const state = membershipState(page);
+  const renderKey = `${state}:${paymentState?.mode || ""}:${paymentState?.providerStatus || ""}`;
+  if (page.dataset.clubePaymentModeRender === renderKey && vip.querySelector(".clube-payment-choice-panel")) return;
+  page.dataset.clubePaymentModeRender = renderKey;
+
   vip.querySelector(".membership-sales-trigger")?.remove();
   vip.querySelector(".clube-payment-choice-panel")?.remove();
   page.querySelector(".clube-payment-mode-feedback")?.remove();
 
-  const state = membershipState(page);
   const panel = document.createElement("div");
   panel.className = "clube-payment-choice-panel";
 
