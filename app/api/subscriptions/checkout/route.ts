@@ -11,6 +11,7 @@ import {
   type MercadoPagoPreapproval,
 } from "../../../mercadopago-subscriptions";
 import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
+import { expirePendingSubscriptionsForClient } from "../../../subscription-pending-expiration";
 import { getOneTimePaymentBySubscription } from "../../../subscription-one-time";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  await expirePendingSubscriptionsForClient(user.email);
 
   const db = getDb();
   const rows = await db
