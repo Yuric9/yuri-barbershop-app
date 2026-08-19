@@ -30,6 +30,21 @@ type PaymentLinkRow = {
   updated_at: string;
 };
 
+const BUSINESS_TIME_ZONE = "America/Sao_Paulo";
+
+function dateKeyInBusinessTimeZone(value: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const year = parts.find((part) => part.type === "year")?.value || "";
+  const month = parts.find((part) => part.type === "month")?.value || "";
+  const day = parts.find((part) => part.type === "day")?.value || "";
+  return year && month && day ? `${year}-${month}-${day}` : "";
+}
+
 function d1() {
   const binding = (globalThis as typeof globalThis & { __YURI_DB?: D1Database }).__YURI_DB;
   if (!binding) throw new Error("D1 indisponível para assinaturas");
@@ -152,7 +167,7 @@ function isoDate(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 10);
+  return dateKeyInBusinessTimeZone(date);
 }
 
 function addDays(dateKey: string, days: number) {
@@ -193,7 +208,14 @@ export async function syncLocalSubscriptionFromMercadoPago(preapproval: MercadoP
 
   const update: { status: string; startDate?: string; endDate?: string } = { status: localStatus };
   if (localStatus === "Ativa") {
-    const startDate = local.startDate || isoDate(preapproval.last_modified) || isoDate(preapproval.date_created) || new Date().toISOString().slice(0, 10);
+    // Mercado Pago devolve timestamps em UTC. Para o cliente da barbearia, a data
+    // deve seguir o dia civil de Trindade/GO (America/Sao_Paulo), evitando que uma
+    // aprovação à noite apareça como se tivesse começado no dia seguinte.
+    const startDate =
+      isoDate(preapproval.date_created) ||
+      local.startDate ||
+      isoDate(preapproval.last_modified) ||
+      dateKeyInBusinessTimeZone(new Date());
     let endDate = isoDate(preapproval.next_payment_date);
     if (!endDate || endDate <= startDate) endDate = addDays(startDate, 30);
     update.startDate = startDate;
