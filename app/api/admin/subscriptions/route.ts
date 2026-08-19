@@ -7,6 +7,7 @@ import {
   syncSubscriptionByLocalId,
 } from "../../../mercadopago-subscriptions";
 import { rejectCrossSiteWrite } from "../../../request-security";
+import { getArchivedSubscriptionIds } from "../../../subscription-archive-store";
 
 export const dynamic = "force-dynamic";
 
@@ -80,18 +81,19 @@ export async function GET() {
   if (!user || user.role !== "admin") return unauthorized();
 
   const db = getDb();
-  const [subscriptionRows, appointmentRows, profileRows, payments] = await Promise.all([
+  const [subscriptionRows, appointmentRows, profileRows, payments, archivedIds] = await Promise.all([
     db.select().from(subscriptions).orderBy(desc(subscriptions.id)),
     db.select().from(appointments).orderBy(desc(appointments.date), desc(appointments.time)),
     db.select().from(profiles),
     paymentRows(),
+    getArchivedSubscriptionIds(),
   ]);
 
   const today = localToday();
   const profileByEmail = new Map(profileRows.map((profile) => [profile.email.toLowerCase(), profile]));
   const paymentBySubscription = new Map(payments.map((payment) => [payment.subscription_id, payment]));
 
-  const rows = subscriptionRows.map((subscription) => {
+  const allRows = subscriptionRows.map((subscription) => {
     const email = subscription.clientEmail.toLowerCase();
     const profile = profileByEmail.get(email);
     const payment = paymentBySubscription.get(subscription.id);
@@ -142,6 +144,9 @@ export async function GET() {
     };
   });
 
+  // Arquivar é apenas organização administrativa. Se o provedor voltar a deixar
+  // a assinatura ativa, ela reaparece automaticamente na gestão principal.
+  const rows = allRows.filter((row) => row.status === "Ativa" || !archivedIds.has(row.id));
   const activeRows = rows.filter((row) => row.status === "Ativa");
   const metrics = {
     active: activeRows.length,
