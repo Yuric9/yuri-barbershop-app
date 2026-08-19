@@ -17,6 +17,14 @@ type ArchivedSubscription = {
   lastVisit: { date: string; time: string; serviceName: string } | null;
 };
 
+type ArchivedClientGroup = {
+  key: string;
+  clientName: string;
+  clientEmail: string;
+  phone: string;
+  records: ArchivedSubscription[];
+};
+
 function escapeHtml(value: unknown) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -46,7 +54,7 @@ function formatDateTime(value?: string | null) {
   }).format(date);
 }
 
-function whatsappUrl(item: ArchivedSubscription) {
+function whatsappUrl(item: Pick<ArchivedSubscription, "phone" | "clientName">) {
   const digits = String(item.phone || "").replace(/\D/g, "");
   if (!digits) return "";
   const phone = digits.startsWith("55") ? digits : `55${digits}`;
@@ -57,7 +65,30 @@ function whatsappUrl(item: ArchivedSubscription) {
   return `https://wa.me/${phone}?text=${text}`;
 }
 
-async function archiveRequest(action: "archive" | "restore", id: number) {
+function groupArchived(items: ArchivedSubscription[]) {
+  const groups = new Map<string, ArchivedClientGroup>();
+  for (const item of items) {
+    const key = item.clientEmail.trim().toLowerCase() || `id:${item.id}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.records.push(item);
+      if (!existing.phone && item.phone) existing.phone = item.phone;
+      continue;
+    }
+    groups.set(key, {
+      key,
+      clientName: item.clientName,
+      clientEmail: item.clientEmail,
+      phone: item.phone,
+      records: [item],
+    });
+  }
+  return [...groups.values()]
+    .map((group) => ({ ...group, records: [...group.records].sort((a, b) => String(b.archivedAt).localeCompare(String(a.archivedAt))) }))
+    .sort((a, b) => String(b.records[0]?.archivedAt || "").localeCompare(String(a.records[0]?.archivedAt || "")));
+}
+
+async function archiveRequest(action: "archive" | "restore" | "delete", id: number) {
   const response = await fetch("/api/admin/subscriptions/archive", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -80,6 +111,10 @@ export default function SubscriptionArchiveEnhancer() {
 
     function root() {
       return document.getElementById("clube-admin-pro") as HTMLElement | null;
+    }
+
+    function clientGroups() {
+      return groupArchived(archived);
     }
 
     async function loadArchived() {
@@ -134,28 +169,85 @@ export default function SubscriptionArchiveEnhancer() {
           if (!loading) void loadArchived();
         });
       }
-      const label = `Arquivados${archived.length ? ` (${archived.length})` : ""}`;
+      const count = clientGroups().length;
+      const label = `Arquivados${count ? ` (${count})` : ""}`;
       if (button.textContent !== label) button.textContent = label;
       button.classList.toggle("active", archiveMode);
     }
 
-    function archiveCard(item: ArchivedSubscription) {
-      const wa = whatsappUrl(item);
-      return `<article class="clube-archive-card">
-        <div class="clube-archive-card-head">
-          <div><strong>${escapeHtml(item.clientName)}</strong><small>${escapeHtml(item.clientEmail)}</small></div>
+    function historyRow(item: ArchivedSubscription) {
+      return `<div class="clube-archive-history-row">
+        <div class="clube-archive-history-main">
           <span>${escapeHtml(item.statusAtArchive || item.status)}</span>
+          <b>${formatDate(item.startDate)} — ${formatDate(item.endDate)}</b>
+          <small>Arquivado em ${formatDateTime(item.archivedAt)}</small>
+        </div>
+        <div class="clube-archive-history-actions">
+          <button type="button" data-restore-subscription="${item.id}">Restaurar</button>
+          <button type="button" class="danger" data-delete-subscription="${item.id}">Excluir registro</button>
+        </div>
+      </div>`;
+    }
+
+    function archiveCard(group: ArchivedClientGroup) {
+      const latest = group.records[0];
+      const wa = whatsappUrl(group);
+      const lastVisit = group.records.find((item) => item.lastVisit)?.lastVisit || null;
+      const history = group.records.map(historyRow).join("");
+      return `<article class="clube-archive-card clube-archive-client-card">
+        <div class="clube-archive-card-head">
+          <div><strong>${escapeHtml(group.clientName)}</strong><small>${escapeHtml(group.clientEmail)}</small></div>
+          <span>${escapeHtml(latest?.statusAtArchive || latest?.status || "Arquivado")}</span>
         </div>
         <div class="clube-archive-meta">
-          <span><small>Arquivado em</small><b>${formatDateTime(item.archivedAt)}</b></span>
-          <span><small>Último ciclo</small><b>${formatDate(item.startDate)} — ${formatDate(item.endDate)}</b></span>
-          <span><small>Último atendimento</small><b>${item.lastVisit ? `${formatDate(item.lastVisit.date)} • ${escapeHtml(item.lastVisit.serviceName)}` : "—"}</b></span>
+          <span><small>Registros arquivados</small><b>${group.records.length}</b></span>
+          <span><small>Último ciclo</small><b>${formatDate(latest?.startDate)} — ${formatDate(latest?.endDate)}</b></span>
+          <span><small>Último atendimento</small><b>${lastVisit ? `${formatDate(lastVisit.date)} • ${escapeHtml(lastVisit.serviceName)}` : "—"}</b></span>
         </div>
         <div class="clube-archive-actions">
           ${wa ? `<a href="${wa}" target="_blank" rel="noreferrer">WhatsApp para remarketing</a>` : `<span class="clube-archive-no-phone">Sem telefone cadastrado</span>`}
-          <button type="button" data-restore-subscription="${item.id}">Restaurar para Assinantes</button>
         </div>
+        <details class="clube-archive-history" ${group.records.length > 1 ? "" : "open"}>
+          <summary>${group.records.length > 1 ? `Ver histórico (${group.records.length})` : "Gerenciar registro"}</summary>
+          <div>${history}</div>
+        </details>
       </article>`;
+    }
+
+    function bindArchiveActions(view: HTMLElement) {
+      view.querySelectorAll<HTMLButtonElement>("[data-restore-subscription]").forEach((button) => button.addEventListener("click", async () => {
+        const id = Number(button.dataset.restoreSubscription || 0);
+        button.disabled = true;
+        button.textContent = "Restaurando...";
+        try {
+          await archiveRequest("restore", id);
+          feedback = "Registro restaurado para a lista principal de Assinantes.";
+          await loadArchived();
+          root()?.querySelector<HTMLButtonElement>(".clube-admin-refresh")?.click();
+        } catch (error) {
+          feedback = error instanceof Error ? error.message : "Não foi possível restaurar.";
+          renderArchiveView();
+        }
+      }));
+
+      view.querySelectorAll<HTMLButtonElement>("[data-delete-subscription]").forEach((button) => button.addEventListener("click", async () => {
+        const id = Number(button.dataset.deleteSubscription || 0);
+        const confirmed = window.confirm(
+          "Excluir definitivamente este registro de assinatura? Esta ação remove somente o registro do Clube e seus vínculos de pagamento. O cadastro do cliente e os atendimentos não serão apagados.",
+        );
+        if (!confirmed) return;
+        button.disabled = true;
+        button.textContent = "Excluindo...";
+        try {
+          await archiveRequest("delete", id);
+          feedback = "Registro excluído definitivamente. O cadastro do cliente foi preservado.";
+          await loadArchived();
+          root()?.querySelector<HTMLButtonElement>(".clube-admin-refresh")?.click();
+        } catch (error) {
+          feedback = error instanceof Error ? error.message : "Não foi possível excluir este registro.";
+          renderArchiveView();
+        }
+      }));
     }
 
     function renderArchiveView() {
@@ -166,13 +258,14 @@ export default function SubscriptionArchiveEnhancer() {
       const body = host.querySelector<HTMLElement>(".clube-admin-body");
       if (!body) return;
       const term = search.trim().toLowerCase();
-      const rows = archived.filter((item) => !term || `${item.clientName} ${item.clientEmail} ${item.phone}`.toLowerCase().includes(term));
+      const groups = clientGroups();
+      const rows = groups.filter((group) => !term || `${group.clientName} ${group.clientEmail} ${group.phone}`.toLowerCase().includes(term));
       const view = document.createElement("div");
       view.className = "clube-admin-archive-view";
       view.innerHTML = `
         <div class="clube-archive-heading">
-          <div><small>BASE PARA RELACIONAMENTO</small><h3>Ex-assinantes arquivados</h3><p>Esses clientes saem da gestão diária, mas continuam disponíveis para consulta e remarketing.</p></div>
-          <span>${archived.length} arquivado(s)</span>
+          <div><small>BASE PARA RELACIONAMENTO</small><h3>Ex-assinantes arquivados</h3><p>Cada cliente aparece uma única vez. O histórico completo continua disponível para consulta, remarketing ou limpeza de registros de teste.</p></div>
+          <span>${groups.length} cliente(s) • ${archived.length} registro(s)</span>
         </div>
         <label class="clube-archive-search"><span>⌕</span><input type="search" value="${escapeHtml(search)}" placeholder="Buscar ex-assinante" /></label>
         ${feedback ? `<p class="clube-archive-feedback">${escapeHtml(feedback)}</p>` : ""}
@@ -188,20 +281,7 @@ export default function SubscriptionArchiveEnhancer() {
         if (input) input.setSelectionRange(input.value.length, input.value.length);
       });
 
-      view.querySelectorAll<HTMLButtonElement>("[data-restore-subscription]").forEach((button) => button.addEventListener("click", async () => {
-        const id = Number(button.dataset.restoreSubscription || 0);
-        button.disabled = true;
-        button.textContent = "Restaurando...";
-        try {
-          await archiveRequest("restore", id);
-          feedback = "Assinante restaurado para a lista principal.";
-          await loadArchived();
-          root()?.querySelector<HTMLButtonElement>(".clube-admin-refresh")?.click();
-        } catch (error) {
-          feedback = error instanceof Error ? error.message : "Não foi possível restaurar.";
-          renderArchiveView();
-        }
-      }));
+      bindArchiveActions(view);
     }
 
     function injectArchiveAction() {
