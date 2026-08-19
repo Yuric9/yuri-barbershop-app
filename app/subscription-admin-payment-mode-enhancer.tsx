@@ -20,15 +20,23 @@ export default function SubscriptionAdminPaymentModeEnhancer() {
     let destroyed = false;
     let modes: ModeMap = {};
     let decorateScheduled = false;
+    let loadingModes = false;
+    let loadedOnce = false;
 
     async function loadModes() {
+      if (loadingModes || !document.getElementById("clube-admin-pro")) return;
+      loadingModes = true;
       try {
         const response = await fetch("/api/admin/subscriptions/payment-modes", { cache: "no-store" });
         if (!response.ok) return;
         const data = await response.json();
         modes = data.modes || {};
+        loadedOnce = true;
         scheduleDecorate();
-      } catch {}
+      } catch {
+      } finally {
+        loadingModes = false;
+      }
     }
 
     function decorate() {
@@ -36,6 +44,7 @@ export default function SubscriptionAdminPaymentModeEnhancer() {
       if (destroyed) return;
       const root = document.getElementById("clube-admin-pro");
       if (!root) return;
+      if (!loadedOnce && !loadingModes) void loadModes();
 
       // Como agora existem assinaturas recorrentes e períodos únicos de 30 dias,
       // o indicador geral precisa falar de ciclos, não apenas de renovações.
@@ -109,8 +118,9 @@ export default function SubscriptionAdminPaymentModeEnhancer() {
     const observer = new MutationObserver(scheduleDecorate);
     observer.observe(document.body, { childList: true, subtree: true });
     scheduleDecorate();
-    void loadModes();
-    const refreshTimer = window.setInterval(loadModes, 30000);
+    const refreshTimer = window.setInterval(() => {
+      if (document.getElementById("clube-admin-pro")) void loadModes();
+    }, 30000);
 
     return () => {
       destroyed = true;
