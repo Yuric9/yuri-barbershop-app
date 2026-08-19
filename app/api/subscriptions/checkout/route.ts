@@ -11,6 +11,7 @@ import {
   type MercadoPagoPreapproval,
 } from "../../../mercadopago-subscriptions";
 import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
+import { getOneTimePaymentBySubscription } from "../../../subscription-one-time";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
@@ -86,7 +87,16 @@ export async function POST(request: Request) {
   const active = rows.find((item) => item.status === "Ativa" && (!item.endDate || item.endDate >= today()));
   if (active) return Response.json({ error: "Seu Clube Yuri já está ativo." }, { status: 409 });
 
-  let current = rows.find((item) => item.status === "Aguardando pagamento");
+  let current: (typeof rows)[number] | undefined;
+  for (const item of rows) {
+    if (item.status !== "Aguardando pagamento") continue;
+    const oneTime = await getOneTimePaymentBySubscription(item.id);
+    if (!oneTime) {
+      current = item;
+      break;
+    }
+  }
+
   if (!current) {
     const [created] = await db
       .insert(subscriptions)
