@@ -18,6 +18,8 @@ export const runtime = "edge";
 const CLUBE_YURI_TEST_APP_ID = "8874721750108093";
 const CLUBE_YURI_TEST_SELLER_ID = "3625511764";
 const CLUBE_YURI_TEST_PUBLIC_KEY = "APP_USR-09006eaf-14fa-4961-b1ac-e01d5cd3db92";
+const CLUBE_YURI_PROD_APP_ID = "2549193741810118";
+const CLUBE_YURI_PROD_SELLER_ID = "184990261";
 
 function today() {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -56,8 +58,23 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as { cardTokenId?: string };
   const cardTokenId = String(body.cardTokenId || "").trim();
+  const { testPayerEmail, accessToken } = mercadoPagoRuntimeConfig();
+  const identity = tokenIdentity(accessToken);
 
-  await runOneTimeSubscriptionTestReset();
+  if (testPayerEmail) {
+    await runOneTimeSubscriptionTestReset();
+    if (identity.appId !== CLUBE_YURI_TEST_APP_ID || identity.sellerId !== CLUBE_YURI_TEST_SELLER_ID) {
+      return Response.json(
+        { error: "O ambiente de teste do Clube Yuri está temporariamente indisponível." },
+        { status: 503 },
+      );
+    }
+  } else if (identity.appId !== CLUBE_YURI_PROD_APP_ID || identity.sellerId !== CLUBE_YURI_PROD_SELLER_ID) {
+    return Response.json(
+      { error: "O pagamento do Clube Yuri está temporariamente indisponível. Tente novamente em instantes." },
+      { status: 503 },
+    );
+  }
 
   const db = getDb();
   const rows = await db
@@ -78,29 +95,15 @@ export async function POST(request: Request) {
     current = created;
   }
 
-  const { testPayerEmail, accessToken } = mercadoPagoRuntimeConfig();
-
-  if (testPayerEmail) {
-    const identity = tokenIdentity(accessToken);
-    if (identity.appId !== CLUBE_YURI_TEST_APP_ID || identity.sellerId !== CLUBE_YURI_TEST_SELLER_ID) {
-      return Response.json(
-        {
-          error: `Credencial de teste ainda não está ativa no servidor. Aplicação em uso: ${identity.appId || "não identificada"}; vendedor em uso: ${identity.sellerId || "não identificado"}.`,
-        },
-        { status: 503 },
-      );
-    }
-
-    if (!cardTokenId) {
-      return Response.json({
-        ok: true,
-        testMode: true,
-        publicKey: CLUBE_YURI_TEST_PUBLIC_KEY,
-        amount: current.priceCents / 100,
-        payerEmail: testPayerEmail,
-        subscriptionId: current.id,
-      });
-    }
+  if (testPayerEmail && !cardTokenId) {
+    return Response.json({
+      ok: true,
+      testMode: true,
+      publicKey: CLUBE_YURI_TEST_PUBLIC_KEY,
+      amount: current.priceCents / 100,
+      payerEmail: testPayerEmail,
+      subscriptionId: current.id,
+    });
   }
 
   const existingPayment = await getPaymentLinkBySubscription(current.id);
@@ -166,17 +169,15 @@ export async function POST(request: Request) {
     );
   }
 
-  if (testPayerEmail) {
-    const returnedAppId = String(data.application_id || "");
-    const returnedSellerId = String(data.collector_id || "");
-    if (returnedAppId !== CLUBE_YURI_TEST_APP_ID || returnedSellerId !== CLUBE_YURI_TEST_SELLER_ID) {
-      return Response.json(
-        {
-          error: `Mercado Pago criou a assinatura com a conta errada. Aplicação retornada: ${returnedAppId || "não informada"}; vendedor retornado: ${returnedSellerId || "não informado"}.`,
-        },
-        { status: 503 },
-      );
-    }
+  const returnedAppId = String(data.application_id || "");
+  const returnedSellerId = String(data.collector_id || "");
+  const expectedAppId = testPayerEmail ? CLUBE_YURI_TEST_APP_ID : CLUBE_YURI_PROD_APP_ID;
+  const expectedSellerId = testPayerEmail ? CLUBE_YURI_TEST_SELLER_ID : CLUBE_YURI_PROD_SELLER_ID;
+  if (returnedAppId !== expectedAppId || returnedSellerId !== expectedSellerId) {
+    return Response.json(
+      { error: "O Mercado Pago não confirmou a conta recebedora correta. O pagamento foi interrompido por segurança." },
+      { status: 503 },
+    );
   }
 
   await savePaymentLink({
