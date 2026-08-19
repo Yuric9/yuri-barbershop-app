@@ -63,19 +63,19 @@ function updateCopy(page: HTMLElement) {
   const title = hero.querySelector<HTMLElement>(":scope > h2");
   const intro = hero.querySelector<HTMLElement>(":scope > p");
   const priceSmall = hero.querySelector<HTMLElement>(".membership-price small");
-  if (title) title.textContent = "Seu visual em dia por 30 dias.";
-  if (intro) intro.textContent = "O mesmo Clube Yuri por R$ 120. Você escolhe se quer renovação automática ou pagar somente um período.";
-  if (priceSmall) priceSmall.textContent = ",00 / 30 dias";
+  if (title) title.textContent = "Seu visual em dia. Um único valor.";
+  if (intro) intro.textContent = "Clube Yuri por R$ 120, com até 6 atendimentos por ciclo. Você escolhe renovação automática mensal ou somente 30 dias.";
+  if (priceSmall) priceSmall.textContent = ",00";
 
   const trust = hero.querySelector<HTMLElement>(".membership-sales-trust");
   if (trust) trust.innerHTML = "<span>🔒 Mercado Pago</span><span>✓ Escolha como pagar</span><span>✓ Plano individual</span>";
 
   const vipTitle = page.querySelector<HTMLElement>("#clube-vip-title");
-  if (vipTitle) vipTitle.textContent = "R$ 120 por 30 dias";
+  if (vipTitle) vipTitle.textContent = "Clube Yuri por R$ 120";
   const vipTopText = page.querySelector<HTMLElement>(".membership-vip-top p");
-  if (vipTopText) vipTopText.textContent = "Escolha renovação automática ou pagamento único. O valor e os benefícios permanecem os mesmos.";
+  if (vipTopText) vipTopText.textContent = "Mesmo valor e benefícios. Você escolhe se prefere renovação automática mensal ou um único período de 30 dias.";
   const vipPriceSuffix = page.querySelector<HTMLElement>(".membership-vip-price span");
-  if (vipPriceSuffix) vipPriceSuffix.textContent = "/ 30 dias";
+  if (vipPriceSuffix) vipPriceSuffix.textContent = "/ ciclo";
 }
 
 function hideLegacyPaymentButtons(page: HTMLElement) {
@@ -116,7 +116,7 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
     panel.innerHTML = `<div class="clube-payment-current pending">
       <small>${oneTime ? "30 DIAS • PAGAMENTO ÚNICO" : "MENSAL • RENOVAÇÃO AUTOMÁTICA"}</small>
       <strong>${oneTime ? "Seu pagamento de 30 dias está em andamento" : "Sua assinatura mensal está em andamento"}</strong>
-      <p>${oneTime ? "Continue no Mercado Pago para concluir o pagamento. Não haverá renovação automática." : "Continue no Mercado Pago para concluir a autorização da cobrança recorrente."}</p>
+      <p>${oneTime ? "Continue no Mercado Pago para concluir o pagamento. Não haverá renovação automática." : "Continue no Mercado Pago para concluir a autorização da cobrança recorrente mensal."}</p>
       <button type="button" data-payment-mode="${paymentState.mode}">Continuar no Mercado Pago</button>
     </div>`;
   } else {
@@ -128,7 +128,8 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
           <small>MENSAL</small>
           <strong>R$ 120 <i>/ mês</i></strong>
           <h5>Renovação automática</h5>
-          <p>Autorize uma vez e a cobrança se repete mensalmente no meio aceito pelo Mercado Pago até o cancelamento.</p>
+          <p>Autorize uma vez e a cobrança se repete mensalmente pelo Mercado Pago.</p>
+          <span class="clube-payment-assurance">Renovação automática mensal • cancelamento pode ser solicitado a qualquer momento.</span>
           <button type="button" data-payment-mode="recurring">Assinar mensalmente</button>
         </article>
         <article class="clube-payment-option">
@@ -136,7 +137,8 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
           <small>30 DIAS</small>
           <strong>R$ 120 <i>/ 30 dias</i></strong>
           <h5>Pagamento único</h5>
-          <p>Pague uma vez e o Clube termina ao fim do período. Pix, cartão e outros meios podem aparecer conforme disponibilidade do Mercado Pago.</p>
+          <p>Pague uma vez e use o Clube pelo período contratado. Pix, cartão e outros meios podem aparecer conforme disponibilidade do Mercado Pago.</p>
+          <span class="clube-payment-assurance">Pagamento único • não renova automaticamente.</span>
           <button type="button" data-payment-mode="one_time">Comprar somente 30 dias</button>
         </article>
       </div>
@@ -156,7 +158,7 @@ function renderChoicePanel(page: HTMLElement, paymentState: PaymentState | null)
   if (sticky) {
     const stickyPrice = sticky.querySelector<HTMLElement>("strong");
     const stickyButton = sticky.querySelector<HTMLButtonElement>("button");
-    if (stickyPrice) stickyPrice.textContent = "R$ 120 / 30 dias";
+    if (stickyPrice) stickyPrice.textContent = "R$ 120";
     if (stickyButton) {
       stickyButton.textContent = state === "pending" && paymentState?.mode ? "CONTINUAR PAGAMENTO" : "ESCOLHER COMO PAGAR";
       const replacement = stickyButton.cloneNode(true) as HTMLButtonElement;
