@@ -1,0 +1,65 @@
+:root {
+  /* Identidade */
+  --yuri-black: #11110f;
+  --yuri-ink: #201f1b;
+  --yuri-gold: #c59a3d;
+  --yuri-gold-strong: #a77d20;
+  --yuri-gold-soft: #f4ead1;
+  --yuri-cream: #f7f4ed;
+  --yuri-surface: #ffffff;
+  --yuri-surface-dark: #181815;
+  --yuri-muted: #76736b;
+  --yuri-line: #e6e0d5;
+  --yuri-success: #2f7250;
+  --yuri-danger: #9d493e;
+  --yuri-warning: #9b7117;
+
+  /* Compatibilidade com o CSS legado */
+  --black: var(--yuri-black);
+  --ink: var(--yuri-ink);
+  --gold: var(--yuri-gold);
+  --gold-soft: var(--yuri-gold-soft);
+  --cream: var(--yuri-cream);
+  --white: var(--yuri-surface);
+  --muted: var(--yuri-muted);
+  --line: var(--yuri-line);
+  --green: var(--yuri-success);
+  --red: var(--yuri-danger);
+
+  /* Tipografia */
+  --font-ui: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-h3: clamp(1.25rem, 2vw, 1.5rem);
+  --text-h2: clamp(1.55rem, 3vw, 2rem);
+  --text-h1: clamp(2rem, 5vw, 3.2rem);
+  --line-body: 1.55;
+
+  /* Espaçamento */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Geometria */
+  --radius-control: 12px;
+  --radius-card: 18px;
+  --radius-modal: 20px;
+  --radius-pill: 999px;
+
+  /* Interação */
+  --touch-min: 44px;
+  --touch-mobile: 48px;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--yuri-gold) 34%, transparent);
+  --shadow-card: 0 10px 28px rgba(38, 31, 19, 0.055);
+  --shadow-elevated: 0 18px 46px rgba(26, 22, 15, 0.12);
+  --motion-fast: 140ms;
+  --motion-normal: 220ms;
+}
