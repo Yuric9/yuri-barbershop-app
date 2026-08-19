@@ -4,6 +4,7 @@ import { subscriptions } from "../../../../db/schema";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { mercadoPagoRequest } from "../../../mercadopago-subscriptions";
 import { mercadoPagoRuntimeConfig } from "../../../runtime-config";
+import { expirePendingSubscriptionsForClient, PENDING_ATTEMPT_TTL_MS } from "../../../subscription-pending-expiration";
 import {
   getOneTimePaymentBySubscription,
   oneTimeExternalReference,
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "O pagamento do Clube Yuri está temporariamente indisponível." }, { status: 503 });
   }
 
+  await expirePendingSubscriptionsForClient(user.email);
+
   const db = getDb();
   const rows = await db.select().from(subscriptions).where(eq(subscriptions.clientEmail, user.email)).orderBy(desc(subscriptions.id));
   const active = rows.find((item) => item.status === "Ativa" && (!item.endDate || item.endDate >= today()));
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
   for (const item of rows.slice(0, 8)) {
     if (item.status !== "Aguardando pagamento") continue;
     const stored = await getOneTimePaymentBySubscription(item.id);
-    if (stored?.init_point && !["approved", "refunded", "charged_back", "cancelled", "canceled"].includes(String(stored.provider_status || "").toLowerCase())) {
+    if (stored?.init_point && !["approved", "refunded", "charged_back", "cancelled", "canceled", "expired", "rejected"].includes(String(stored.provider_status || "").toLowerCase())) {
       return Response.json({ ok: true, checkoutUrl: stored.init_point, subscriptionId: item.id, reused: true, mode: "one_time" });
     }
   }
@@ -72,6 +75,8 @@ export async function POST(request: Request) {
   }).returning();
 
   const origin = new URL(request.url).origin;
+  const preferenceStart = new Date();
+  const preferenceEnd = new Date(preferenceStart.getTime() + PENDING_ATTEMPT_TTL_MS);
   const payload = {
     items: [
       {
@@ -92,6 +97,9 @@ export async function POST(request: Request) {
     },
     auto_return: "approved",
     notification_url: `${origin}/api/webhooks/mercadopago`,
+    expires: true,
+    expiration_date_from: preferenceStart.toISOString(),
+    expiration_date_to: preferenceEnd.toISOString(),
   };
 
   let response: Response;
