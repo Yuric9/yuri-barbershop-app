@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 
-export default function LoginCampaignPopup({ campaign }: { campaign: any }) {
+type LoginCampaign = { imageKey?: string; title?: string; description?: string; kind?: string };
+
+export default function LoginCampaignPopup({ campaign }: { campaign: LoginCampaign | null | undefined }) {
   const [open,setOpen]=useState(true);
   if(!open||!campaign)return null;
   const image=campaign.imageKey?`/api/upload?key=${encodeURIComponent(campaign.imageKey)}`:"";
