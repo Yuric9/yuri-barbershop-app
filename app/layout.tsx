@@ -27,6 +27,7 @@ import "./design-system.css";
 import "./app-feel.css";
 import BookingDateGuard from "./booking-date-guard";
 import MobileBookingBridge from "./mobile-booking-bridge";
+import BookingSocialIconEnhancer from "./booking-social-icon-enhancer";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
 import CatalogImageViewer from "./catalog-image-viewer";
 import CatalogOrderEnhancer from "./catalog-order-enhancer";
@@ -104,6 +105,7 @@ export default function RootLayout({
         <BookingDateGuard />
         {children}
         <MobileBookingBridge />
+        <BookingSocialIconEnhancer />
         <CatalogAdminEnhancer />
         <CatalogOrderEnhancer />
         <CatalogImageViewer />
