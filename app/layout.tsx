@@ -26,6 +26,7 @@ import "./barber-nav-icons.css";
 import "./design-system.css";
 import "./app-feel.css";
 import BookingDateGuard from "./booking-date-guard";
+import BookingHubFetchBridge from "./booking-hub-fetch-bridge";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import BookingSocialIconEnhancer from "./booking-social-icon-enhancer";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
@@ -104,6 +105,7 @@ export default function RootLayout({
       >
         <BookingDateGuard />
         {children}
+        <BookingHubFetchBridge />
         <MobileBookingBridge />
         <BookingSocialIconEnhancer />
         <CatalogAdminEnhancer />
