@@ -1223,6 +1223,11 @@ a {
 .cell-email { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
 .empty-table { padding: 35px!important; text-align: center!important; color: var(--muted); }
 .section-description { margin: -13px 0 18px; color: var(--muted); font-size: 11px; }
+.remarketing-brevo-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; padding: 17px 18px; border: 1px solid #c9d8d0; border-radius: 14px; background: linear-gradient(120deg,#f1f8f3,#fffdf7); }
+.remarketing-brevo-card small { display: block; color: var(--green); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.remarketing-brevo-card strong { display: block; margin-top: 5px; font: 20px Georgia,serif; }
+.remarketing-brevo-card p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+.remarketing-brevo-card a { flex: 0 0 auto; padding: 11px 14px; border-radius: 9px; background: var(--black); color: var(--gold); font-size: 10px; font-weight: 800; text-decoration: none; }
 .remarketing-list { display: flex; flex-direction: column; gap: 10px; }
 .remarketing-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px; }
 .remarketing-metrics article { padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: white; }
@@ -1461,6 +1466,8 @@ a {
   .report-chart-head { flex-direction: column; }
   .report-chart-head > div:last-child { align-items: flex-start; text-align: left; }
   .monthly-bars { height: 250px; }
+  .remarketing-brevo-card { align-items: stretch; flex-direction: column; }
+  .remarketing-brevo-card a { text-align: center; }
   .remarketing-card { grid-template-columns: 38px 1fr; }
   .remarketing-card > a,.remarketing-actions { grid-column: 1 / -1; width: 100%; max-width: none; }
   .remarketing-metrics { grid-template-columns: 1fr 1fr; }
