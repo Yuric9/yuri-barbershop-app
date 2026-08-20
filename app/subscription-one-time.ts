@@ -167,14 +167,21 @@ export async function syncLocalOneTimePayment(payment: MercadoPagoOneTimePayment
     await db.update(subscriptions).set(update).where(eq(subscriptions.id, subscriptionId));
   }
 
+  // O webhook do Checkout Pro pode chegar alguns milissegundos antes de a
+  // preferência ter sido persistida localmente. O pagamento já foi validado
+  // acima, portanto sincronizamos a assinatura e só atualizamos o vínculo do
+  // provedor quando ele já existir. Isso evita transformar uma corrida normal
+  // de eventos em erro 500 no webhook.
   const existing = await getOneTimePaymentBySubscription(subscriptionId);
-  await saveOneTimePayment({
-    subscriptionId,
-    preferenceId: existing?.preference_id || "",
-    initPoint: existing?.init_point || "",
-    paymentId: String(payment.id),
-    providerStatus,
-  });
+  if (existing?.preference_id) {
+    await saveOneTimePayment({
+      subscriptionId,
+      preferenceId: existing.preference_id,
+      initPoint: existing.init_point || "",
+      paymentId: String(payment.id),
+      providerStatus,
+    });
+  }
 
   return { ok: true, subscriptionId, status: localStatus, previousStatus: local.status, providerStatus } as const;
 }

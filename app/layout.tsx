@@ -25,6 +25,7 @@ import "./barber-nav-icons.css";
 import "./design-system.css";
 import "./app-feel.css";
 import BookingDateGuard from "./booking-date-guard";
+import BookingErrorBoundary from "./booking-error-boundary";
 import MobileBookingBridge from "./mobile-booking-bridge";
 import CatalogAdminEnhancer from "./catalog-admin-enhancer";
 import CatalogImageViewer from "./catalog-image-viewer";
@@ -102,7 +103,9 @@ export default function RootLayout({
       >
         <BookingDateGuard />
         {children}
-        <MobileBookingBridge />
+        <BookingErrorBoundary>
+          <MobileBookingBridge />
+        </BookingErrorBoundary>
         <CatalogAdminEnhancer />
         <CatalogOrderEnhancer />
         <CatalogImageViewer />

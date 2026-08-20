@@ -34,3 +34,17 @@ test("central keeps club copy aligned with six-visit business rule", async () =>
   assert.match(source, /Até 6 atendimentos por ciclo/);
   assert.doesNotMatch(source, /ilimitad/i);
 });
+
+test("booking central is protected by an error boundary", async () => {
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const boundary = await readFile(new URL("../app/booking-error-boundary.tsx", import.meta.url), "utf8");
+  assert.match(layout, /<BookingErrorBoundary>/);
+  assert.match(boundary, /getDerivedStateFromError/);
+  assert.match(boundary, /Recarregar Central/);
+});
+
+test("one-time payment webhook tolerates preference creation race", async () => {
+  const source = await readFile(new URL("../app/subscription-one-time.ts", import.meta.url), "utf8");
+  assert.match(source, /if \(existing\?\.preference_id\)/);
+  assert.doesNotMatch(source, /preferenceId: existing\?\.preference_id \|\| ""/);
+});
