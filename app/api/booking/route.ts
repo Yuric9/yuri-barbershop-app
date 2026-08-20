@@ -209,7 +209,7 @@ export async function POST(request: Request) {
 
   const rawItems = Array.isArray(body.products) ? body.products.slice(0, 20) : [];
   const normalizedItems = rawItems
-    .map((item: any) => ({ id: Number(item?.id || 0), quantity: Math.max(0, Math.floor(Number(item?.quantity || 0))) }))
+    .map((item: { id?: unknown; quantity?: unknown }) => ({ id: Number(item?.id || 0), quantity: Math.max(0, Math.floor(Number(item?.quantity || 0))) }))
     .filter((item) => item.id > 0 && item.quantity > 0);
   const uniqueIds = [...new Set(normalizedItems.map((item) => item.id))];
   const productRows = uniqueIds.length
