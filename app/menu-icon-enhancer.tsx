@@ -70,6 +70,8 @@ function googleBusinessIcon() {
 
 export default function MenuIconEnhancer() {
   useEffect(() => {
+    let frame = 0;
+
     function enhance() {
       document.querySelectorAll<HTMLButtonElement>(".sidebar nav button").forEach((button) => {
         const iconHost = button.querySelector<HTMLElement>(":scope > span:first-child");
@@ -89,10 +91,24 @@ export default function MenuIconEnhancer() {
         host.setAttribute("aria-hidden", "true");
       });
     }
-    enhance();
-    const observer = new MutationObserver(enhance);
-    observer.observe(document.body, { childList:true, subtree:true, characterData:true });
-    return () => observer.disconnect();
+
+    const scheduleEnhance = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        enhance();
+      });
+    };
+
+    scheduleEnhance();
+    const observer = new MutationObserver(scheduleEnhance);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
+
   return null;
 }
