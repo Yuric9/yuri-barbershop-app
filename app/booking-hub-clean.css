@@ -1,4 +1,4 @@
-/* Refinamento visual da Central: menos titulos e cards com linguagem visual unica. */
+/* Refinamento visual da Central: menos titulos e cards pretos premium. */
 .booking-hub-app:has(.booking-hub-home)>.booking-hub-header{display:none}
 .booking-hub-home{gap:18px}
 .booking-hub-home>.booking-hub-section>.booking-hub-section-head{display:none}
@@ -17,7 +17,7 @@
 .booking-hub-home>.booking-social-section>.booking-hub-section-head small{display:none}
 .booking-hub-home>.booking-social-section>.booking-hub-section-head h3{margin:0;font:700 24px/1.05 Georgia,serif;color:#211f1a}
 
-/* PADRONIZACAO FORCADA: todos os cards visiveis da Central usam exatamente a mesma cor. */
+/* Todos os cards da home seguem exatamente o mesmo visual do Clube Yuri. */
 .booking-hub-home .booking-entry-grid>button,
 .booking-hub-home .booking-entry-grid>button.featured,
 .booking-hub-home .booking-hub-service-grid>button,
@@ -26,14 +26,13 @@
 .booking-hub-home button.booking-benefit-card.club,
 .booking-hub-home .booking-social-grid>a,
 .booking-hub-home button.booking-next-appointment{
-  background-color:#ffffff!important;
-  background-image:none!important;
-  border:1px solid #ded6c8!important;
-  color:#25231e!important;
-  box-shadow:0 9px 24px #24170d0b!important;
+  background-color:#1a1916!important;
+  background-image:radial-gradient(circle at 100% 0,#d3aa4b18,transparent 37%),linear-gradient(145deg,#1a1916,#27231b)!important;
+  border:1px solid #7f672f!important;
+  color:#ffffff!important;
+  box-shadow:0 12px 30px #18120b22!important;
 }
 
-/* Textos internos tambem seguem a mesma paleta clara. */
 .booking-hub-home .booking-entry-grid strong,
 .booking-hub-home .booking-hub-service-grid strong,
 .booking-hub-home .booking-catalog-feature strong,
@@ -41,7 +40,7 @@
 .booking-hub-home .booking-benefit-card.club>strong,
 .booking-hub-home .booking-social-grid strong,
 .booking-hub-home .booking-next-appointment strong{
-  color:#25231e!important;
+  color:#ffffff!important;
 }
 
 .booking-hub-home .booking-entry-grid small,
@@ -51,9 +50,10 @@
 .booking-hub-home .booking-benefit-card.club>p,
 .booking-hub-home .booking-social-grid small,
 .booking-hub-home .booking-next-appointment span{
-  color:#817b70!important;
+  color:#c7c0b4!important;
 }
 
+.booking-hub-home .booking-entry-grid>button>b,
 .booking-hub-home .booking-catalog-feature small,
 .booking-hub-home .booking-catalog-feature>b,
 .booking-hub-home .booking-benefit-card>small,
@@ -62,26 +62,40 @@
 .booking-hub-home .booking-benefit-card.club>b,
 .booking-hub-home .booking-next-appointment small,
 .booking-hub-home .booking-hub-service-grid>button>b,
-.booking-hub-home .booking-hub-service-grid>button>i{
-  color:#9d742a!important;
+.booking-hub-home .booking-hub-service-grid>button>i,
+.booking-hub-home .booking-social-grid>a>b{
+  color:#d7b558!important;
 }
 
-/* Icones seguem um unico bloco claro/dourado. */
+/* Icones dos cards seguem o preto/dourado; redes preservam as cores oficiais. */
 .booking-hub-home .booking-entry-icon,
 .booking-hub-home .booking-hub-service-icon,
 .booking-hub-home .booking-benefit-card>span,
-.booking-hub-home .booking-benefit-card.club>span,
-.booking-hub-home .booking-social-grid>a>span{
-  background:#f6f0e4!important;
-  color:#9d742a!important;
+.booking-hub-home .booking-benefit-card.club>span{
+  background:#d6ad5026!important;
+  color:#e0bd62!important;
 }
 
-/* Fotos do catalogo continuam aparecendo, mas sem moldura escura. */
-.booking-hub-home .booking-catalog-collage span{
-  border-color:#ffffff!important;
-  background:#f3eee4!important;
-  color:#9d742a!important;
+.booking-hub-home .booking-social-grid>a>span.booking-social-brand-icon{
+  background:#ffffff!important;
+  color:inherit!important;
+  overflow:hidden;
 }
+.booking-hub-home .booking-social-brand-icon svg{width:23px;height:23px;display:block}
+.booking-hub-home .booking-social-brand-icon svg path:not([fill]){fill:currentColor}
+.booking-hub-home .booking-social-grid>a[href*="instagram.com"] .booking-social-brand-icon{color:#E4405F!important}
+.booking-hub-home .booking-social-grid>a[href*="wa.me"] .booking-social-brand-icon{color:#25D366!important}
+
+/* Fotos do catalogo continuam aparecendo, agora integradas ao card preto. */
+.booking-hub-home .booking-catalog-collage span{
+  border-color:#27231b!important;
+  background:#342f26!important;
+  color:#d9b75f!important;
+}
+
+/* Fidelidade mantem a progressao visivel sobre o fundo escuro. */
+.booking-hub-home .booking-loyalty-dots i{background:#4a443a!important}
+.booking-hub-home .booking-loyalty-dots i.active{background:#d7b558!important}
 
 /* Mesmo comportamento ao passar o mouse. */
 .booking-hub-home .booking-entry-grid>button:hover,
@@ -90,8 +104,8 @@
 .booking-hub-home .booking-benefit-card:hover,
 .booking-hub-home .booking-social-grid>a:hover,
 .booking-hub-home .booking-next-appointment:hover{
-  border-color:#c8aa6a!important;
-  box-shadow:0 11px 28px #24170d12!important;
+  border-color:#d7b558!important;
+  box-shadow:0 14px 34px #18120b30!important;
   transform:translateY(-1px);
 }
 
