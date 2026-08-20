@@ -38,21 +38,22 @@ function lockCashDate() {
   const dateInput = section.querySelector<HTMLInputElement>('input[type="date"]');
   if (dateInput) {
     const today = saoPauloToday();
-    if (dateInput.value !== today) {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      setter?.call(dateInput, today);
-      dateInput.dispatchEvent(new Event("input", { bubbles: true }));
-      dateInput.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+
+    // A data real enviada ao servidor já é forçada para hoje no interceptador abaixo.
+    // Aqui apenas sincronizamos a exibição, sem disparar eventos React. Isso evita
+    // ciclos de renderização quando o formulário "Nova movimentação" é aberto.
+    if (dateInput.value !== today) dateInput.value = today;
+
     dateInput.disabled = true;
     dateInput.setAttribute("aria-label", "Data de hoje — definida automaticamente");
     dateInput.title = "No Caixa, os lançamentos são sempre registrados na data de hoje. Para dias anteriores, use Relatórios.";
-    dateInput.closest("label")?.classList.add("cash-today-date");
+    const label = dateInput.closest("label");
+    if (label && !label.classList.contains("cash-today-date")) label.classList.add("cash-today-date");
   }
 
   const clientButton = section.querySelector<HTMLButtonElement>(".cash-new-client");
   if (clientButton) {
-    clientButton.classList.add("cash-new-client-visible");
+    if (!clientButton.classList.contains("cash-new-client-visible")) clientButton.classList.add("cash-new-client-visible");
     clientButton.setAttribute("aria-label", "Cadastrar novo cliente e vincular ao lançamento");
   }
 }
@@ -128,19 +129,28 @@ export default function CashTodayGuard() {
     };
 
     let dashboardTimer: number | null = null;
+    let frame = 0;
+
     const scan = () => {
-      lockCashDate();
-      if (dashboardTimer) window.clearTimeout(dashboardTimer);
-      dashboardTimer = window.setTimeout(() => void refreshDashboardMetrics(), 120);
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        lockCashDate();
+        if (dashboardTimer) window.clearTimeout(dashboardTimer);
+        dashboardTimer = window.setTimeout(() => void refreshDashboardMetrics(), 120);
+      });
     };
 
+    // Observar apenas entrada/saída de elementos. Alterações de classes eram
+    // desnecessárias aqui e podiam gerar tempestade de callbacks no mobile.
     const observer = new MutationObserver(scan);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.body, { childList: true, subtree: true });
     scan();
 
     return () => {
       window.fetch = originalFetch;
       observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
       if (dashboardTimer) window.clearTimeout(dashboardTimer);
     };
   }, []);
