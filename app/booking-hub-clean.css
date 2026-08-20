@@ -1,0 +1,24 @@
+/* Refinamento visual da Central: menos titulos, mantendo os cards intactos. */
+.booking-hub-app:has(.booking-hub-home)>.booking-hub-header{display:none}
+.booking-hub-home{gap:18px}
+.booking-hub-home>.booking-hub-section>.booking-hub-section-head{display:none}
+.booking-hub-home>.booking-hub-section{gap:0}
+
+/* Mantem somente a identificacao de Servicos. */
+.booking-hub-home>.booking-hub-section:has(.booking-hub-service-grid){gap:10px}
+.booking-hub-home>.booking-hub-section:has(.booking-hub-service-grid)>.booking-hub-section-head{display:flex;align-items:center}
+.booking-hub-home>.booking-hub-section:has(.booking-hub-service-grid)>.booking-hub-section-head small{font:700 24px/1.05 Georgia,serif;letter-spacing:-.02em;color:#211f1a;text-transform:none}
+.booking-hub-home>.booking-hub-section:has(.booking-hub-service-grid)>.booking-hub-section-head h3{display:none}
+.booking-hub-home>.booking-hub-section:has(.booking-hub-service-grid)>.booking-hub-section-head>span{font-size:10px;color:#8a8276}
+
+/* Mantem apenas 'Nos siga nas redes' no final. */
+.booking-hub-home>.booking-social-section{gap:10px}
+.booking-hub-home>.booking-social-section>.booking-hub-section-head{display:flex}
+.booking-hub-home>.booking-social-section>.booking-hub-section-head small{display:none}
+.booking-hub-home>.booking-social-section>.booking-hub-section-head h3{margin:0;font:700 24px/1.05 Georgia,serif;color:#211f1a}
+
+@media(max-width:760px){
+  .booking-hub-home{gap:15px}
+  .booking-hub-home>.booking-hub-section:has(.booking-hub-service-grid)>.booking-hub-section-head small,
+  .booking-hub-home>.booking-social-section>.booking-hub-section-head h3{font-size:22px}
+}
