@@ -6,6 +6,7 @@ import "./login-logo-fix.css";
 import "./mobile-booking.css";
 import "./booking-commerce.css";
 import "./booking-hub.css";
+import "./booking-hub-clean.css";
 import "./catalog-image-viewer.css";
 import "./mobile-experience.css";
 import "./menu-icons.css";
