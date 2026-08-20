@@ -2,6 +2,10 @@
 
 import { useEffect } from "react";
 
+type MercadoPagoCardForm = { getCardFormData: () => { token?: unknown } };
+type MercadoPagoSdk = { cardForm: (options: Record<string, unknown>) => MercadoPagoCardForm };
+type MercadoPagoWindow = Window & { MercadoPago?: new (publicKey: string) => MercadoPagoSdk };
+
 const OPEN_CLUBE_YURI_KEY = "yuri:open-clube-yuri";
 let syncingSubscription = false;
 
@@ -51,7 +55,7 @@ async function syncSubscriptionStatus(options?: { reloadWhenChanged?: boolean })
 
 function loadMercadoPagoSdk() {
   return new Promise<void>((resolve, reject) => {
-    if ((window as any).MercadoPago) return resolve();
+    if ((window as MercadoPagoWindow).MercadoPago) return resolve();
     const existing = document.querySelector<HTMLScriptElement>('script[data-yuri-mp-sdk="1"]');
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
@@ -123,9 +127,10 @@ async function openTestCardForm(options: {
   };
   document.getElementById("yuri-mp-close")?.addEventListener("click", close);
 
-  const mp = new (window as any).MercadoPago(options.publicKey);
-  let cardForm: any;
-  cardForm = mp.cardForm({
+  const MercadoPago = (window as MercadoPagoWindow).MercadoPago;
+  if (!MercadoPago) throw new Error("Mercado Pago indisponível.");
+  const mp = new MercadoPago(options.publicKey);
+  const cardForm = mp.cardForm({
     amount: String(options.amount),
     iframe: true,
     form: {
