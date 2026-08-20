@@ -28,6 +28,7 @@ export default function LogoHomeEnhancer() {
       if (!homeButton) return false;
 
       event.preventDefault();
+      event.stopPropagation();
       homeButton.click();
       window.scrollTo({ top: 0, behavior: "smooth" });
       return true;
