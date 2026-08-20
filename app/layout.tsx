@@ -4,6 +4,7 @@ import "./design-tokens.css";
 import "./globals.css";
 import "./login-logo-fix.css";
 import "./mobile-booking.css";
+import "./booking-commerce.css";
 import "./catalog-image-viewer.css";
 import "./mobile-experience.css";
 import "./menu-icons.css";
