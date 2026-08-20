@@ -1,4 +1,4 @@
-/* Refinamento visual da Central: menos titulos e cards pretos premium. */
+/* Central Yuri: menos titulos, cards pretos premium e icones corretos das redes. */
 .booking-hub-app:has(.booking-hub-home)>.booking-hub-header{display:none}
 .booking-hub-home{gap:18px}
 .booking-hub-home>.booking-hub-section>.booking-hub-section-head{display:none}
@@ -17,87 +17,106 @@
 .booking-hub-home>.booking-social-section>.booking-hub-section-head small{display:none}
 .booking-hub-home>.booking-social-section>.booking-hub-section-head h3{margin:0;font:700 24px/1.05 Georgia,serif;color:#211f1a}
 
-/* Todos os cards da home seguem exatamente o mesmo visual do Clube Yuri. */
+/* PADRAO UNICO: todos os cards principais usam o mesmo preto do Clube Yuri. */
 .booking-hub-home .booking-entry-grid>button,
-.booking-hub-home .booking-entry-grid>button.featured,
 .booking-hub-home .booking-hub-service-grid>button,
-.booking-hub-home button.booking-catalog-feature,
-.booking-hub-home button.booking-benefit-card,
-.booking-hub-home button.booking-benefit-card.club,
+.booking-hub-home .booking-catalog-feature,
+.booking-hub-home .booking-benefit-card,
 .booking-hub-home .booking-social-grid>a,
-.booking-hub-home button.booking-next-appointment{
-  background-color:#1a1916!important;
+.booking-hub-home .booking-next-appointment{
+  background:#1a1916!important;
   background-image:radial-gradient(circle at 100% 0,#d3aa4b18,transparent 37%),linear-gradient(145deg,#1a1916,#27231b)!important;
   border:1px solid #7f672f!important;
-  color:#ffffff!important;
+  color:#fff!important;
   box-shadow:0 12px 30px #18120b22!important;
+}
+
+.booking-hub-home .booking-entry-grid>button.featured,
+.booking-hub-home .booking-benefit-card.club{
+  background:#1a1916!important;
+  background-image:radial-gradient(circle at 100% 0,#d3aa4b18,transparent 37%),linear-gradient(145deg,#1a1916,#27231b)!important;
+  border-color:#7f672f!important;
+  color:#fff!important;
 }
 
 .booking-hub-home .booking-entry-grid strong,
 .booking-hub-home .booking-hub-service-grid strong,
 .booking-hub-home .booking-catalog-feature strong,
 .booking-hub-home .booking-benefit-card>strong,
-.booking-hub-home .booking-benefit-card.club>strong,
 .booking-hub-home .booking-social-grid strong,
-.booking-hub-home .booking-next-appointment strong{
-  color:#ffffff!important;
-}
+.booking-hub-home .booking-next-appointment strong{color:#fff!important}
 
 .booking-hub-home .booking-entry-grid small,
 .booking-hub-home .booking-hub-service-grid small,
 .booking-hub-home .booking-catalog-feature p,
 .booking-hub-home .booking-benefit-card>p,
-.booking-hub-home .booking-benefit-card.club>p,
 .booking-hub-home .booking-social-grid small,
-.booking-hub-home .booking-next-appointment span{
-  color:#c7c0b4!important;
-}
+.booking-hub-home .booking-next-appointment span{color:#c7c0b4!important}
 
 .booking-hub-home .booking-entry-grid>button>b,
 .booking-hub-home .booking-catalog-feature small,
 .booking-hub-home .booking-catalog-feature>b,
 .booking-hub-home .booking-benefit-card>small,
 .booking-hub-home .booking-benefit-card>b,
-.booking-hub-home .booking-benefit-card.club>small,
-.booking-hub-home .booking-benefit-card.club>b,
 .booking-hub-home .booking-next-appointment small,
 .booking-hub-home .booking-hub-service-grid>button>b,
 .booking-hub-home .booking-hub-service-grid>button>i,
-.booking-hub-home .booking-social-grid>a>b{
-  color:#d7b558!important;
-}
+.booking-hub-home .booking-social-grid>a>b{color:#d7b558!important}
 
-/* Icones dos cards seguem o preto/dourado; redes preservam as cores oficiais. */
+/* Icones dos cards gerais. */
 .booking-hub-home .booking-entry-icon,
 .booking-hub-home .booking-hub-service-icon,
-.booking-hub-home .booking-benefit-card>span,
-.booking-hub-home .booking-benefit-card.club>span{
+.booking-hub-home .booking-benefit-card>span{
   background:#d6ad5026!important;
   color:#e0bd62!important;
 }
 
-.booking-hub-home .booking-social-grid>a>span.booking-social-brand-icon{
-  background:#ffffff!important;
-  color:inherit!important;
-  overflow:hidden;
+/* Redes: esconde os caracteres antigos (◎ / G / ◉) e desenha os logos corretos. */
+.booking-hub-home .booking-social-grid>a>span{
+  position:relative!important;
+  width:40px!important;
+  height:40px!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:transparent!important;
+  font-size:0!important;
 }
-.booking-hub-home .booking-social-brand-icon svg{width:23px;height:23px;display:block}
-.booking-hub-home .booking-social-brand-icon svg path:not([fill]){fill:currentColor}
-.booking-hub-home .booking-social-grid>a[href*="instagram.com"] .booking-social-brand-icon{color:#E4405F!important}
-.booking-hub-home .booking-social-grid>a[href*="wa.me"] .booking-social-brand-icon{color:#25D366!important}
+.booking-hub-home .booking-social-grid>a>span::before{
+  content:"";
+  width:25px;
+  height:25px;
+  display:block;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+}
 
-/* Fotos do catalogo continuam aparecendo, agora integradas ao card preto. */
+/* Instagram */
+.booking-hub-home .booking-social-grid>a[href*="instagram.com"]>span::before{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23fdc830'/%3E%3Cstop offset='.45' stop-color='%23f77737'/%3E%3Cstop offset='.72' stop-color='%23c13584'/%3E%3Cstop offset='1' stop-color='%234052b5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='20' height='20' rx='6' fill='url(%23g)'/%3E%3Ccircle cx='12' cy='12' r='4.3' fill='none' stroke='white' stroke-width='1.8'/%3E%3Ccircle cx='17.4' cy='6.8' r='1.2' fill='white'/%3E%3C/svg%3E")!important;
+}
+
+/* Google */
+.booking-hub-home .booking-social-grid>a[href*="g.page"]>span::before{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-1.99 3.02v2.52h3.22c1.89-1.74 2.99-4.31 2.99-7.37z'/%3E%3Cpath fill='%2334A853' d='M12 22c2.7 0 4.96-.9 6.61-2.4l-3.22-2.52c-.9.6-2.04.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.07v2.6A10 10 0 0 0 12 22z'/%3E%3Cpath fill='%23FBBC05' d='M6.39 13.91A6 6 0 0 1 6.08 12c0-.66.11-1.3.31-1.91v-2.6H3.07A10 10 0 0 0 2 12c0 1.61.38 3.14 1.07 4.51l3.32-2.6z'/%3E%3Cpath fill='%23EA4335' d='M12 5.96c1.47 0 2.79.5 3.82 1.49l2.86-2.86C16.95 2.98 14.7 2 12 2a10 10 0 0 0-8.93 5.49l3.32 2.6C7.18 7.72 9.39 5.96 12 5.96z'/%3E%3C/svg%3E")!important;
+}
+
+/* WhatsApp */
+.booking-hub-home .booking-social-grid>a[href*="wa.me"]>span::before{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%2325D366'/%3E%3Cpath fill='white' d='M17.3 14.4c-.29-.15-1.72-.85-1.99-.95-.27-.1-.47-.15-.67.15-.2.29-.77.95-.94 1.14-.17.2-.35.22-.64.07-.29-.15-1.23-.45-2.34-1.44-.87-.77-1.45-1.72-1.62-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.35.44-.52.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.91-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.29-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.19 1.87.12.57-.08 1.72-.7 1.96-1.38.24-.68.24-1.26.17-1.38-.07-.12-.27-.19-.56-.34z'/%3E%3C/svg%3E")!important;
+}
+
 .booking-hub-home .booking-catalog-collage span{
   border-color:#27231b!important;
   background:#342f26!important;
   color:#d9b75f!important;
 }
-
-/* Fidelidade mantem a progressao visivel sobre o fundo escuro. */
 .booking-hub-home .booking-loyalty-dots i{background:#4a443a!important}
 .booking-hub-home .booking-loyalty-dots i.active{background:#d7b558!important}
 
-/* Mesmo comportamento ao passar o mouse. */
 .booking-hub-home .booking-entry-grid>button:hover,
 .booking-hub-home .booking-hub-service-grid>button:hover,
 .booking-hub-home .booking-catalog-feature:hover,
