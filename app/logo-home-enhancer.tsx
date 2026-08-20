@@ -20,51 +20,39 @@ function findPortalHomeButton() {
 
 export default function LogoHomeEnhancer() {
   useEffect(() => {
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
+    const goHome = (target: HTMLElement | null, event: Event) => {
       const brand = target?.closest<HTMLElement>(".sidebar .brand, .sidebar .brand-home, .sidebar .brand-mark");
-      if (!brand) return;
+      if (!brand) return false;
 
       const homeButton = findPortalHomeButton();
-      if (!homeButton) return;
+      if (!homeButton) return false;
 
       event.preventDefault();
       homeButton.click();
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return true;
+    };
+
+    const onClick = (event: MouseEvent) => {
+      goHome(event.target as HTMLElement | null, event);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Enter" && event.key !== " ") return;
-      const target = event.target as HTMLElement | null;
-      const brand = target?.closest<HTMLElement>(".sidebar .brand, .sidebar .brand-home, .sidebar .brand-mark");
-      if (!brand) return;
-
-      const homeButton = findPortalHomeButton();
-      if (!homeButton) return;
-
-      event.preventDefault();
-      homeButton.click();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      goHome(event.target as HTMLElement | null, event);
     };
 
     document.addEventListener("click", onClick, true);
     document.addEventListener("keydown", onKeyDown, true);
 
-    const enhanceAccessibility = () => {
-      document.querySelectorAll<HTMLElement>(".sidebar .brand:not(button):not(a), .sidebar .brand-mark").forEach((node) => {
-        if (node.closest("button, a")) return;
-        node.setAttribute("role", "button");
-        node.setAttribute("tabindex", "0");
-        node.setAttribute("aria-label", "Voltar ao início");
-      });
-    };
-
-    enhanceAccessibility();
-    const observer = new MutationObserver(enhanceAccessibility);
-    observer.observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll<HTMLElement>(".sidebar .brand:not(button):not(a), .sidebar .brand-mark").forEach((node) => {
+      if (node.closest("button, a")) return;
+      node.setAttribute("role", "button");
+      node.setAttribute("tabindex", "0");
+      node.setAttribute("aria-label", "Voltar ao início");
+    });
 
     return () => {
-      observer.disconnect();
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
     };
