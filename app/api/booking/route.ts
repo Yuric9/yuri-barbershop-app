@@ -2,6 +2,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "../../../db";
 import {
   appointments,
+  appointmentSlots,
   businessSettings,
   catalogItems,
   collaborators,
@@ -202,6 +203,9 @@ export async function POST(request: Request) {
   if (requestedCollaboratorId && !collaborator) {
     return noStore({ error: "Profissional indisponível" }, { status: 400 });
   }
+  if (!requestedCollaboratorId && activeCollaborators.length > 1) {
+    return noStore({ error: "Escolha o profissional para reservar este horário." }, { status: 400 });
+  }
 
   const rawItems = Array.isArray(body.products) ? body.products.slice(0, 20) : [];
   const normalizedItems = rawItems
@@ -267,22 +271,54 @@ export async function POST(request: Request) {
   if (conflict) return noStore({ error: "Este período acabou de ser reservado. Escolha outro horário." }, { status: 409 });
 
   const now = new Date().toISOString();
+  const reservationId = crypto.randomUUID();
+  const resourceKey = collaborator ? `barber:${collaborator.id}` : "shop";
+  const slotTimes = Array.from(
+    { length: Math.max(1, Math.ceil(service.durationMin / 30)) },
+    (_, index) => {
+      const minutes = requestedStart + index * 30;
+      return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    },
+  );
+  try {
+    await db.insert(appointmentSlots).values(slotTimes.map((slotTime) => ({
+      date,
+      time: slotTime,
+      resourceKey,
+      reservationId,
+      createdAt: now,
+    })));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    if (/unique|constraint|appointment_slots_unique/i.test(detail)) {
+      return noStore({ error: "Este período acabou de ser reservado. Escolha outro horário." }, { status: 409 });
+    }
+    throw error;
+  }
+
   const onlyProduct = normalizedItems.length === 1 ? productById.get(normalizedItems[0].id) : undefined;
-  const [created] = await db.insert(appointments).values({
-    clientEmail: user.email,
-    clientName: profileRows[0]?.name || user.displayName,
-    serviceId: service.id,
-    serviceName: service.name,
-    productId: onlyProduct?.id,
-    productName: productDescriptions.length ? productDescriptions.join(", ") : null,
-    date,
-    time,
-    totalCents: service.priceCents + productTotalCents,
-    collaboratorId: collaborator?.id,
-    collaboratorName: collaborator?.name || "A definir",
-    adminMessage: styleName ? `Estilo escolhido: ${styleName}` : "",
-    createdAt: now,
-  }).returning();
+  let created: typeof appointments.$inferSelect;
+  try {
+    [created] = await db.insert(appointments).values({
+      clientEmail: user.email,
+      clientName: profileRows[0]?.name || user.displayName,
+      serviceId: service.id,
+      serviceName: service.name,
+      productId: onlyProduct?.id,
+      productName: productDescriptions.length ? productDescriptions.join(", ") : null,
+      date,
+      time,
+      totalCents: service.priceCents + productTotalCents,
+      collaboratorId: collaborator?.id,
+      collaboratorName: collaborator?.name || "A definir",
+      adminMessage: styleName ? `Estilo escolhido: ${styleName}` : "",
+      createdAt: now,
+    }).returning();
+    await db.update(appointmentSlots).set({ appointmentId: created.id }).where(eq(appointmentSlots.reservationId, reservationId));
+  } catch (error) {
+    await db.delete(appointmentSlots).where(eq(appointmentSlots.reservationId, reservationId));
+    throw error;
+  }
 
   return noStore({ ok: true, appointment: created });
 }

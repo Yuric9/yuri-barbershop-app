@@ -5,13 +5,13 @@
  */
 
 :root {
-  --app-radius-control: 14px;
-  --app-radius-card: 22px;
-  --app-radius-large: 26px;
+  --app-radius-control: var(--radius-control);
+  --app-radius-card: var(--radius-card);
+  --app-radius-large: var(--radius-modal);
   --app-icon-box: 34px;
   --app-ease: cubic-bezier(.2,.75,.25,1);
-  --app-shadow-soft: 0 10px 30px rgba(37,30,19,.06);
-  --app-shadow-hover: 0 16px 38px rgba(37,30,19,.10);
+  --app-shadow-soft: var(--shadow-card);
+  --app-shadow-hover: var(--shadow-elevated);
 }
 
 /* Superfícies principais: mais táteis, sem alterar a estrutura. */
@@ -192,27 +192,25 @@ textarea:focus {
 /* Mobile: navegação e componentes se comportam mais como app. */
 @media (max-width: 900px) {
   :root {
-    --app-radius-control: 15px;
-    --app-radius-card: 22px;
     --app-icon-box: 38px;
   }
 
   .sidebar nav button {
     min-height: 52px !important;
-    border-radius: 16px !important;
+    border-radius: var(--app-radius-control) !important;
   }
 
   .sidebar nav button > span:first-child {
-    border-radius: 12px !important;
+    border-radius: var(--app-radius-control) !important;
   }
 
   .app-header {
-    border-radius: 0 0 22px 22px;
+    border-radius: 0 0 var(--app-radius-card) var(--app-radius-card);
   }
 
   .menu-button,
   .icon-button {
-    border-radius: 16px !important;
+    border-radius: var(--app-radius-control) !important;
   }
 
   .panel,
@@ -223,18 +221,18 @@ textarea:focus {
   .collaborator-card,
   .barber-preview-panel,
   .ui-card {
-    border-radius: 22px !important;
+    border-radius: var(--app-radius-card) !important;
   }
 
   /* Na área do colaborador, os ícones parecem abas de app e não símbolos soltos. */
   .barber-preview-sidebar nav button {
-    border-radius: 16px !important;
+    border-radius: var(--app-radius-control) !important;
   }
 
   .barber-preview-sidebar nav button span {
     width: 36px !important;
     height: 36px !important;
-    border-radius: 12px !important;
+    border-radius: var(--app-radius-control) !important;
   }
 
   .barber-preview-sidebar nav button.active {

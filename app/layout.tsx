@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./design-tokens.css";
 import "./globals.css";
 import "./login-logo-fix.css";
@@ -50,16 +49,6 @@ import BarberManualServiceEnhancer from "./barber-manual-service-enhancer";
 import BarberNavIconEnhancer from "./barber-nav-icon-enhancer";
 import LogoHomeEnhancer from "./logo-home-enhancer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -72,9 +61,6 @@ export const metadata: Metadata = {
   title: "Yuri Barbershop | Agendamento e cuidados masculinos",
   description: "Agende seu atendimento na Yuri Barbershop, conheça nossos serviços, produtos, promoções e o Clube Yuri.",
   manifest: "/manifest.webmanifest",
-  other: {
-    "codex-preview": "development",
-  },
   icons: {
     icon: "/brand/yuri-barbershop-logo.png",
     shortcut: "/brand/yuri-barbershop-logo.png",
@@ -98,9 +84,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body>
         <BookingDateGuard />
         {children}
         <BookingErrorBoundary>

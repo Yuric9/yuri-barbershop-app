@@ -52,10 +52,16 @@ function buildModal() {
   fetch("/api/data", { cache: "no-store" })
     .then((response) => response.ok ? response.json() : Promise.reject())
     .then((data) => {
-      const services = (data.services || []).filter((item: any) => item.active !== false);
-      serviceSelect.innerHTML = '<option value="">Selecione o serviço</option>' + services.map((item: any) => `<option value="${item.id}">${item.name} — ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((item.priceCents || 0) / 100)}</option>`).join("");
+      const services = (data.services || []) as Array<{ active?: boolean; id: number; name: string; priceCents: number }>;
+      const options = services
+        .filter((item) => item.active !== false)
+        .map((item) => new Option(
+          `${item.name} — ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((item.priceCents || 0) / 100)}`,
+          String(item.id),
+        ));
+      serviceSelect.replaceChildren(new Option("Selecione o serviço", ""), ...options);
     })
-    .catch(() => { serviceSelect.innerHTML = '<option value="">Não foi possível carregar</option>'; });
+    .catch(() => { serviceSelect.replaceChildren(new Option("Não foi possível carregar", "")); });
 
   save.addEventListener("click", async () => {
     const serviceId = Number(serviceSelect.value || 0);

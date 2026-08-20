@@ -53,7 +53,7 @@ body {
   min-height: 100%;
   background: var(--cream);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
 }
 button,
 a,
@@ -132,7 +132,7 @@ a {
 .own-login-form label { display: grid; gap: 6px; color: #aaa69c; font-size: 9px; font-weight: 800; }
 .own-login-form input { width: 100%; padding: 13px; border: 1px solid #454138; border-radius: 9px; outline: 0; background: #10100e; color: white; }
 .own-login-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px #c59a3d18; }
-.show-password-option { display: flex !important; grid-template-columns: none !important; align-items: center; justify-content: flex-start; gap: 8px !important; width: fit-content; color: #d2cec4 !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer; user-select: none; }
+.show-password-option { display: flex !important; grid-template-columns: none !important; align-items: center; justify-content: flex-start; gap: 8px !important; width: fit-content; min-height: var(--touch-min); color: #d2cec4 !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer; user-select: none; }
 .show-password-option input { width: 17px !important; height: 17px; margin: 0; padding: 0 !important; accent-color: var(--gold); cursor: pointer; }
 .show-password-option span { line-height: 17px; }
 .login-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -147,7 +147,7 @@ a {
 .login-help { display: flex; flex-direction: column; gap: 5px; margin-top: 22px; padding-top: 18px; border-top: 1px solid #34322d; color: #aaa69c; font-size: 10px; line-height: 1.45; }
 .login-help b { margin-bottom: 3px; color: white; font-size: 11px; }
 .login-help small { margin-top: 6px; color: var(--gold); font-size: 9px; }
-.privacy-link { display: block; margin-top: 16px; color: #8f8b82; font-size: 9px; text-align: center; }
+.privacy-link { display: flex; align-items: center; justify-content: center; min-height: var(--touch-min); margin-top: 8px; color: #8f8b82; font-size: 11px; text-align: center; }
 .landing-nav {
   position: relative;
   z-index: 2;
@@ -572,7 +572,7 @@ a {
   font-size: 10px;
   font-weight: 800;
 }
-.forgot-password-link { width: fit-content; margin: -2px 0 2px auto !important; color: #d9ae57 !important; font-size: 14px !important; font-weight: 700; text-decoration: none; }
+.forgot-password-link { display: inline-flex; align-items: center; min-height: var(--touch-min); width: fit-content; margin: -2px 0 2px auto !important; color: #d9ae57 !important; font-size: 14px !important; font-weight: 700; text-decoration: none; }
 .forgot-password-link:hover { text-decoration: underline; }
 
 /* Legibilidade consistente para clientes de diferentes idades. */

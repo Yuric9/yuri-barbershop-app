@@ -18,6 +18,16 @@ test("booking API validates past times, conflicts and stock", async () => {
   assert.match(source, /Este período acabou de ser reservado/);
   assert.match(source, /Estoque insuficiente/);
   assert.match(source, /cache-control/);
+  assert.match(source, /appointmentSlots/);
+  assert.match(source, /reservationId/);
+  assert.match(source, /appointment_slots_unique/);
+});
+
+test("legacy data API cannot bypass the isolated booking protections", async () => {
+  const source = await readFile(new URL("../app/api/data/route.ts", import.meta.url), "utf8");
+  assert.match(source, /Use a Central de Agendamentos/);
+  assert.match(source, /status: 410/);
+  assert.match(source, /db\.delete\(appointmentSlots\)/);
 });
 
 test("scheduled booking is registered before WhatsApp", async () => {

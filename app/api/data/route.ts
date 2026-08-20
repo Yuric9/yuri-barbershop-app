@@ -2,6 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
 import {
   appointments,
+  appointmentSlots,
   accounts,
   catalogItems,
   messages,
@@ -101,6 +102,9 @@ async function finalizeAppointment(db: any, appointment: typeof appointments.$in
   if (!["Pendente", "Confirmado", "Finalizado", "Cancelado"].includes(status)) throw new Error("Status de agendamento inválido");
   if (status !== "Finalizado" || appointment.status === "Finalizado") {
     await db.update(appointments).set({ status, adminMessage: message }).where(eq(appointments.id, appointment.id));
+    if (status === "Cancelado") {
+      await db.delete(appointmentSlots).where(eq(appointmentSlots.appointmentId, appointment.id));
+    }
     return;
   }
   let commissionPercent = 0;
@@ -306,56 +310,10 @@ export async function POST(request: Request) {
     return Response.json({ ok: true });
   }
   if (action === "appointment") {
-    const serviceId = Number(body.serviceId);
-    const [service] = await db.select().from(services).where(and(eq(services.id, serviceId), eq(services.active, true))).limit(1);
-    if (!service) return Response.json({ error: "Serviço inválido" }, { status: 400 });
-    const productId = body.productId ? Number(body.productId) : null;
-    const [product] = productId ? await db.select().from(products).where(and(eq(products.id, productId), eq(products.active, true))).limit(1) : [undefined];
-    const date = String(body.date || "");
-    const time = String(body.time || "");
-    const requestedCollaboratorId = Number(body.collaboratorId || 0);
-    const activeCollaborators = await db.select().from(collaborators).where(eq(collaborators.active, true));
-    let collaborator = requestedCollaboratorId ? activeCollaborators.find((item) => item.id === requestedCollaboratorId) : undefined;
-    if (!collaborator && activeCollaborators.length === 1) collaborator = activeCollaborators[0];
-    if (requestedCollaboratorId && !collaborator) return Response.json({ error: "Profissional indisponível" }, { status: 400 });
-    if (!date || !time) return Response.json({ error: "Escolha uma data e um horário" }, { status: 400 });
-    if (date < localToday()) return Response.json({ error: "Não é possível solicitar um horário em uma data passada." }, { status: 400 });
-    if (!allowedBookingTimes(date, service.durationMin).includes(time)) return Response.json({ error: "Este serviço não cabe neste horário antes do fechamento. Escolha outro." }, { status: 400 });
-
-    const requestedStart = timeToMinutes(time);
-    const dayBlocks = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.date, date));
-    const blocked = dayBlocks.some((block) => {
-      if (block.collaboratorId && block.collaboratorId !== collaborator?.id) return false;
-      if (block.time === "Dia inteiro") return true;
-      const blockStart = timeToMinutes(block.time);
-      return Number.isFinite(blockStart) && overlaps(requestedStart, service.durationMin, blockStart, 30);
-    });
-    if (blocked) return Response.json({ error: "Este período está bloqueado na agenda. Escolha outro horário." }, { status: 409 });
-    const dayAppointments = await db.select().from(appointments).where(eq(appointments.date, date));
-    const activeAppointments = dayAppointments.filter((item) => item.status !== "Cancelado" && (!collaborator || !item.collaboratorId || item.collaboratorId === collaborator.id));
-    const durationRows = activeAppointments.length ? await db.select({ id: services.id, durationMin: services.durationMin }).from(services) : [];
-    const durationByService = new Map(durationRows.map((item) => [item.id, item.durationMin]));
-    const conflict = activeAppointments.some((item) => {
-      const existingStart = timeToMinutes(item.time);
-      return Number.isFinite(existingStart) && overlaps(requestedStart, service.durationMin, existingStart, durationByService.get(item.serviceId) || 30);
-    });
-    if (conflict) return Response.json({ error: "Este período acabou de ser reservado. Escolha outro horário." }, { status: 409 });
-    const profile = await db.select().from(profiles).where(eq(profiles.email, user.email)).limit(1);
-    const [created] = await db.insert(appointments).values({
-      clientEmail: user.email,
-      clientName: profile[0]?.name || user.displayName,
-      serviceId,
-      serviceName: service.name,
-      productId: product?.id,
-      productName: product?.name,
-      date,
-      time,
-      totalCents: service.priceCents + (product?.priceCents || 0),
-      collaboratorId: collaborator?.id,
-      collaboratorName: collaborator?.name || "A definir",
-      createdAt: now,
-    }).returning();
-    return Response.json({ ok: true, appointment: created });
+    return Response.json(
+      { error: "Use a Central de Agendamentos para reservar um horário." },
+      { status: 410 },
+    );
   }
   if (action === "subscription-request") {
     const existing = await db.select().from(subscriptions).where(eq(subscriptions.clientEmail, user.email));

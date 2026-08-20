@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "${SITES_ENV_READY:-}" != "1" ]]; then
-  exec "${script_dir}/sites-env.sh" -- "$0" "$@"
+  exec bash "${script_dir}/sites-env.sh" -- bash "$0" "$@"
 fi
 
 command -v timeout || {
@@ -19,6 +19,16 @@ if [[ ! -x "${vinext}" ]]; then
 fi
 
 echo "Running bounded vinext build..."
+
+# Evita que arquivos antigos (por exemplo, fontes removidas do código) sigam
+# dentro do pacote de produção após builds incrementais.
+build_output="${SITES_PROJECT_ROOT}/dist"
+if [[ "${build_output}" != "${SITES_PROJECT_ROOT}/dist" ]]; then
+  echo "Refusing to clean an unexpected build directory: ${build_output}" >&2
+  exit 70
+fi
+rm -rf -- "${build_output}"
+
 timeout \
   --signal=TERM \
   --kill-after="${SITES_BUILD_KILL_AFTER:-10s}" \
