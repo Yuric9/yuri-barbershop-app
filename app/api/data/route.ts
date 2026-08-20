@@ -98,7 +98,7 @@ async function seedServices() {
       );
 }
 
-async function finalizeAppointment(db: any, appointment: typeof appointments.$inferSelect, status: string, paymentMethod: string, message: string, actorEmail: string, now: string) {
+async function finalizeAppointment(db: ReturnType<typeof getDb>, appointment: typeof appointments.$inferSelect, status: string, paymentMethod: string, message: string, actorEmail: string, now: string) {
   if (!["Pendente", "Confirmado", "Finalizado", "Cancelado"].includes(status)) throw new Error("Status de agendamento inválido");
   if (status !== "Finalizado" || appointment.status === "Finalizado") {
     await db.update(appointments).set({ status, adminMessage: message }).where(eq(appointments.id, appointment.id));
