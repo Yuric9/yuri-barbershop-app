@@ -14,6 +14,11 @@ export const runtime = "edge";
 
 const encoder = new TextEncoder();
 
+type MercadoPagoWebhookBody = {
+  data?: { id?: unknown };
+  type?: unknown;
+};
+
 function parseSignature(value: string) {
   const parts = Object.fromEntries(
     value
@@ -93,7 +98,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  let body: any = {};
+  let body: MercadoPagoWebhookBody = {};
   try {
     body = await request.json();
   } catch {
