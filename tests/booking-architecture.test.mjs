@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFile } from "node:fs/promises";
+
+test("booking client uses isolated booking API and cannot hang forever", async () => {
+  const source = await readFile(new URL("../app/mobile-booking-bridge.tsx", import.meta.url), "utf8");
+  assert.match(source, /fetchJson\("\/api\/booking"/);
+  assert.doesNotMatch(source, /fetch\("\/api\/data"/);
+  assert.match(source, /AbortController/);
+  assert.match(source, /Tentar novamente/);
+  assert.match(source, /observer\.disconnect\(\)/);
+});
+
+test("booking API validates past times, conflicts and stock", async () => {
+  const source = await readFile(new URL("../app/api/booking/route.ts", import.meta.url), "utf8");
+  assert.match(source, /America\/Sao_Paulo/);
+  assert.match(source, /Este horário já passou/);
+  assert.match(source, /Este período acabou de ser reservado/);
+  assert.match(source, /Estoque insuficiente/);
+  assert.match(source, /cache-control/);
+});
+
+test("scheduled booking is registered before WhatsApp", async () => {
+  const source = await readFile(new URL("../app/mobile-booking-bridge.tsx", import.meta.url), "utf8");
+  const postIndex = source.indexOf('fetchJson("/api/booking"');
+  const whatsappIndex = source.indexOf("window.location.assign");
+  assert.ok(postIndex >= 0, "booking POST is missing");
+  assert.ok(whatsappIndex > postIndex, "WhatsApp must open only after the booking call");
+  assert.match(source, /Protocolo do agendamento/);
+});
+
+test("central keeps club copy aligned with six-visit business rule", async () => {
+  const source = await readFile(new URL("../app/mobile-booking-bridge.tsx", import.meta.url), "utf8");
+  assert.match(source, /Até 6 atendimentos por ciclo/);
+  assert.doesNotMatch(source, /ilimitad/i);
+});
