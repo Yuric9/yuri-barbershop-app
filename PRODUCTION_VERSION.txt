@@ -1,0 +1,4 @@
+YURI BARBERSHOP
+Production release: 2026-08-21
+Source branch: main
+Purpose: trigger and identify the approved production deployment after the client-flow simplification.
