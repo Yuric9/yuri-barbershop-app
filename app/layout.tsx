@@ -19,6 +19,7 @@ import "./barber-nav-icons.css";
 import "./design-system.css";
 import "./app-feel.css";
 import "./current-version.css";
+import "./reports-v2.css";
 import BookingDateGuard from "./booking-date-guard";
 import BookingErrorBoundary from "./booking-error-boundary";
 import MobileBookingBridge from "./mobile-booking-bridge";
@@ -34,6 +35,7 @@ import BarberManualServiceEnhancer from "./barber-manual-service-enhancer";
 import BarberNavIconEnhancer from "./barber-nav-icon-enhancer";
 import LogoHomeEnhancer from "./logo-home-enhancer";
 import CurrentVersionEnhancer from "./current-version-enhancer";
+import ReportsV2 from "./reports-v2";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -63,11 +65,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
       <body>
@@ -88,6 +86,7 @@ export default function RootLayout({
         <BarberNavIconEnhancer />
         <LogoHomeEnhancer />
         <CurrentVersionEnhancer />
+        <ReportsV2 />
       </body>
     </html>
   );
