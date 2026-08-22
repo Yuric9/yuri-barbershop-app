@@ -10,11 +10,6 @@ import "./mobile-experience.css";
 import "./menu-icons.css";
 import "./product-admin.css";
 import "./product-experience.css";
-import "./subscription-sales.css";
-import "./subscription-payment-mode.css";
-import "./subscription-qa.css";
-import "./subscription-admin.css";
-import "./subscription-archive.css";
 import "./cash-today.css";
 import "./barber-experience.css";
 import "./barber-preview.css";
@@ -23,31 +18,22 @@ import "./barber-manual-service.css";
 import "./barber-nav-icons.css";
 import "./design-system.css";
 import "./app-feel.css";
+import "./current-version.css";
 import BookingDateGuard from "./booking-date-guard";
 import BookingErrorBoundary from "./booking-error-boundary";
 import MobileBookingBridge from "./mobile-booking-bridge";
-import CatalogAdminEnhancer from "./catalog-admin-enhancer";
 import CatalogImageViewer from "./catalog-image-viewer";
-import CatalogOrderEnhancer from "./catalog-order-enhancer";
 import MobileExperience from "./mobile-experience";
 import MenuIconEnhancer from "./menu-icon-enhancer";
 import ProductAdminEnhancer from "./product-admin-enhancer";
 import ProductExperience from "./product-experience";
-import SubscriptionClientStatusGuard from "./subscription-client-status-guard";
-import SubscriptionPaymentModeEnhancer from "./subscription-payment-mode-enhancer";
-import SubscriptionPaymentEnhancer from "./subscription-payment-enhancer";
-import SubscriptionSalesEnhancer from "./subscription-sales-enhancer";
-import SubscriptionAdminEnhancer from "./subscription-admin-enhancer";
-import AdminSubscriptionScopeGuard from "./admin-subscription-scope-guard";
-import SubscriptionAdminPaymentModeEnhancer from "./subscription-admin-payment-mode-enhancer";
-import SubscriptionArchiveEnhancer from "./subscription-archive-enhancer";
-import AdminClubPreviewCleanup from "./admin-club-preview-cleanup";
 import CashTodayGuard from "./cash-today-guard";
 import BarberExperience from "./barber-experience";
 import AdminBarberPreviewLink from "./admin-barber-preview-link";
 import BarberManualServiceEnhancer from "./barber-manual-service-enhancer";
 import BarberNavIconEnhancer from "./barber-nav-icon-enhancer";
 import LogoHomeEnhancer from "./logo-home-enhancer";
+import CurrentVersionEnhancer from "./current-version-enhancer";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -58,8 +44,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://yuricbarbershop.com"),
-  title: "Yuri Barbershop | Agendamento e cuidados masculinos",
-  description: "Agende seu atendimento na Yuri Barbershop, conheça nossos serviços, produtos, promoções e o Clube Yuri.",
+  title: "Yuri Barbershop | Agendamento e produtos",
+  description: "Agende seu atendimento na Yuri Barbershop e encomende produtos diretamente pelo WhatsApp.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/brand/yuri-barbershop-logo.png",
@@ -68,7 +54,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Yuri Barbershop",
-    description: "Estilo, confiança e atitude. Agende seu atendimento pelo nosso aplicativo.",
+    description: "Agendamento simples, produtos e atendimento direto pelo WhatsApp.",
     url: "https://yuricbarbershop.com",
     siteName: "Yuri Barbershop",
     locale: "pt_BR",
@@ -90,28 +76,18 @@ export default function RootLayout({
         <BookingErrorBoundary>
           <MobileBookingBridge />
         </BookingErrorBoundary>
-        <CatalogAdminEnhancer />
-        <CatalogOrderEnhancer />
         <CatalogImageViewer />
         <MobileExperience />
         <MenuIconEnhancer />
         <ProductAdminEnhancer />
         <ProductExperience />
-        <SubscriptionClientStatusGuard />
-        <SubscriptionSalesEnhancer />
-        <SubscriptionPaymentModeEnhancer />
-        <SubscriptionPaymentEnhancer />
-        <SubscriptionAdminEnhancer />
-        <AdminSubscriptionScopeGuard />
-        <SubscriptionAdminPaymentModeEnhancer />
-        <SubscriptionArchiveEnhancer />
-        <AdminClubPreviewCleanup />
         <CashTodayGuard />
         <BarberExperience />
         <AdminBarberPreviewLink />
         <BarberManualServiceEnhancer />
         <BarberNavIconEnhancer />
         <LogoHomeEnhancer />
+        <CurrentVersionEnhancer />
       </body>
     </html>
   );
