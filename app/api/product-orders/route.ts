@@ -31,7 +31,7 @@ export async function POST(request:Request){
 
   if(action==="create"){
     const raw=Array.isArray(body.items)?body.items.slice(0,20):[];
-    const items=raw.map((item:any)=>({id:Number(item?.id||0),quantity:Math.max(1,Math.floor(Number(item?.quantity||1)))})).filter(item=>item.id>0&&item.quantity>0);
+    const items=raw.map(item=>{const value=item&&typeof item==="object"?item as Record<string,unknown>:{};return{id:Number(value.id||0),quantity:Math.max(1,Math.floor(Number(value.quantity||1)))}}).filter(item=>item.id>0&&item.quantity>0);
     if(!items.length) return Response.json({error:"Escolha pelo menos um produto."},{status:400});
     const ids=[...new Set(items.map(item=>item.id))];
     const rows=await db.select().from(products).where(and(inArray(products.id,ids),eq(products.active,true)));

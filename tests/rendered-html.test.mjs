@@ -27,6 +27,10 @@ test("renders production-safe metadata without internal preview markers", async 
     response.headers.get("content-type") ?? "",
     /^text\/html\b/i,
   );
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
   assert.doesNotMatch(response.headers.get("link") ?? "", /\/workspace\//i);
   const html = await response.text();
   assert.doesNotMatch(html, /codex-preview/i);
@@ -58,4 +62,13 @@ test("booking date guard uses Sao Paulo business date", async () => {
 test("public login does not expose an administrator tab", async () => {
   const login = await readFile(new URL("../app/login-panel.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(login, />Administrador<\/button>/);
+});
+
+test("registration and profile updates reject duplicate phone numbers", async () => {
+  const register = await readFile(new URL("../app/api/auth/register/route.ts", import.meta.url), "utf8");
+  const data = await readFile(new URL("../app/api/data/route.ts", import.meta.url), "utf8");
+  assert.match(register, /Este telefone já está cadastrado/);
+  assert.match(register, /profiles\.phone/);
+  assert.match(data, /function normalizePhone/);
+  assert.match(data, /Este telefone já está cadastrado/);
 });

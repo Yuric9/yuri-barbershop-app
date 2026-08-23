@@ -53,6 +53,22 @@ test("booking central is protected by an error boundary", async () => {
   assert.match(boundary, /Recarregar Central/);
 });
 
+test("current booking flow remains visible inside the mobile booking target", async () => {
+  const source = await readFile(new URL("../app/booking-v3.tsx", import.meta.url), "utf8");
+  assert.match(source, /className="mobile-booking-app booking-commerce-app booking-hub-v2 booking-v3"/);
+  assert.match(source, /className="mobile-booking-app booking-commerce-app booking-hub-v2 booking-v3 loading"/);
+});
+
+test("client and admin navigation exclude retired modules", async () => {
+  const source = await readFile(new URL("../app/portal-client.tsx", import.meta.url), "utf8");
+  const admin = source.slice(source.indexOf("const adminItems"), source.indexOf("const barberItems"));
+  const client = source.slice(source.indexOf("const registeredClientItems"), source.indexOf("const clientItems"));
+  for (const label of ["Catálogo de estilos", "Promoções", "Assinaturas", "Crescimento"]) assert.doesNotMatch(admin, new RegExp(label));
+  for (const label of ["Caixa de entrada", "Meus horários", "Meu histórico", "Fidelidade", "Avaliar atendimento", "Promoções", "Clube Yuri", "Catálogo de estilos", "Localização", "Meu perfil"]) assert.doesNotMatch(client, new RegExp(label));
+  assert.match(client, /\["agendar", "Agendar"/);
+  assert.match(client, /\["produtos", "Produtos"/);
+});
+
 test("one-time payment webhook tolerates preference creation race", async () => {
   const source = await readFile(new URL("../app/subscription-one-time.ts", import.meta.url), "utf8");
   assert.match(source, /if \(existing\?\.preference_id\)/);

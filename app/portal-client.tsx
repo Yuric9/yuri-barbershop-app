@@ -96,7 +96,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [selectedService, setSelectedService] = useState("Corte");
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [notice, setNotice] = useState("");
-  const [bookingDate, setBookingDate] = useState("2026-08-15");
+  const [bookingDate, setBookingDate] = useState("");
   const [liveServices, setLiveServices] = useState(defaultServices);
   const [liveProducts, setLiveProducts] = useState(defaultProducts);
   const [clientProfile, setClientProfile] = useState<any>(null);
@@ -130,11 +130,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     ["remarketing", "Remarketing"],
     ["servicos", "Serviços"],
     ["produtos", "Produtos"],
-    ["catalogo", "Catálogo de estilos"],
-    ["promocoes", "Promoções"],
-    ["assinatura", "Assinaturas"],
     ["relatorios", "Relatórios"],
-    ["crescimento", "Crescimento"],
   ];
   const barberItems = [
     ["inicio", "Meu painel"], ["mensagens", "Caixa de entrada"], ["agenda", "Minha agenda"],
@@ -142,25 +138,11 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   ];
   const registeredClientItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
-    ["mensagens", "Caixa de entrada", "ATENDIMENTO"],
-    ["meus-horarios", "Meus horários", "ATENDIMENTO"],
-    ["historico", "Meu histórico", "ATENDIMENTO"],
-    ["fidelidade", "Fidelidade", "BENEFÍCIOS"],
-    ["avaliar", "Avaliar atendimento", "BENEFÍCIOS"],
-    ["promocoes", "Promoções", "BENEFÍCIOS"],
-    ["assinatura", "Clube Yuri", "BENEFÍCIOS"],
     ["produtos", "Produtos", "CONHEÇA"],
-    ["catalogo", "Catálogo de estilos", "CONHEÇA"],
-    ["localizacao", "Localização", "CONHEÇA"],
-    ["perfil", "Meu perfil", "MINHA CONTA"],
   ];
   const visitorItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
-    ["promocoes", "Promoções", "BENEFÍCIOS"],
-    ["assinatura", "Clube Yuri", "BENEFÍCIOS"],
     ["produtos", "Produtos", "CONHEÇA"],
-    ["catalogo", "Catálogo de estilos", "CONHEÇA"],
-    ["localizacao", "Localização", "CONHEÇA"],
   ];
   const clientItems = demo ? visitorItems : registeredClientItems;
   const items = portalRole === "admin" ? adminItems : portalRole === "barber" ? barberItems : clientItems;
