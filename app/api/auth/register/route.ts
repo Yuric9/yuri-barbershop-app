@@ -34,6 +34,8 @@ export async function POST(request: Request) {
 
   const db = getDb();
   if ((await db.select({ email: accounts.email }).from(accounts).where(eq(accounts.email, email)).limit(1)).length) return Response.json({ error: "Este e-mail já está cadastrado." }, { status: 409 });
+  const existingProfiles = await db.select({ email: profiles.email, phone: profiles.phone }).from(profiles);
+  if (existingProfiles.some((profile) => profile.email !== email && String(profile.phone || "").replace(/\D/g, "") === phone)) return Response.json({ error: "Este telefone já está cadastrado." }, { status: 409 });
   const now = new Date().toISOString();
   await db.insert(accounts).values({ email, passwordHash: await hashPassword(password), role: "client", active: true, createdAt: now });
   await db.insert(profiles).values({ email, name, phone, birthDate, createdAt: now });

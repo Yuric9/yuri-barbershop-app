@@ -76,6 +76,11 @@ function overlaps(startA: number, durationA: number, startB: number, durationB: 
 function unauthorized() {
   return Response.json({ error: "Não autorizado" }, { status: 401 });
 }
+
+function normalizePhone(value: unknown) {
+  return String(value || "").replace(/\D/g, "");
+}
+
 function forbidden() {
   return Response.json(
     { error: "Acesso restrito ao administrador" },
@@ -306,7 +311,11 @@ export async function POST(request: Request) {
 
   if (action === "profile") {
     const name = String(body.name || user.displayName).trim();
-    await db.insert(profiles).values({ email: user.email, name, phone: String(body.phone || ""), birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name, phone: String(body.phone || ""), birthDate: String(body.birthDate || "") } });
+    const phone = normalizePhone(body.phone);
+    if (phone && (phone.length < 10 || phone.length > 13)) return Response.json({ error: "Informe um telefone válido com DDD." }, { status: 400 });
+    const existingProfiles = await db.select({ email: profiles.email, phone: profiles.phone }).from(profiles);
+    if (phone && existingProfiles.some((profile) => profile.email !== user.email && normalizePhone(profile.phone) === phone)) return Response.json({ error: "Este telefone já está cadastrado." }, { status: 409 });
+    await db.insert(profiles).values({ email: user.email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: { name, phone, birthDate: String(body.birthDate || "") } });
     return Response.json({ ok: true });
   }
   if (action === "appointment") {
