@@ -1,0 +1,26 @@
+.booking-v3-hero,
+.booking-v3-product-callout,
+.booking-v3 > section {
+  color: #f6f1e6;
+}
+
+.booking-v3-hero h2,
+.booking-v3-product-callout h3,
+.booking-v3-title h2 {
+  color: #f6f1e6;
+}
+
+.booking-v3-hero small,
+.booking-v3-product-callout small,
+.booking-v3-title small {
+  color: rgba(246, 241, 230, 0.72);
+}
+
+.booking-v3-hero p,
+.booking-v3-product-callout p {
+  color: rgba(246, 241, 230, 0.78);
+}
+
+.booking-v3-title > span {
+  color: rgba(246, 241, 230, 0.78);
+}
