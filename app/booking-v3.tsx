@@ -37,6 +37,18 @@ export default function BookingV3(){
 
 function Flow(){
   const [data,setData]=useState<Data>(EMPTY);const[loading,setLoading]=useState(true);const[journey,setJourney]=useState<Journey>("");const[step,setStep]=useState<Step>("home");const[selectedServices,setSelectedServices]=useState<number[]>([]);const[collaboratorId,setCollaboratorId]=useState(0);const[date,setDate]=useState("");const[time,setTime]=useState("");const[cart,setCart]=useState<Record<number,number>>({});const[details,setDetails]=useState({name:"",phone:"",birthDate:""});const[occupied,setOccupied]=useState<string[]>([]);const[message,setMessage]=useState("");const[submitting,setSubmitting]=useState(false);
+  useEffect(()=>{
+    if(journey!=="booking"||step!=="summary"||!date)return;
+    const today=localDateKey();
+    const [hours,minutes]=time.split(":").map(Number);
+    const pastDate=date<today;
+    const pastTime=date===today&&Number.isFinite(hours)&&Number.isFinite(minutes)&&hours*60+minutes<=localMinutesNow();
+    if(!pastDate&&!pastTime)return;
+    setDate(pastDate?"":date);
+    setTime("");
+    setStep("datetime");
+    setMessage(pastDate?"A data escolhida já passou. Escolha uma nova data.":"Este horário já passou. Escolha outro horário.");
+  },[journey,step,date,time]);
   const load=useCallback(async()=>{try{const r=await fetch("/api/booking-v3",{cache:"no-store"});const b=await r.json();if(!r.ok)throw new Error(b.error||"Não foi possível carregar.");setData({services:b.services||[],products:b.products||[],collaborators:b.collaborators||[],profile:b.profile||null});setDetails({name:b.profile?.name||"",phone:b.profile?.phone||"",birthDate:b.profile?.birthDate||""});if((b.collaborators||[]).length===1)setCollaboratorId(b.collaborators[0].id);}catch(e){setMessage(e instanceof Error?e.message:"Não foi possível carregar.")}finally{setLoading(false)}},[]);useEffect(()=>{const timer=window.setTimeout(()=>{void load()},0);return()=>window.clearTimeout(timer)},[load]);
   const services=useMemo(()=>data.services.filter(s=>selectedServices.includes(s.id)),[data.services,selectedServices]);const totalDuration=services.reduce((s,i)=>s+i.durationMin,0);const serviceTotal=services.reduce((s,i)=>s+i.priceCents,0);const cartItems=useMemo(()=>data.products.map(p=>({product:p,quantity:cart[p.id]||0})).filter(i=>i.quantity>0),[data.products,cart]);const productTotal=cartItems.reduce((s,i)=>s+i.product.priceCents*i.quantity,0);const availableTimes=slotsFor(date,totalDuration||30).filter(t=>!occupied.includes(t));
   useEffect(()=>{if(step!=="datetime"||!date||!selectedServices.length)return;const q=new URLSearchParams({date,serviceIds:selectedServices.join(",")});if(collaboratorId)q.set("collaboratorId",String(collaboratorId));fetch(`/api/booking-v3?${q}`,{cache:"no-store"}).then(r=>r.json()).then(b=>setOccupied(Array.isArray(b.occupiedTimes)?b.occupiedTimes:[])).catch(()=>setMessage("Não foi possível conferir os horários."))},[date,selectedServices,collaboratorId,step]);
