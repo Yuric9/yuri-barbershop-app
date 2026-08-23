@@ -59,6 +59,13 @@ test("current booking flow remains visible inside the mobile booking target", as
   assert.match(source, /className="mobile-booking-app booking-commerce-app booking-hub-v2 booking-v3 loading"/);
 });
 
+test("booking confirmation revalidates stale dates and times", async () => {
+  const source = await readFile(new URL("../app/booking-v3.tsx", import.meta.url), "utf8");
+  assert.match(source, /A data escolhida já passou/);
+  assert.match(source, /Este horário já passou/);
+  assert.match(source, /setStep\("datetime"\)/);
+});
+
 test("client and admin navigation exclude retired modules", async () => {
   const source = await readFile(new URL("../app/portal-client.tsx", import.meta.url), "utf8");
   const admin = source.slice(source.indexOf("const adminItems"), source.indexOf("const barberItems"));
