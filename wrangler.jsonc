@@ -7,8 +7,8 @@
   "workers_dev": true,
   "routes": [
     {
-      "pattern": "yuricbarbershop.com/*",
-      "zone_name": "yuricbarbershop.com"
+      "pattern": "yuricbarbershop.com",
+      "custom_domain": true
     }
   ],
   "vars": {
