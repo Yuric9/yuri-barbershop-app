@@ -81,6 +81,23 @@ function normalizePhone(value: unknown) {
   return String(value || "").replace(/\D/g, "");
 }
 
+const LOYALTY_TARGET = 8;
+
+function loyaltySnapshot(profile: typeof profiles.$inferSelect, finalizedPaidCount: number) {
+  const eligibleVisits = Math.max(0, finalizedPaidCount + Number(profile.loyaltyAdjustment || 0));
+  const earnedRewards = Math.floor(eligibleVisits / LOYALTY_TARGET);
+  const availableRewards = Math.max(0, earnedRewards - Number(profile.loyaltyRewardsRedeemed || 0));
+  return {
+    loyaltyTarget: LOYALTY_TARGET,
+    loyaltyEligibleVisits: eligibleVisits,
+    loyaltyProgress: availableRewards > 0 ? LOYALTY_TARGET : eligibleVisits % LOYALTY_TARGET,
+    loyaltyEarnedRewards: earnedRewards,
+    loyaltyAvailableRewards: availableRewards,
+    loyaltyRewardAvailable: availableRewards > 0,
+    loyaltyManualAdjustment: Number(profile.loyaltyAdjustment || 0),
+  };
+}
+
 function forbidden() {
   return Response.json(
     { error: "Acesso restrito ao administrador" },
@@ -117,6 +134,18 @@ async function finalizeAppointment(db: ReturnType<typeof getDb>, appointment: ty
     const [collaborator] = await db.select().from(collaborators).where(eq(collaborators.id, appointment.collaboratorId)).limit(1);
     const [override] = await db.select().from(collaboratorServices).where(and(eq(collaboratorServices.collaboratorId, appointment.collaboratorId), eq(collaboratorServices.serviceId, appointment.serviceId), eq(collaboratorServices.active, true))).limit(1);
     commissionPercent = Math.max(0, Math.min(100, override?.commissionPercent ?? collaborator?.defaultCommissionPercent ?? 0));
+  }
+  const courtesy = paymentMethod === "Cortesia";
+  if (courtesy) {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.email, appointment.clientEmail)).limit(1);
+    const previousPaid = await db.select().from(appointments).where(eq(appointments.clientEmail, appointment.clientEmail));
+    const paidCount = previousPaid.filter((item) => item.status === "Finalizado" && item.paymentMethod !== "Cortesia").length;
+    const snapshot = profile ? loyaltySnapshot(profile, paidCount) : null;
+    if (!profile || !snapshot?.loyaltyRewardAvailable) throw new Error("Este cliente ainda não possui atendimento gratuito disponível.");
+    await db.update(appointments).set({ status, adminMessage: message, paymentMethod, commissionPercent: 0, commissionCents: 0, cashTransactionId: null }).where(eq(appointments.id, appointment.id));
+    await db.update(profiles).set({ loyaltyRewardsRedeemed: sql`${profiles.loyaltyRewardsRedeemed} + 1`, loyaltyUpdatedAt: now, loyaltyUpdatedBy: actorEmail }).where(eq(profiles.email, appointment.clientEmail));
+    if (message.trim()) await db.insert(messages).values({ senderEmail: actorEmail, senderName: "Yuri Barbershop", recipientEmail: appointment.clientEmail, subject: `Atualização do agendamento: ${appointment.serviceName}`, body: message.trim(), createdAt: now });
+    return;
   }
   const [cashEntry] = await db.insert(transactions).values({
     kind: "entrada",
@@ -246,7 +275,7 @@ export async function GET(request: Request) {
           appointmentsCount: history.length,
           finalizedCount: finalized.length,
           loyaltyRewards: Math.floor(finalized.length / 10),
-          totalSpentCents: history.reduce((sum, item) => sum + item.totalCents, 0),
+          totalSpentCents: history.filter((item) => item.paymentMethod !== "Cortesia").reduce((sum, item) => sum + item.totalCents, 0),
           lastVisit: lastAppointment?.date || null,
           lastService: lastAppointment?.serviceName || null,
           lastStatus: lastAppointment?.status || null,
@@ -254,6 +283,9 @@ export async function GET(request: Request) {
           needsRemarketing: daysSinceLastVisit !== null && daysSinceLastVisit >= 15,
           subscriptionStatus,
           subscriptionEndDate: subscription?.endDate || null,
+          loyaltyRewardsRedeemed: Number(profile.loyaltyRewardsRedeemed || 0),
+          loyaltyAdjustmentNote: profile.loyaltyAdjustmentNote || "",
+          ...loyaltySnapshot(profile, finalized.filter((item) => item.paymentMethod !== "Cortesia").length),
         };
       })
     : [];
@@ -268,8 +300,8 @@ export async function GET(request: Request) {
     : isBarber && currentCollaborator
       ? blockRows.filter((item) => !item.collaboratorId || item.collaboratorId === currentCollaborator.id)
       : [];
-  const settings = settingsRows[0] || { monthlyGoalCents: 500000, loyaltyTarget: 10, loyaltyReward: "1 atendimento grátis" };
-  const visibleSettings = isAdmin ? settings : { loyaltyTarget: settings.loyaltyTarget, loyaltyReward: settings.loyaltyReward };
+  const settings = settingsRows[0] || { monthlyGoalCents: 500000, loyaltyTarget: LOYALTY_TARGET, loyaltyReward: "1 atendimento grátis" };
+  const visibleSettings = isAdmin ? { ...settings, loyaltyTarget: LOYALTY_TARGET, loyaltyReward: "1 atendimento grátis" } : { loyaltyTarget: LOYALTY_TARGET, loyaltyReward: "1 atendimento grátis" };
 
   return Response.json({
     isAdmin,
@@ -367,10 +399,35 @@ export async function POST(request: Request) {
     if (!appointment) return forbidden();
     const status = String(body.status || appointment.status);
     if (!["Confirmado", "Finalizado", "Cancelado"].includes(status)) return Response.json({ error: "Status inválido" }, { status: 400 });
-    await finalizeAppointment(db, appointment, status, String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now);
+    try { await finalizeAppointment(db, appointment, status, String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now); } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Não foi possível finalizar o atendimento" }, { status: 409 }); }
     return Response.json({ ok: true });
   }
   if (!isAdmin) return forbidden();
+  if (action === "client-update") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const name = String(body.name || "").trim();
+    const phone = String(body.phone || "").trim();
+    const birthDate = String(body.birthDate || "").trim();
+    if (!email || !name || !phone) return Response.json({ error: "Informe nome, telefone e cliente válido" }, { status: 400 });
+    const phoneKey = normalizePhone(phone);
+    if (phoneKey.length < 8) return Response.json({ error: "Informe um telefone válido" }, { status: 400 });
+    const duplicate = (await db.select().from(profiles)).find((profile) => profile.email !== email && normalizePhone(profile.phone) === phoneKey);
+    if (duplicate) return Response.json({ error: "Este telefone já está cadastrado para outro cliente" }, { status: 409 });
+    await db.update(profiles).set({ name, phone, birthDate }).where(eq(profiles.email, email));
+    return Response.json({ ok: true });
+  }
+  if (action === "loyalty-adjust") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const targetCount = Math.floor(Number(body.targetCount));
+    const note = String(body.note || "").trim().slice(0, 240);
+    if (!email || !Number.isFinite(targetCount) || targetCount < 0 || targetCount > 10000 || !note) return Response.json({ error: "Informe uma quantidade válida e o motivo do ajuste" }, { status: 400 });
+    const [profile] = await db.select().from(profiles).where(eq(profiles.email, email)).limit(1);
+    if (!profile) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
+    const rows = await db.select().from(appointments).where(eq(appointments.clientEmail, email));
+    const automaticCount = rows.filter((item) => item.status === "Finalizado" && item.paymentMethod !== "Cortesia").length;
+    await db.update(profiles).set({ loyaltyAdjustment: targetCount - automaticCount, loyaltyAdjustmentNote: note, loyaltyUpdatedAt: now, loyaltyUpdatedBy: user.email }).where(eq(profiles.email, email));
+    return Response.json({ ok: true });
+  }
   if (action === "client-create") {
     const name = String(body.name || "").trim();
     const phone = String(body.phone || "").trim();
@@ -435,7 +492,7 @@ export async function POST(request: Request) {
   } else if (action === "appointment-status") {
     const [appointment] = await db.select().from(appointments).where(eq(appointments.id, Number(body.id))).limit(1);
     if (!appointment) return Response.json({ error: "Agendamento não encontrado" }, { status: 404 });
-    await finalizeAppointment(db, appointment, String(body.status), String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now);
+    try { await finalizeAppointment(db, appointment, String(body.status), String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now); } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Não foi possível atualizar o atendimento" }, { status: 409 }); }
   } else if (action === "subscription-activate") {
     const startDate = String(body.startDate || new Date().toISOString().slice(0, 10));
     const end = new Date(`${startDate}T12:00:00`);
