@@ -92,6 +92,13 @@
       "when": 1786631616184,
       "tag": "0012_quiet_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787652000000,
+      "tag": "0018_loyalty_card_admin",
+      "breakpoints": true
     }
   ]
 }
