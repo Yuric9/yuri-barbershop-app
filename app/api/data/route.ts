@@ -283,6 +283,8 @@ export async function GET(request: Request) {
           needsRemarketing: daysSinceLastVisit !== null && daysSinceLastVisit >= 15,
           subscriptionStatus,
           subscriptionEndDate: subscription?.endDate || null,
+          loyaltyRewardsRedeemed: Number(profile.loyaltyRewardsRedeemed || 0),
+          loyaltyAdjustmentNote: profile.loyaltyAdjustmentNote || "",
           ...loyaltySnapshot(profile, finalized.filter((item) => item.paymentMethod !== "Cortesia").length),
         };
       })
@@ -397,7 +399,7 @@ export async function POST(request: Request) {
     if (!appointment) return forbidden();
     const status = String(body.status || appointment.status);
     if (!["Confirmado", "Finalizado", "Cancelado"].includes(status)) return Response.json({ error: "Status inválido" }, { status: 400 });
-    await finalizeAppointment(db, appointment, status, String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now);
+    try { await finalizeAppointment(db, appointment, status, String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now); } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Não foi possível finalizar o atendimento" }, { status: 409 }); }
     return Response.json({ ok: true });
   }
   if (!isAdmin) return forbidden();
@@ -490,7 +492,7 @@ export async function POST(request: Request) {
   } else if (action === "appointment-status") {
     const [appointment] = await db.select().from(appointments).where(eq(appointments.id, Number(body.id))).limit(1);
     if (!appointment) return Response.json({ error: "Agendamento não encontrado" }, { status: 404 });
-    await finalizeAppointment(db, appointment, String(body.status), String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now);
+    try { await finalizeAppointment(db, appointment, String(body.status), String(body.paymentMethod || "Dinheiro"), String(body.message || ""), user.email, now); } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Não foi possível atualizar o atendimento" }, { status: 409 }); }
   } else if (action === "subscription-activate") {
     const startDate = String(body.startDate || new Date().toISOString().slice(0, 10));
     const end = new Date(`${startDate}T12:00:00`);
