@@ -267,6 +267,7 @@ export async function GET(request: Request) {
           ? Math.floor((Date.now() - new Date(`${lastAppointment.date}T12:00:00`).getTime()) / 86400000)
           : null;
         const subscription = subscriptionRows.find((item) => item.clientEmail === profile.email) || null;
+        const loyalty = loyaltySnapshot(profile, finalized.filter((item) => item.paymentMethod !== "Cortesia").length);
         const subscriptionStatus = subscription?.status === "Ativa" && subscription.endDate && subscription.endDate < today
           ? "Vencida"
           : subscription?.status || "Sem assinatura";
@@ -274,7 +275,7 @@ export async function GET(request: Request) {
           ...profile,
           appointmentsCount: history.length,
           finalizedCount: finalized.length,
-          loyaltyRewards: Math.floor(finalized.length / 10),
+          loyaltyRewards: loyalty.loyaltyEarnedRewards,
           totalSpentCents: history.filter((item) => item.paymentMethod !== "Cortesia").reduce((sum, item) => sum + item.totalCents, 0),
           lastVisit: lastAppointment?.date || null,
           lastService: lastAppointment?.serviceName || null,
@@ -285,7 +286,7 @@ export async function GET(request: Request) {
           subscriptionEndDate: subscription?.endDate || null,
           loyaltyRewardsRedeemed: Number(profile.loyaltyRewardsRedeemed || 0),
           loyaltyAdjustmentNote: profile.loyaltyAdjustmentNote || "",
-          ...loyaltySnapshot(profile, finalized.filter((item) => item.paymentMethod !== "Cortesia").length),
+          ...loyalty,
         };
       })
     : [];
