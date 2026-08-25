@@ -79,8 +79,8 @@ test("client and admin navigation exclude retired modules", async () => {
 
 test("active remarketing uses the eight-visit loyalty snapshot", async () => {
   const source = await readFile(new URL("../app/portal-client.tsx", import.meta.url), "utf8");
-  assert.match(source, /Number\\(c\\.loyaltyProgress\\|\\|0\\)>=6/);
-  assert.doesNotMatch(source, /finalizedCount%10|10-\\(c\\.finalizedCount%10\\)/);
+  assert.match(source, /Number\(c\.loyaltyProgress\|\|0\)>=6/);
+  assert.doesNotMatch(source, /finalizedCount%10|10-\(c\.finalizedCount%10\)/);
 });
 
 test("one-time payment webhook tolerates preference creation race", async () => {
