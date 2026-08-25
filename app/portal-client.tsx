@@ -1193,7 +1193,7 @@ function Remarketing({clients,initialContacts}:any){
   const inactive=clients.filter((c:any)=>c.daysSinceLastVisit!==null&&c.daysSinceLastVisit>=inactiveDays&&(serviceFilter==="todos"||c.lastService===serviceFilter));
   const currentMonth=String(new Date().getMonth()+1).padStart(2,"0");
   const birthdays=clients.filter((c:any)=>c.birthDate?.slice(5,7)===currentMonth);
-  const loyalty=clients.filter((c:any)=>c.finalizedCount>0&&c.finalizedCount%10>=7);
+  const loyalty=clients.filter((c:any)=>Number(c.loyaltyProgress||0)>=6);
   const membership=clients.filter((c:any)=>c.finalizedCount>=3&&c.subscriptionStatus==="Sem assinatura");
   const services=[...new Set(clients.map((c:any)=>c.lastService).filter(Boolean))] as string[];
   const sentCount=Object.values(contacts).filter((item:any)=>item.sentAt).length;
@@ -1204,7 +1204,7 @@ function Remarketing({clients,initialContacts}:any){
   const returnMessage=(c:any)=>`Olá, ${c.name.split(" ")[0]}! Tudo bem? Já faz ${c.daysSinceLastVisit} dias desde seu último atendimento na Yuri Barbershop. Que tal cuidarmos do visual novamente? Fale comigo por aqui para combinarmos seu próximo horário. ✂️`;
   const birthdayMessage=(c:any)=>`Olá, ${c.name.split(" ")[0]}! O seu mês chegou! 🎉 A Yuri Barbershop deseja um feliz aniversário. Você tem um presente especial esperando por você. Fale comigo para agendar!`;
   const referralMessage=(c:any)=>`Olá, ${c.name.split(" ")[0]}! Que tal indicar um amigo para conhecer a Yuri Barbershop? Quando ele fizer o primeiro atendimento, vocês recebem um benefício especial. Envie nosso contato para ele! ✂️`;
-  const loyaltyMessage=(c:any)=>`Olá, ${c.name.split(" ")[0]}! Você está quase completando seu cartão fidelidade: faltam apenas ${10-(c.finalizedCount%10)} atendimento(s) para ganhar 1 serviço grátis. Vamos agendar o próximo? ⭐`;
+  const loyaltyMessage=(c:any)=>c.loyaltyRewardAvailable?`Olá, ${c.name.split(" ")[0]}! Seu cartão fidelidade está completo e você já tem um atendimento gratuito disponível. Vamos agendar? ⭐`:`Olá, ${c.name.split(" ")[0]}! Você está quase completando seu cartão fidelidade: faltam apenas ${Math.max(0, Number(c.loyaltyTarget||8)-Number(c.loyaltyProgress||0))} atendimento(s) para ganhar 1 serviço grátis. Vamos agendar o próximo? ⭐`;
   const membershipMessage=(c:any)=>`Olá, ${c.name.split(" ")[0]}! Como você cuida sempre do visual, o Clube Yuri pode ser ideal: serviços ilimitados por R$ 120 durante 30 dias. Quer conhecer as condições? 👑`;
   const lists:any={pos:{title:"Solicitar avaliação e marcação",items:completed,message:postMessage,badge:"Pós-atendimento"},retorno:{title:"Clientes para voltar",items:inactive,message:returnMessage,badge:`${inactiveDays}+ dias`},aniversario:{title:"Aniversariantes do mês",items:birthdays,message:birthdayMessage,badge:"Presente de aniversário"},indicacao:{title:"Campanha indique um amigo",items:clients,message:referralMessage,badge:"Indicação"},fidelidade:{title:"Próximos do prêmio",items:loyalty,message:loyaltyMessage,badge:"Fidelidade"},assinatura:{title:"Potenciais assinantes",items:membership,message:membershipMessage,badge:"Clube Yuri"}};
   const selected=lists[tab];
