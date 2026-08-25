@@ -55,7 +55,7 @@ test("booking central is protected by an error boundary", async () => {
 
 test("current booking flow remains visible inside the mobile booking target", async () => {
   const source = await readFile(new URL("../app/booking-v3.tsx", import.meta.url), "utf8");
-  assert.match(source, /className="mobile-booking-app booking-commerce-app booking-hub-v2 booking-v3"/);
+  assert.match(source, /booking-v3 step-\$\{step\}/);
   assert.match(source, /className="mobile-booking-app booking-commerce-app booking-hub-v2 booking-v3 loading"/);
 });
 
