@@ -39,10 +39,10 @@ test("scheduled booking is registered before WhatsApp", async () => {
   assert.match(source, /Protocolo do agendamento/);
 });
 
-test("central keeps club copy aligned with six-visit business rule", async () => {
+test("central keeps loyalty cycle aligned with eight paid visits", async () => {
   const source = await readFile(new URL("../app/mobile-booking-bridge.tsx", import.meta.url), "utf8");
-  assert.match(source, /Até 6 atendimentos por ciclo/);
-  assert.doesNotMatch(source, /ilimitad/i);
+  assert.match(source, /const loyaltyTarget=8/);
+  assert.doesNotMatch(source, /Até 6 atendimentos|loyaltyTarget\?\.loyaltyTarget\|\|10|CLUBE YURI|PROMOÇÕES/);
 });
 
 test("booking central is protected by an error boundary", async () => {
@@ -71,9 +71,10 @@ test("client and admin navigation exclude retired modules", async () => {
   const admin = source.slice(source.indexOf("const adminItems"), source.indexOf("const barberItems"));
   const client = source.slice(source.indexOf("const registeredClientItems"), source.indexOf("const clientItems"));
   for (const label of ["Catálogo de estilos", "Promoções", "Assinaturas", "Crescimento"]) assert.doesNotMatch(admin, new RegExp(label));
-  for (const label of ["Caixa de entrada", "Meus horários", "Meu histórico", "Fidelidade", "Avaliar atendimento", "Promoções", "Clube Yuri", "Catálogo de estilos", "Localização", "Meu perfil"]) assert.doesNotMatch(client, new RegExp(label));
+  for (const label of ["Caixa de entrada", "Meus horários", "Meu histórico", "Avaliar atendimento", "Promoções", "Clube Yuri", "Catálogo de estilos", "Localização", "Meu perfil"]) assert.doesNotMatch(client, new RegExp(label));
   assert.match(client, /\["agendar", "Agendar"/);
   assert.match(client, /\["produtos", "Produtos"/);
+  assert.match(client, /\["fidelidade", "Fidelidade", "BENEFÍCIOS"\]/);
 });
 
 test("one-time payment webhook tolerates preference creation race", async () => {
