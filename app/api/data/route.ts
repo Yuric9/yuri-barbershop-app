@@ -302,6 +302,11 @@ export async function GET(request: Request) {
       : [];
   const settings = settingsRows[0] || { monthlyGoalCents: 500000, loyaltyTarget: LOYALTY_TARGET, loyaltyReward: "1 atendimento grátis" };
   const visibleSettings = isAdmin ? { ...settings, loyaltyTarget: LOYALTY_TARGET, loyaltyReward: "1 atendimento grátis" } : { loyaltyTarget: LOYALTY_TARGET, loyaltyReward: "1 atendimento grátis" };
+  const clientProfile = !isAdmin && !isBarber ? profileRows[0] : null;
+  const clientPaidFinalizedCount = !isAdmin && !isBarber
+    ? appointmentRows.filter((item) => item.status === "Finalizado" && item.paymentMethod !== "Cortesia").length
+    : 0;
+  const clientLoyalty = clientProfile ? loyaltySnapshot(clientProfile, clientPaidFinalizedCount) : null;
 
   return Response.json({
     isAdmin,
@@ -311,6 +316,7 @@ export async function GET(request: Request) {
     products: productRows,
     appointments: appointmentRows,
     profiles: profileRows.filter((profile) => profile.email === user.email),
+    clientLoyalty,
     transactions: transactionRows,
     occupiedTimes,
     clientSummaries,
