@@ -100,6 +100,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [liveServices, setLiveServices] = useState(defaultServices);
   const [liveProducts, setLiveProducts] = useState(defaultProducts);
   const [clientProfile, setClientProfile] = useState<any>(null);
+  const [clientLoyalty, setClientLoyalty] = useState<any>(null);
   const [clientAppointments, setClientAppointments] = useState<any[]>([]);
   const [livePromotions, setLivePromotions] = useState<any[]>(demo ? visitorPromotions : []);
   const [liveCatalog, setLiveCatalog] = useState<any[]>(demo ? visitorCatalog : []);
@@ -139,6 +140,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const registeredClientItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
     ["produtos", "Produtos", "CONHEÇA"],
+    ["fidelidade", "Fidelidade", "BENEFÍCIOS"],
   ];
   const visitorItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
@@ -188,6 +190,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
             })),
           );
         if (data.profiles?.[0]) setClientProfile(data.profiles[0]);
+        setClientLoyalty(data.clientLoyalty || null);
         setClientAppointments(data.appointments || []);
         setLivePromotions(data.promotions || []);
         setLiveCatalog(data.catalogItems || []);
@@ -320,6 +323,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
             services={liveServices}
             products={liveProducts}
             profile={clientProfile}
+            loyalty={clientLoyalty}
             appointments={clientAppointments}
             promotions={livePromotions}
             catalogItems={liveCatalog}
@@ -514,6 +518,7 @@ function ClientView({
   services,
   products,
   profile,
+  loyalty,
   appointments,
   promotions,
   catalogItems,
@@ -537,7 +542,7 @@ function ClientView({
 }: any) {
   if (section === "mensagens") return <Inbox messages={messages || []} clients={[]} user={user} onRefresh={onRefresh} />;
   if (section === "historico") return <ClientHistory appointments={appointments || []} />;
-  if (section === "fidelidade") return <LoyaltyCard appointments={appointments || []} settings={growth?.settings || {}} user={user} />;
+  if (section === "fidelidade") return <LoyaltyCard snapshot={loyalty} user={user} />;
   if (section === "avaliar") return <ReviewAndWaitlist onRefresh={onRefresh} />;
   if (section === "meus-horarios")
     return (
@@ -635,12 +640,44 @@ function ClientHistory({ appointments }: any) {
   return <section><div className="section-title"><div><small>SEU RELACIONAMENTO</small><h2>Histórico de atendimentos</h2></div></div><div className="history-summary"><article><span>Atendimentos</span><strong>{completed.length}</strong></article><article><span>Total em serviços</span><strong>{money(total)}</strong></article><article><span>Último serviço</span><strong>{completed[0]?.serviceName||"—"}</strong></article></div><div className="table-card"><table><thead><tr><th>Data</th><th>Serviço</th><th>Produto</th><th>Valor</th><th>Status</th></tr></thead><tbody>{completed.length?completed.map((a:any)=><tr key={a.id}><td>{formatDate(a.date)}</td><td><strong>{a.serviceName}</strong></td><td>{a.productName||"—"}</td><td>{money(a.totalCents)}</td><td>{a.status}</td></tr>):<tr><td colSpan={5} className="empty-table">Seu histórico aparecerá após os atendimentos.</td></tr>}</tbody></table></div></section>;
 }
 
-function LoyaltyCard({ appointments, settings, user }: any) {
-  const target = settings.loyaltyTarget || 10;
-  const finalized = appointments.filter((a:any)=>a.status === "Finalizado").length;
-  const count = finalized % target;
-  const rewards = Math.floor(finalized / target);
-  return <section className="loyalty-page"><div className="section-title"><div><small>CLUBE DE VANTAGENS</small><h2>Programa de fidelidade</h2></div></div><div className="loyalty-card"><span>YURI BARBERSHOP</span><h3>{user.name}</h3><p>A cada {target} atendimentos finalizados, você recebe:</p><strong>{settings.loyaltyReward || "1 atendimento grátis"}</strong>{rewards>0&&<div className="loyalty-reward-ready">🎁 Você possui {rewards} atendimento{rewards>1?"s":""} grátis disponível{rewards>1?"eis":""}!</div>}<div className="loyalty-stamps">{Array.from({length:target},(_,i)=><i key={i} className={i<count?"filled":""}>{i<count?"✓":"✂"}</i>)}</div><small>{count} de {target} atendimentos finalizados no ciclo atual</small><p className="loyalty-rule">Somente atendimentos marcados como <b>Finalizado</b> pelo administrador são validados.</p></div></section>;
+function LoyaltyCard({ snapshot, user }: any) {
+  const target = Math.max(1, Number(snapshot?.loyaltyTarget || 8));
+  const availableRewards = Math.max(0, Number(snapshot?.loyaltyAvailableRewards || 0));
+  const progress = availableRewards > 0
+    ? target
+    : Math.min(target - 1, Math.max(0, Number(snapshot?.loyaltyProgress || 0)));
+  const remaining = Math.max(0, target - progress);
+
+  return (
+    <section className="loyalty-page">
+      <div className="section-title">
+        <div>
+          <small>BENEFÍCIO EXCLUSIVO</small>
+          <h2>Meu cartão fidelidade</h2>
+          <p className="section-description">Acompanhe seu progresso a cada atendimento realizado.</p>
+        </div>
+      </div>
+      <div className="loyalty-card">
+        <span>YURI BARBERSHOP</span>
+        <h3>{user.name}</h3>
+        <p>A cada {target} atendimentos finalizados e pagos, o próximo é por nossa conta.</p>
+        <strong>{availableRewards > 0 ? "Cortesia disponível" : "Continue acumulando atendimentos"}</strong>
+        <div className="loyalty-stamps" aria-label={`${progress} de ${target} atendimentos`}>
+          {Array.from({ length: target }, (_, index) => (
+            <i key={index} className={index < progress ? "filled" : ""}>
+              {index < progress ? "✓" : "✂"}
+            </i>
+          ))}
+        </div>
+        {availableRewards > 0 ? (
+          <div className="loyalty-reward-ready">🎁 Você conquistou um atendimento gratuito!</div>
+        ) : (
+          <small>Você tem {progress} de {target} atendimentos. Faltam {remaining}.</small>
+        )}
+        <p className="loyalty-rule">Somente atendimentos finalizados e pagos pelo administrador entram na contagem. A cortesia é liberada pela equipe da Yuri Barbershop.</p>
+      </div>
+    </section>
+  );
 }
 
 function ReviewAndWaitlist({ onRefresh }: any) {
