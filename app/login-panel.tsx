@@ -32,8 +32,9 @@ export default function LoginPanel() {
     <h1>{view === "register" ? "Crie seu cadastro" : "Entre na Yuri Barbershop"}</h1>
     <p>{view === "register" ? "Cadastre-se uma vez para agendar e acompanhar seus atendimentos." : "Use seu e-mail e senha. O sistema abre automaticamente a área correspondente ao seu acesso."}</p>
     <div className="login-tabs" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
-      <button className={view === "client" ? "active" : ""} onClick={() => { setView("client"); setMessage(""); }}>Cliente</button>
-      <button className={view === "register" ? "active" : ""} onClick={() => { setView("register"); setMessage(""); }}>Cadastrar</button>
+
+      <button className={view === "client" ? "active" : ""} onClick={() => { setView("client"); setMessage(""); setShowPassword(false); }}>Cliente</button>
+      <button className={view === "register" ? "active" : ""} onClick={() => { setView("register"); setMessage(""); setShowPassword(false); }}>Cadastrar</button>
     </div>
     <form className="own-login-form" onSubmit={submit}>
       {view === "register" && <><label>Nome completo<input required autoComplete="name" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })}/></label><div className="login-form-row"><label>Telefone com DDD<input required inputMode="tel" autoComplete="tel" value={form.phone} onChange={event => setForm({ ...form, phone: event.target.value })}/></label><label>Data de aniversário<input type="date" value={form.birthDate} onChange={event => setForm({ ...form, birthDate: event.target.value })}/></label></div></>}
