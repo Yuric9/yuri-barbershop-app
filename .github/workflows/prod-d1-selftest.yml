@@ -1,0 +1,36 @@
+name: Production D1 Selftest
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  run-selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Wait for Cloudflare deployment and run test
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://yuricbarbershop.com/api/d1-selftest"
+          echo "Waiting for production endpoint..."
+          for i in $(seq 1 36); do
+            code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 15 "$url" || true)
+            echo "attempt=$i status=$code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/result.json
+              exit 0
+            fi
+            if [ "$code" = "500" ]; then
+              cat /tmp/result.json
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "Production endpoint was not deployed in time"
+          test -f /tmp/result.json && cat /tmp/result.json || true
+          exit 2
