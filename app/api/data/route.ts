@@ -450,8 +450,20 @@ export async function POST(request: Request) {
       if (existing) {
         await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
       } else {
-        // O cliente não precisa informar e-mail; este identificador fica apenas no banco.
-        await db.insert(profiles).values({ email, name, phone, birthDate: "", createdAt: now });
+        // O cliente informa apenas nome e telefone. Os demais campos são internos.
+        // Preenchê-los explicitamente mantém compatibilidade com bases D1 antigas.
+        await db.insert(profiles).values({
+          email,
+          name,
+          phone,
+          birthDate: "",
+          loyaltyAdjustment: 0,
+          loyaltyRewardsRedeemed: 0,
+          loyaltyAdjustmentNote: "",
+          loyaltyUpdatedAt: "",
+          loyaltyUpdatedBy: "",
+          createdAt: now,
+        });
       }
       return Response.json({ ok: true, client: { email, name, phone } });
     } catch (error) {
