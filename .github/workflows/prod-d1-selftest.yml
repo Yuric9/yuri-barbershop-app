@@ -1,4 +1,4 @@
-name: Production D1 Selftest
+name: Production Login Registration Test
 
 on:
   push:
@@ -8,29 +8,39 @@ permissions:
   contents: read
 
 jobs:
-  run-selftest:
+  test-login-registration:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 4
     steps:
-      - name: Wait for Workers deployment and run test
+      - name: Register and login test client through real API
         shell: bash
         run: |
           set -euo pipefail
-          url="https://yuri-barbershop-app.jesika-yure.workers.dev/api/d1-selftest"
-          echo "Waiting for workers.dev endpoint..."
-          for i in $(seq 1 36); do
-            code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 15 "$url" || true)
-            echo "attempt=$i status=$code"
-            if [ "$code" = "200" ]; then
-              cat /tmp/result.json
-              exit 0
-            fi
-            if [ "$code" = "500" ]; then
-              cat /tmp/result.json
-              exit 1
-            fi
-            sleep 10
-          done
-          echo "workers.dev endpoint was not deployed in time"
-          test -f /tmp/result.json && cat /tmp/result.json || true
-          exit 2
+          origin="https://yuri-barbershop-app.jesika-yure.workers.dev"
+          email="__test_login_cadastro__@cadastro.local"
+          phone="997000000001"
+          password="TesteLogin2026!"
+
+          register_code=$(curl -sS -c /tmp/cookies.txt -o /tmp/register.json -w '%{http_code}' \
+            -X POST "$origin/api/auth/register" \
+            -H "origin: $origin" \
+            -H "content-type: application/json" \
+            --data "{\"name\":\"Cliente Teste Login\",\"phone\":\"$phone\",\"email\":\"$email\",\"password\":\"$password\",\"birthDate\":\"\",\"area\":\"client\"}")
+          echo "register_status=$register_code"
+          cat /tmp/register.json
+          echo
+          if [ "$register_code" != "200" ]; then
+            exit 1
+          fi
+
+          login_code=$(curl -sS -b /tmp/cookies.txt -c /tmp/cookies.txt -o /tmp/login.json -w '%{http_code}' \
+            -X POST "$origin/api/auth/login" \
+            -H "origin: $origin" \
+            -H "content-type: application/json" \
+            --data "{\"email\":\"$email\",\"password\":\"$password\",\"area\":\"client\"}")
+          echo "login_status=$login_code"
+          cat /tmp/login.json
+          echo
+          if [ "$login_code" != "200" ]; then
+            exit 1
+          fi
