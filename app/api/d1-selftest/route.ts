@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { accounts, authSessions, profiles } from "../../../db/schema";
 import { POST as registerPost } from "../auth/register/route";
@@ -18,6 +18,30 @@ function errorText(error: unknown) {
   return `${message} | cause: ${causeMessage}`;
 }
 
+async function ensureLoyaltyColumns(db: ReturnType<typeof getDb>) {
+  const statements = [
+    ["loyalty_adjustment", "ALTER TABLE `profiles` ADD `loyalty_adjustment` integer DEFAULT 0 NOT NULL"],
+    ["loyalty_rewards_redeemed", "ALTER TABLE `profiles` ADD `loyalty_rewards_redeemed` integer DEFAULT 0 NOT NULL"],
+    ["loyalty_adjustment_note", "ALTER TABLE `profiles` ADD `loyalty_adjustment_note` text DEFAULT '' NOT NULL"],
+    ["loyalty_updated_at", "ALTER TABLE `profiles` ADD `loyalty_updated_at` text DEFAULT '' NOT NULL"],
+    ["loyalty_updated_by", "ALTER TABLE `profiles` ADD `loyalty_updated_by` text DEFAULT '' NOT NULL"],
+  ] as const;
+
+  const applied: string[] = [];
+  const existing: string[] = [];
+  for (const [column, statement] of statements) {
+    try {
+      await db.run(sql.raw(statement));
+      applied.push(column);
+    } catch (error) {
+      const text = errorText(error);
+      if (/duplicate column name|already exists/i.test(text)) existing.push(column);
+      else throw error;
+    }
+  }
+  return { applied, existing };
+}
+
 export async function GET(request: Request) {
   const db = getDb();
   const now = new Date().toISOString();
@@ -30,6 +54,7 @@ export async function GET(request: Request) {
   const origin = new URL(request.url).origin;
 
   const result: Record<string, unknown> = {
+    migrationOk: false,
     manualAccountPresent: false,
     manualProfilePresent: false,
     manualCleanup: false,
@@ -40,6 +65,15 @@ export async function GET(request: Request) {
     login: false,
     cleanup: false,
   };
+
+  try {
+    const migration = await ensureLoyaltyColumns(db);
+    result.migrationOk = true;
+    result.migrationApplied = migration.applied;
+    result.migrationAlreadyPresent = migration.existing;
+  } catch (error) {
+    result.migrationError = errorText(error);
+  }
 
   try {
     const [manualAccount] = await db.select({ email: accounts.email }).from(accounts).where(eq(accounts.email, MANUAL_TEST_EMAIL)).limit(1);
@@ -141,6 +175,6 @@ export async function GET(request: Request) {
     result.cleanupError = errorText(error);
   }
 
-  const passed = result.manualCleanup === true && result.quickMinimal === true && result.quickVerify === true && result.register === true && result.login === true && result.cleanup === true;
+  const passed = result.migrationOk === true && result.manualCleanup === true && result.quickExtended === true && result.quickMinimal === true && result.quickVerify === true && result.register === true && result.login === true && result.cleanup === true;
   return Response.json(result, { status: passed ? 200 : 500 });
 }
