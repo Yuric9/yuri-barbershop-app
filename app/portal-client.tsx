@@ -1064,7 +1064,17 @@ function Cash({transactions,services,clients,onRefresh}:any) {
   const annual=transactions.filter((t:any)=>t.date.startsWith(new Date().getFullYear().toString())).reduce((s:number,t:any)=>s+(t.kind==="entrada"?t.amountCents:-t.amountCents),0);
   function selectService(id:string){const service=services.find((s:any)=>String(s.id)===id);setEntry({...entry,serviceId:id,serviceName:service?.name||"",description:service?.name||entry.description,amount:service?(service.priceCents/100).toFixed(2):entry.amount});}
   function selectClient(email:string){const client=clients.find((c:any)=>c.email===email);setEntry({...entry,clientEmail:email,clientName:client?.name||""});}
-  async function createClient(){if(!clientForm.name.trim()||!clientForm.phone.trim()){setMessage("Informe pelo menos o nome e o telefone do cliente.");return;}setSaving(true);const r=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"client-create",...clientForm})});const result=await r.json().catch(()=>({}));setSaving(false);if(!r.ok){setMessage(result.error||"Não foi possível cadastrar o cliente.");return;}setEntry({...entry,clientEmail:result.client.email,clientName:result.client.name});setClientForm({name:"",phone:"",email:"",birthDate:""});setShowClientForm(false);setMessage("Cliente cadastrado e vinculado ao lançamento.");await onRefresh();}
+  async function createClient(){
+    if(!clientForm.name.trim()||!clientForm.phone.trim()){setMessage("Informe pelo menos o nome e o telefone do cliente.");return;}
+    setSaving(true);setMessage("");
+    try{
+      const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"client-create",...clientForm})});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok){setMessage(response.status===401?"Sua sessão expirou. Entre novamente como administrador.":result.error||"Não foi possível cadastrar o cliente.");return;}
+      setEntry({...entry,clientEmail:result.client.email,clientName:result.client.name});setClientForm({name:"",phone:"",email:"",birthDate:""});setShowClientForm(false);setMessage("Cliente cadastrado e vinculado ao lançamento.");await onRefresh();
+    }catch{setMessage("Não foi possível conectar ao sistema. Verifique a conexão e tente novamente.");}
+    finally{setSaving(false);}
+  }
   async function save(){if(!entry.description.trim()||Number(entry.amount)<=0){setMessage("Informe a descrição e um valor maior que zero.");return;}setSaving(true);const r=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"transaction",...entry})});setSaving(false);if(r.ok){setEntry({...entry,description:"",amount:"",clientEmail:"",clientName:"",serviceId:"",serviceName:""});setShowForm(false);setMessage("Movimentação registrada com sucesso.");await onRefresh();}else setMessage("Não foi possível registrar a movimentação.");}
   return (
     <section>
@@ -1157,8 +1167,14 @@ function ClientsDatabase({clients,onRefresh}:any){
   }
   async function saveQuick(){
     if(!form.name.trim()||!form.phone.trim()){setMessage("Informe o nome e o telefone do cliente.");return;}
-    setSaving(true);const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"client-create",...form})});const result=await response.json().catch(()=>({}));setSaving(false);
-    if(!response.ok){setMessage(result.error||"Não foi possível cadastrar o cliente.");return;}setForm({name:"",phone:""});setShowQuick(false);setMessage("Cliente cadastrado com sucesso.");await onRefresh();
+    setSaving(true);setMessage("");
+    try{
+      const response=await fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"client-create",...form})});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok){setMessage(response.status===401?"Sua sessão expirou. Entre novamente como administrador.":result.error||"Não foi possível cadastrar o cliente.");return;}
+      setForm({name:"",phone:""});setShowQuick(false);setMessage("Cliente cadastrado com sucesso.");await onRefresh();
+    }catch{setMessage("Não foi possível conectar ao sistema. Verifique a conexão e tente novamente.");}
+    finally{setSaving(false);}
   }
   async function pickPhoneContacts(){
     try{const picked=await (navigator as any).contacts.select(["name","tel"],{multiple:true});prepareContacts(picked.map((item:any)=>({name:item.name?.[0]||"",phone:item.tel?.[0]||""})));}
