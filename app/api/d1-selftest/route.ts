@@ -52,8 +52,10 @@ export async function GET(request: Request) {
   const loginPhone = `998${suffix}`;
   const password = "TesteSeguro2026!";
   const origin = new URL(request.url).origin;
+  const testIp = "203.0.113.77";
 
   const result: Record<string, unknown> = {
+    isolatedRateLimit: true,
     migrationOk: false,
     manualAccountPresent: false,
     manualProfilePresent: false,
@@ -129,7 +131,7 @@ export async function GET(request: Request) {
   try {
     const registerResponse = await registerPost(new Request(`${origin}/api/auth/register`, {
       method: "POST",
-      headers: { "content-type": "application/json", origin },
+      headers: { "content-type": "application/json", origin, "cf-connecting-ip": testIp },
       body: JSON.stringify({
         name: "Cliente Teste Login",
         phone: loginPhone,
@@ -150,7 +152,7 @@ export async function GET(request: Request) {
     try {
       const loginResponse = await loginPost(new Request(`${origin}/api/auth/login`, {
         method: "POST",
-        headers: { "content-type": "application/json", origin },
+        headers: { "content-type": "application/json", origin, "cf-connecting-ip": testIp },
         body: JSON.stringify({ email: loginEmail, password, area: "client" }),
       }));
       result.login = loginResponse.ok;
