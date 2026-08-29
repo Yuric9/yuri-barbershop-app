@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Wait for Cloudflare deployment and run test
+      - name: Wait for Workers deployment and run test
         shell: bash
         run: |
           set -euo pipefail
-          url="https://yuricbarbershop.com/api/d1-selftest"
-          echo "Waiting for production endpoint..."
+          url="https://yuri-barbershop-app.jesika-yure.workers.dev/api/d1-selftest"
+          echo "Waiting for workers.dev endpoint..."
           for i in $(seq 1 36); do
             code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 15 "$url" || true)
             echo "attempt=$i status=$code"
@@ -31,6 +31,6 @@ jobs:
             fi
             sleep 10
           done
-          echo "Production endpoint was not deployed in time"
+          echo "workers.dev endpoint was not deployed in time"
           test -f /tmp/result.json && cat /tmp/result.json || true
           exit 2
