@@ -437,26 +437,21 @@ export async function POST(request: Request) {
   }
   if (action === "client-create") {
     try {
+      // Cadastro rápido: somente nome e telefone. O e-mail é técnico e interno.
       const name = String(body.name || "").trim();
       const phone = String(body.phone || "").trim();
-      const informedEmail = String(body.email || "").trim().toLowerCase();
-      if (!name || !phone) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
-      const phoneKey = phone.replace(/\D/g, "") || String(Date.now());
+      const phoneKey = phone.replace(/\D/g, "");
+      if (!name || !phoneKey) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
+      if (phoneKey.length < 8 || phoneKey.length > 13) return Response.json({ error: "Informe um telefone válido" }, { status: 400 });
       const profileRows = await db.select().from(profiles);
-      const existing = profileRows.find((profile) => {
-        const samePhone = String(profile.phone || "").replace(/\D/g, "") === phoneKey;
-        const sameEmail = Boolean(informedEmail) && profile.email === informedEmail;
-        return samePhone || sameEmail;
-      });
-      const email = existing?.email || informedEmail || `cliente-${phoneKey}@cadastro.local`;
-      const birthDate = String(body.birthDate || "").trim();
-      const update: { name: string; phone: string; birthDate?: string } = { name, phone };
-      if (birthDate) update.birthDate = birthDate;
+      const existing = profileRows.find((profile) => String(profile.phone || "").replace(/\D/g, "") === phoneKey);
+      const email = existing?.email || `cliente-${phoneKey}@cadastro.local`;
+      const update = { name, phone };
       if (existing) {
         await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
       } else {
-        // Inserção direta: evita depender de ON CONFLICT em bases D1 antigas.
-        await db.insert(profiles).values({ email, name, phone, birthDate, createdAt: now });
+        // O cliente não precisa informar e-mail; este identificador fica apenas no banco.
+        await db.insert(profiles).values({ email, name, phone, birthDate: "", createdAt: now });
       }
       return Response.json({ ok: true, client: { email, name, phone } });
     } catch (error) {
