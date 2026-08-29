@@ -12,22 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Wait for diagnostic route, execute and clean test data
+      - name: Wait for migrated diagnostic route and execute tests
         shell: bash
         run: |
           set -euo pipefail
           url="https://yuri-barbershop-app.jesika-yure.workers.dev/api/d1-selftest"
-          echo "Waiting for latest Worker diagnostic..."
+          echo "Waiting for migrated Worker diagnostic..."
           for i in $(seq 1 54); do
             code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 15 "$url" || true)
             body=$(cat /tmp/result.json 2>/dev/null || true)
             echo "attempt=$i status=$code"
-            if printf '%s' "$body" | grep -Fq 'manualAccountPresent'; then
+            if printf '%s' "$body" | grep -Fq 'migrationOk'; then
               echo "$body"
               exit 0
             fi
             sleep 10
           done
-          echo "Latest diagnostic route was not observed in time"
+          echo "Migrated diagnostic route was not observed in time"
           cat /tmp/result.json 2>/dev/null || true
           exit 2
