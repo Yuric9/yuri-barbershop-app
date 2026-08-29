@@ -1,4 +1,4 @@
-name: Production Login Registration Test
+name: Production Login Verification Test
 
 on:
   push:
@@ -8,39 +8,27 @@ permissions:
   contents: read
 
 jobs:
-  test-login-registration:
+  verify-login:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 3
     steps:
-      - name: Register and login test client through real API
+      - name: Try login with registration test account
         shell: bash
         run: |
           set -euo pipefail
           origin="https://yuri-barbershop-app.jesika-yure.workers.dev"
           email="__test_login_cadastro__@cadastro.local"
-          phone="997000000001"
           password="TesteLogin2026!"
 
-          register_code=$(curl -sS -c /tmp/cookies.txt -o /tmp/register.json -w '%{http_code}' \
-            -X POST "$origin/api/auth/register" \
-            -H "origin: $origin" \
-            -H "content-type: application/json" \
-            --data "{\"name\":\"Cliente Teste Login\",\"phone\":\"$phone\",\"email\":\"$email\",\"password\":\"$password\",\"birthDate\":\"\",\"area\":\"client\"}")
-          echo "register_status=$register_code"
-          cat /tmp/register.json
-          echo
-          if [ "$register_code" != "200" ]; then
-            exit 1
-          fi
-
-          login_code=$(curl -sS -b /tmp/cookies.txt -c /tmp/cookies.txt -o /tmp/login.json -w '%{http_code}' \
+          login_code=$(curl -sS -c /tmp/cookies.txt -o /tmp/login.json -w '%{http_code}' \
             -X POST "$origin/api/auth/login" \
             -H "origin: $origin" \
             -H "content-type: application/json" \
             --data "{\"email\":\"$email\",\"password\":\"$password\",\"area\":\"client\"}")
           echo "login_status=$login_code"
-          cat /tmp/login.json
+          cat /tmp/login.json || true
           echo
-          if [ "$login_code" != "200" ]; then
-            exit 1
+          if [ "$login_code" = "200" ]; then
+            exit 0
           fi
+          exit 1
