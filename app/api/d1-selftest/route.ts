@@ -6,6 +6,8 @@ import { POST as loginPost } from "../auth/login/route";
 
 export const dynamic = "force-dynamic";
 
+const MANUAL_TEST_EMAIL = "__test_login_cadastro__@cadastro.local";
+
 function errorText(error: unknown) {
   const value = error as { message?: unknown; cause?: unknown };
   const message = typeof value?.message === "string" ? value.message : String(error);
@@ -28,6 +30,9 @@ export async function GET(request: Request) {
   const origin = new URL(request.url).origin;
 
   const result: Record<string, unknown> = {
+    manualAccountPresent: false,
+    manualProfilePresent: false,
+    manualCleanup: false,
     quickExtended: false,
     quickMinimal: false,
     quickVerify: false,
@@ -35,6 +40,23 @@ export async function GET(request: Request) {
     login: false,
     cleanup: false,
   };
+
+  try {
+    const [manualAccount] = await db.select({ email: accounts.email }).from(accounts).where(eq(accounts.email, MANUAL_TEST_EMAIL)).limit(1);
+    const [manualProfile] = await db.select({ email: profiles.email }).from(profiles).where(eq(profiles.email, MANUAL_TEST_EMAIL)).limit(1);
+    result.manualAccountPresent = Boolean(manualAccount);
+    result.manualProfilePresent = Boolean(manualProfile);
+
+    await db.delete(authSessions).where(eq(authSessions.accountEmail, MANUAL_TEST_EMAIL));
+    await db.delete(accounts).where(eq(accounts.email, MANUAL_TEST_EMAIL));
+    await db.delete(profiles).where(eq(profiles.email, MANUAL_TEST_EMAIL));
+
+    const [manualAccountLeft] = await db.select({ email: accounts.email }).from(accounts).where(eq(accounts.email, MANUAL_TEST_EMAIL)).limit(1);
+    const [manualProfileLeft] = await db.select({ email: profiles.email }).from(profiles).where(eq(profiles.email, MANUAL_TEST_EMAIL)).limit(1);
+    result.manualCleanup = !manualAccountLeft && !manualProfileLeft;
+  } catch (error) {
+    result.manualCleanupError = errorText(error);
+  }
 
   try {
     await db.insert(profiles).values({
@@ -119,6 +141,6 @@ export async function GET(request: Request) {
     result.cleanupError = errorText(error);
   }
 
-  const passed = result.quickMinimal === true && result.quickVerify === true && result.register === true && result.login === true && result.cleanup === true;
+  const passed = result.manualCleanup === true && result.quickMinimal === true && result.quickVerify === true && result.register === true && result.login === true && result.cleanup === true;
   return Response.json(result, { status: passed ? 200 : 500 });
 }
