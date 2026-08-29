@@ -9,15 +9,24 @@ const SESSION_DAYS = 14;
 
 async function isCrossSiteSessionRequest() {
   const requestHeaders = await headers();
-  if (requestHeaders.get("sec-fetch-site") === "cross-site") return true;
+  const fetchSite = requestHeaders.get("sec-fetch-site");
+  if (fetchSite === "cross-site") return true;
+  // A requisição same-origin pode chegar ao Worker com um host interno
+  // diferente do domínio personalizado. Nesse caso, não rejeitar a sessão.
+  if (fetchSite === "same-origin") return false;
 
   const origin = requestHeaders.get("origin");
   if (!origin) return false;
-  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
-  if (!host) return false;
+  const hosts = [
+    requestHeaders.get("x-forwarded-host"),
+    requestHeaders.get("host"),
+    requestHeaders.get("cf-connecting-host"),
+    requestHeaders.get("x-original-host"),
+  ].filter(Boolean).flatMap((value) => String(value).split(",").map((item) => item.trim()));
 
   try {
-    return new URL(origin).host !== host;
+    const originHost = new URL(origin).host;
+    return hosts.length > 0 && !hosts.includes(originHost);
   } catch {
     return true;
   }
