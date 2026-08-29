@@ -436,19 +436,24 @@ export async function POST(request: Request) {
     return Response.json({ ok: true });
   }
   if (action === "client-create") {
-    const name = String(body.name || "").trim();
-    const phone = String(body.phone || "").trim();
-    const informedEmail = String(body.email || "").trim().toLowerCase();
-    if (!name || !phone) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
-    const phoneKey = phone.replace(/\D/g, "") || String(Date.now());
-    const profileRows = await db.select().from(profiles);
-    const existing = profileRows.find((profile) => String(profile.phone || "").replace(/\D/g, "") === phoneKey);
-    const email = existing?.email || informedEmail || `cliente-${phoneKey}@cadastro.local`;
-    const update: { name: string; phone: string; birthDate?: string } = { name, phone };
-    if (String(body.birthDate || "").trim()) update.birthDate = String(body.birthDate).trim();
-    if (existing) await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
-    else await db.insert(profiles).values({ email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: update });
-    return Response.json({ ok: true, client: { email, name, phone } });
+    try {
+      const name = String(body.name || "").trim();
+      const phone = String(body.phone || "").trim();
+      const informedEmail = String(body.email || "").trim().toLowerCase();
+      if (!name || !phone) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
+      const phoneKey = phone.replace(/\D/g, "") || String(Date.now());
+      const profileRows = await db.select().from(profiles);
+      const existing = profileRows.find((profile) => String(profile.phone || "").replace(/\D/g, "") === phoneKey);
+      const email = existing?.email || informedEmail || `cliente-${phoneKey}@cadastro.local`;
+      const update: { name: string; phone: string; birthDate?: string } = { name, phone };
+      if (String(body.birthDate || "").trim()) update.birthDate = String(body.birthDate).trim();
+      if (existing) await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
+      else await db.insert(profiles).values({ email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: update });
+      return Response.json({ ok: true, client: { email, name, phone } });
+    } catch (error) {
+      console.error("client-create-failure", error);
+      return Response.json({ error: "Não foi possível salvar o cliente no banco de dados." }, { status: 500 });
+    }
   }
   if (action === "client-import") {
     const received = Array.isArray(body.contacts) ? body.contacts.slice(0, 500) : [];
