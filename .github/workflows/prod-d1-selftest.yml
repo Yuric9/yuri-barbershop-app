@@ -1,4 +1,4 @@
-name: Production Login Verification Test
+name: Production D1 Final Diagnostic
 
 on:
   push:
@@ -8,27 +8,26 @@ permissions:
   contents: read
 
 jobs:
-  verify-login:
+  diagnose-and-clean:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 10
     steps:
-      - name: Try login with registration test account
+      - name: Wait for diagnostic route, execute and clean test data
         shell: bash
         run: |
           set -euo pipefail
-          origin="https://yuri-barbershop-app.jesika-yure.workers.dev"
-          email="__test_login_cadastro__@cadastro.local"
-          password="TesteLogin2026!"
-
-          login_code=$(curl -sS -c /tmp/cookies.txt -o /tmp/login.json -w '%{http_code}' \
-            -X POST "$origin/api/auth/login" \
-            -H "origin: $origin" \
-            -H "content-type: application/json" \
-            --data "{\"email\":\"$email\",\"password\":\"$password\",\"area\":\"client\"}")
-          echo "login_status=$login_code"
-          cat /tmp/login.json || true
-          echo
-          if [ "$login_code" = "200" ]; then
-            exit 0
-          fi
-          exit 1
+          url="https://yuri-barbershop-app.jesika-yure.workers.dev/api/d1-selftest"
+          echo "Waiting for latest Worker diagnostic..."
+          for i in $(seq 1 54); do
+            code=$(curl -sS -o /tmp/result.json -w '%{http_code}' --max-time 15 "$url" || true)
+            body=$(cat /tmp/result.json 2>/dev/null || true)
+            echo "attempt=$i status=$code"
+            if printf '%s' "$body" | grep -Fq 'manualAccountPresent'; then
+              echo "$body"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Latest diagnostic route was not observed in time"
+          cat /tmp/result.json 2>/dev/null || true
+          exit 2
