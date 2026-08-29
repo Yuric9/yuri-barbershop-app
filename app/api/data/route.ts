@@ -443,12 +443,21 @@ export async function POST(request: Request) {
       if (!name || !phone) return Response.json({ error: "Informe nome e telefone" }, { status: 400 });
       const phoneKey = phone.replace(/\D/g, "") || String(Date.now());
       const profileRows = await db.select().from(profiles);
-      const existing = profileRows.find((profile) => String(profile.phone || "").replace(/\D/g, "") === phoneKey);
+      const existing = profileRows.find((profile) => {
+        const samePhone = String(profile.phone || "").replace(/\D/g, "") === phoneKey;
+        const sameEmail = Boolean(informedEmail) && profile.email === informedEmail;
+        return samePhone || sameEmail;
+      });
       const email = existing?.email || informedEmail || `cliente-${phoneKey}@cadastro.local`;
+      const birthDate = String(body.birthDate || "").trim();
       const update: { name: string; phone: string; birthDate?: string } = { name, phone };
-      if (String(body.birthDate || "").trim()) update.birthDate = String(body.birthDate).trim();
-      if (existing) await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
-      else await db.insert(profiles).values({ email, name, phone, birthDate: String(body.birthDate || ""), createdAt: now }).onConflictDoUpdate({ target: profiles.email, set: update });
+      if (birthDate) update.birthDate = birthDate;
+      if (existing) {
+        await db.update(profiles).set(update).where(eq(profiles.email, existing.email));
+      } else {
+        // Inserção direta: evita depender de ON CONFLICT em bases D1 antigas.
+        await db.insert(profiles).values({ email, name, phone, birthDate, createdAt: now });
+      }
       return Response.json({ ok: true, client: { email, name, phone } });
     } catch (error) {
       console.error("client-create-failure", error);
