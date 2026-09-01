@@ -1,0 +1,42 @@
+name: Source Archive
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create clean source ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip -r yuri-barbershop-site-source.zip . \
+            -x '.git/*' \
+               'node_modules/*' \
+               '.next/*' \
+               '.open-next/*' \
+               '.wrangler/*' \
+               'dist/*' \
+               'coverage/*' \
+               '*.log' \
+               '.env' \
+               '.env.*' \
+               '**/.env' \
+               '**/.env.*' \
+               '.github/workflows/source-archive.yml'
+
+      - name: Upload source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: yuri-barbershop-site-source
+          path: yuri-barbershop-site-source.zip
+          if-no-files-found: error
+          retention-days: 1
