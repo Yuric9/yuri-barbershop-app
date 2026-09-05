@@ -148,6 +148,24 @@ a {
 .login-help b { margin-bottom: 3px; color: white; font-size: 11px; }
 .login-help small { margin-top: 6px; color: var(--gold); font-size: 9px; }
 .privacy-link { display: flex; align-items: center; justify-content: center; min-height: var(--touch-min); margin-top: 8px; color: #8f8b82; font-size: 11px; text-align: center; }
+.public-landing { padding: 54px 22px 80px; }
+.public-hero { position: relative; z-index: 2; width: min(1120px, 100%); margin: 0 auto 28px; }
+.public-hero-copy { max-width: 700px; }
+.public-hero .login-brand { align-items: flex-start; text-align: left; }
+.public-hero .login-brand img { width: 145px; }
+.public-hero .login-brand span { margin: 8px 0 34px; }
+.public-hero h1 { max-width: 640px; margin: 14px 0 16px; font: 58px/1.04 Georgia,serif; }
+.public-hero p { max-width: 590px; margin: 0; color: #bdb9af; font-size: 18px; line-height: 1.6; }
+.public-hero-actions { display: flex; align-items: center; gap: 22px; margin-top: 30px; }
+.public-secondary-link { color: #e3ded3; font-size: 13px; font-weight: 700; text-underline-offset: 4px; }
+.public-confirmation-note { display: block; margin-top: 18px; color: var(--gold); font-size: 11px; }
+.public-booking-section, .public-access-section { position: relative; z-index: 2; width: min(1120px, 100%); margin: 0 auto; }
+.public-booking-section { padding: 30px 0 12px; }
+.public-access-section { padding: 52px 0 0; }
+.public-section-heading { margin-bottom: 14px; }
+.public-section-heading h2 { margin: 7px 0 6px; font: 32px/1.1 Georgia,serif; }
+.public-section-heading p { margin: 0; color: #aaa69c; font-size: 13px; line-height: 1.5; }
+.public-access-section .login-card { max-width: 620px; margin-top: 22px; }
 .landing-nav {
   position: relative;
   z-index: 2;
@@ -1474,6 +1492,18 @@ a {
   .compose-message { grid-template-columns: 1fr; }
   .compose-message > * { grid-column: 1 !important; }
   .login-landing { padding: 24px 16px; align-items: start; }
+  .public-landing { padding: 28px 16px 56px; }
+  .public-hero { margin-bottom: 18px; }
+  .public-hero .login-brand img { width: 112px; }
+  .public-hero .login-brand span { margin-bottom: 24px; font-size: 8px; }
+  .public-hero h1 { font-size: 42px; }
+  .public-hero p { font-size: 16px; }
+  .public-hero-actions { align-items: stretch; flex-direction: column; gap: 14px; margin-top: 24px; }
+  .public-hero-actions .primary-button { text-align: center; }
+  .public-secondary-link { text-align: center; }
+  .public-booking-section { padding-top: 24px; }
+  .public-access-section { padding-top: 36px; }
+  .public-section-heading h2 { font-size: 28px; }
   .login-brand img { width: 160px; }
   .access-box.login-card { padding: 24px 18px; border-radius: 18px; }
   .login-card h1 { font-size: 29px; }

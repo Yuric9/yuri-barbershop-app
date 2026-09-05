@@ -64,6 +64,15 @@ test("public login does not expose an administrator tab", async () => {
   assert.doesNotMatch(login, />Administrador<\/button>/);
 });
 
+test("public home leads visitors into booking before restricted access", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /Agendar meu horário/);
+  assert.match(page, /href="#agendamento"/);
+  assert.match(page, /className="booking-with-ads"/);
+  assert.match(page, /Acesso administrativo/);
+  assert.match(page, /confirmado pessoalmente pelo WhatsApp/);
+});
+
 test("registration and profile updates reject duplicate phone numbers", async () => {
   const register = await readFile(new URL("../app/api/auth/register/route.ts", import.meta.url), "utf8");
   const data = await readFile(new URL("../app/api/data/route.ts", import.meta.url), "utf8");
