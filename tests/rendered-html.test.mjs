@@ -66,11 +66,11 @@ test("public login does not expose an administrator tab", async () => {
 
 test("public home leads visitors into booking before restricted access", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /Agendar meu horário/);
-  assert.match(page, /href="#agendamento"/);
+  assert.match(page, /<h1 id="agendamento-title">Agende seu horário<\/h1>/);
   assert.match(page, /className="booking-with-ads"/);
   assert.match(page, /Acesso administrativo/);
-  assert.match(page, /confirmado pessoalmente pelo WhatsApp/);
+  assert.match(page, /A confirmação acontece pelo WhatsApp/);
+  assert.match(page, /Privacidade e proteção de dados/);
 });
 
 test("registration and profile updates reject duplicate phone numbers", async () => {
