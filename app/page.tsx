@@ -13,29 +13,25 @@ export default async function Home() {
       <main className="landing-shell public-landing">
         <div className="landing-orb orb-one" />
         <div className="landing-orb orb-two" />
-        <section className="public-hero">
-          <div className="public-hero-copy">
-            <div className="login-brand">
-              <img src="/brand/yuri-barbershop-logo.png" alt="Yuri Barbershop" />
-              <span>ESTILO • CONFIANÇA • ATITUDE</span>
-            </div>
-            <span className="eyebrow">ATENDIMENTO ONLINE</span>
-            <h1>Seu próximo visual começa aqui.</h1>
-            <p>Escolha o serviço, o profissional, a data e o horário. Envie sua solicitação em poucos passos.</p>
-            <div className="public-hero-actions">
-              <a className="primary-button" href="#agendamento">Agendar meu horário →</a>
-              <a className="public-secondary-link" href="#acesso-equipe">Acesso administrativo</a>
-            </div>
-            <small className="public-confirmation-note">Seu pedido é registrado e confirmado pessoalmente pelo WhatsApp.</small>
+        <header className="public-header">
+          <div className="public-header-brand">
+            <img src="/brand/yuri-barbershop-logo.png" alt="Yuri Barbershop" />
+            <span>YURI BARBERSHOP</span>
           </div>
-        </section>
+          <a className="public-admin-link" href="#acesso-equipe">Acesso administrativo</a>
+        </header>
         <section className="public-booking-section" id="agendamento" aria-labelledby="agendamento-title">
           <div className="public-section-heading">
-            <span className="eyebrow">AGENDAMENTO PÚBLICO</span>
-            <h2 id="agendamento-title">Agende sem criar uma conta</h2>
-            <p>Informe seus dados no final e aguarde a confirmação do horário pelo WhatsApp.</p>
+            <span className="eyebrow">ATENDIMENTO ONLINE</span>
+            <h1 id="agendamento-title">Agende seu horário</h1>
+            <p>Escolha seu serviço e envie a solicitação. A confirmação acontece pelo WhatsApp.</p>
           </div>
           <div className="booking-with-ads" />
+          <div className="public-booking-meta">
+            <span>Segunda a sexta: 18h às 20h30</span>
+            <span>Sábado: 8h às 20h30 · Domingo: 8h às 12h</span>
+            <a href="/privacidade">Privacidade e proteção de dados</a>
+          </div>
         </section>
         <section className="public-access-section" id="acesso-equipe" aria-labelledby="acesso-equipe-title">
           <div className="public-section-heading">
