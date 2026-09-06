@@ -68,9 +68,18 @@ test("public home leads visitors into booking before restricted access", async (
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(page, /<h1 id="agendamento-title">Agende seu horário<\/h1>/);
   assert.match(page, /className="booking-with-ads"/);
-  assert.match(page, /Acesso administrativo/);
+  assert.match(page, /href="\/acesso-administrativo">Acesso administrativo/);
   assert.match(page, /A confirmação acontece pelo WhatsApp/);
   assert.match(page, /Privacidade e proteção de dados/);
+  assert.doesNotMatch(page, /LoginPanel/);
+  assert.doesNotMatch(page, /public-access-section/);
+});
+
+test("administrative access has its own route and reuses the existing login panel", async () => {
+  const accessPage = await readFile(new URL("../app/acesso-administrativo/page.tsx", import.meta.url), "utf8");
+  assert.match(accessPage, /import LoginPanel from "\.\.\/login-panel"/);
+  assert.match(accessPage, /<LoginPanel \/>/);
+  assert.match(accessPage, /href="\/"/);
 });
 
 test("registration and profile updates reject duplicate phone numbers", async () => {
