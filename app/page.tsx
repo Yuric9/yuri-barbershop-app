@@ -1,7 +1,6 @@
 import { getChatGPTUser } from "./chatgpt-auth";
 import PortalClient from "./portal-client";
 import { isAdminEmail } from "./admin-access";
-import LoginPanel from "./login-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +17,7 @@ export default async function Home() {
             <img src="/brand/yuri-barbershop-logo.png" alt="Yuri Barbershop" />
             <span>YURI BARBERSHOP</span>
           </div>
-          <a className="public-admin-link" href="#acesso-equipe">Acesso administrativo</a>
+          <a className="public-admin-link" href="/acesso-administrativo">Acesso administrativo</a>
         </header>
         <section className="public-booking-section" id="agendamento" aria-labelledby="agendamento-title">
           <div className="public-section-heading">
@@ -32,14 +31,6 @@ export default async function Home() {
             <span>Sábado: 8h às 20h30 · Domingo: 8h às 12h</span>
             <a href="/privacidade">Privacidade e proteção de dados</a>
           </div>
-        </section>
-        <section className="public-access-section" id="acesso-equipe" aria-labelledby="acesso-equipe-title">
-          <div className="public-section-heading">
-            <span className="eyebrow">ÁREA RESTRITA</span>
-            <h2 id="acesso-equipe-title">Acesso administrativo</h2>
-            <p>Entre com seu acesso cadastrado para abrir a área correspondente ao seu perfil.</p>
-          </div>
-          <LoginPanel />
         </section>
       </main>
     );
