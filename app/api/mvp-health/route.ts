@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { appointments, appointmentSlots, transactions } from "../../../db/schema";
 import { getChatGPTUser } from "../../chatgpt-auth";
