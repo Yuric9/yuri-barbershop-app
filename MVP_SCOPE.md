@@ -38,6 +38,20 @@ Cliente → serviço → data/horário → solicitação → WhatsApp → confir
 8. Ausência de dados fictícios em produção.
 9. Tratamento de erros e estados de carregamento nos fluxos críticos.
 
+## Terceira etapa — operação administrativa
+
+Validar o ciclo completo sem retrabalho:
+
+1. Solicitação aparece na Agenda como `Pendente`.
+2. Administrador confirma e o registro passa para `Confirmado`.
+3. Administrador pode cancelar e o horário reservado é liberado.
+4. Atendimento confirmado pode ser finalizado com forma de pagamento.
+5. Atendimento pago finalizado gera uma única entrada no Caixa vinculada ao agendamento.
+6. Cortesia de fidelidade não gera entrada financeira e consome o benefício correspondente.
+7. Histórico e Relatórios passam a refletir o atendimento concluído por meio dos dados do Caixa/Agenda.
+8. O endpoint administrativo `/api/mvp-health` verifica vínculos entre agendamento, slot e caixa e aponta inconsistências.
+9. Regressões do fluxo são cobertas por `tests/mvp-stage3.test.mjs`.
+
 ## Cortar do MVP / não expandir agora
 
 - Assinaturas.
