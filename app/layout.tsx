@@ -40,6 +40,7 @@ import LogoHomeEnhancer from "./logo-home-enhancer";
 import CurrentVersionEnhancer from "./current-version-enhancer";
 import ReportsV2 from "./reports-v2";
 import ProductOrdersAdmin from "./product-orders-admin";
+import MvpAdminFlowEnhancer from "./mvp-admin-flow-enhancer";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -92,6 +93,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <CurrentVersionEnhancer />
         <ReportsV2 />
         <ProductOrdersAdmin />
+        <MvpAdminFlowEnhancer />
       </body>
     </html>
   );
