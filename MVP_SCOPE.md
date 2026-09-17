@@ -47,8 +47,6 @@ Cliente → serviço → data/horário → solicitação → WhatsApp → confir
 - Dashboard excessivamente analítico.
 - Recursos duplicados ou legados que não participam do fluxo principal.
 
-Esses recursos podem permanecer no código somente quando não interferirem no MVP; caso aumentem complexidade ou gerem rotas/telas confusas, devem ser removidos em uma limpeza posterior.
-
 ## V2
 
 - Fidelidade avançada.
