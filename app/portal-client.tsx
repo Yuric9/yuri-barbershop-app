@@ -122,20 +122,23 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     [],
   );
   const adminItems = [
-    ["inicio", "Início"],
-    ["mensagens", "Caixa de entrada"],
-    ["agenda", "Agenda"],
-    ["caixa", "Caixa"],
-    ["clientes", "Clientes"],
-    ["colaboradores", "Colaboradores"],
-    ["remarketing", "Remarketing"],
-    ["servicos", "Serviços"],
-    ["produtos", "Produtos"],
-    ["relatorios", "Relatórios"],
+    ["inicio", "Início", "VISÃO GERAL"],
+    ["mensagens", "Caixa de entrada", "VISÃO GERAL"],
+    ["agenda", "Agenda", "OPERAÇÃO"],
+    ["caixa", "Caixa", "OPERAÇÃO"],
+    ["clientes", "Clientes", "GESTÃO"],
+    ["colaboradores", "Colaboradores", "GESTÃO"],
+    ["remarketing", "Remarketing", "CRESCIMENTO"],
+    ["servicos", "Serviços", "CATÁLOGO"],
+    ["produtos", "Produtos", "CATÁLOGO"],
+    ["relatorios", "Relatórios", "FINANCEIRO"],
   ];
   const barberItems = [
-    ["inicio", "Meu painel"], ["mensagens", "Caixa de entrada"], ["agenda", "Minha agenda"],
-    ["ganhos", "Meus ganhos"], ["perfil", "Meu perfil"],
+    ["inicio", "Meu painel", "VISÃO GERAL"],
+    ["mensagens", "Caixa de entrada", "VISÃO GERAL"],
+    ["agenda", "Minha agenda", "AGENDA"],
+    ["ganhos", "Meus ganhos", "FINANCEIRO"],
+    ["perfil", "Meu perfil", "CONTA"],
   ];
   const registeredClientItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
@@ -241,11 +244,15 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     <main className="app-shell">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <Brand onClick={() => demo ? window.location.assign("/") : navigate(portalRole === "client" ? "agendar" : "inicio")} />
-        <nav>
+        <nav aria-label="Navegação principal">
           {items.map(([key, label, group], index) => (
             <Fragment key={key}>
-              {portalRole === "client" && group && (index === 0 || items[index - 1]?.[2] !== group) && <small className="menu-group-label">{group}</small>}
-              <button className={section === key ? "active" : ""} onClick={() => navigate(key)}>
+              {group && (index === 0 || items[index - 1]?.[2] !== group) && <small className="menu-group-label">{group}</small>}
+              <button
+                className={section === key ? "active" : ""}
+                onClick={() => navigate(key)}
+                aria-current={section === key ? "page" : undefined}
+              >
                 <span>{icons[key] || "•"}</span>
                 {label}
                 {key === "mensagens" && unreadMessages > 0 && <b className="inbox-badge">{unreadMessages}</b>}
@@ -298,6 +305,9 @@ export default function PortalClient({ user, role, demo = false }: Props) {
           <button
             className="menu-button"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-controls="mobile-primary-navigation"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Fechar menu principal" : "Abrir menu principal"}
           >
             ☰
           </button>
