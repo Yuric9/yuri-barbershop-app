@@ -444,13 +444,15 @@ function AdminView({
         </div>
         <div className="welcome-actions">
           <button
-            className="primary-button small"
+            type="button"
+            className="primary-button small dashboard-primary-action"
             onClick={() => onNavigate("agenda")}
           >
             + Novo agendamento
           </button>
           <button
-            className="primary-button small"
+            type="button"
+            className="secondary-button small dashboard-secondary-action"
             onClick={() => onNavigate("caixa")}
           >
             + Nova movimentação
@@ -479,7 +481,7 @@ function AdminView({
               <small>AGENDA</small>
               <h3>Próximos atendimentos</h3>
             </div>
-            <button onClick={() => onNavigate("agenda")}>Ver agenda</button>
+            <button type="button" className="panel-link-button" onClick={() => onNavigate("agenda")}>Ver agenda</button>
           </div>
           {upcomingAppointments.length ? upcomingAppointments.map((item: any) => (
             <Appointment
@@ -499,12 +501,20 @@ function AdminView({
             </div>
             <b>{money(sevenDayRevenue)}</b>
           </div>
+          <p className="chart-hint">Passe o mouse ou toque em um dia para ver o valor.</p>
           <div className="bars">
             {lastSevenDays.map((day) => (
-              <div key={day.key} title={`${day.fullLabel}: ${money(day.revenue)}`}>
+              <div
+                key={day.key}
+                className="bar-item"
+                role="img"
+                tabIndex={0}
+                title={`${day.fullLabel}: ${money(day.revenue)}`}
+                aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
+                data-tooltip={`${day.fullLabel}: ${money(day.revenue)}`}
+              >
                 <span
-                  role="img"
-                  aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
+                  aria-hidden="true"
                   style={{ height: `${highestDailyRevenue ? Math.max(2, (day.revenue / highestDailyRevenue) * 100) : 2}%` }}
                 />
                 <small>{day.label}</small>
@@ -514,13 +524,13 @@ function AdminView({
         </section>
       </div>
       <div className="quick-actions">
-        <button onClick={() => onNavigate("caixa")}>
+        <button type="button" className="quick-action" onClick={() => onNavigate("caixa")}>
           ＋ Registrar despesa
         </button>
-        <button onClick={() => onNavigate("clientes")}>
+        <button type="button" className="quick-action" onClick={() => onNavigate("clientes")}>
           ♙ Cadastrar cliente
         </button>
-        <button onClick={() => onNavigate("produtos")}>
+        <button type="button" className="quick-action" onClick={() => onNavigate("produtos")}>
           ◇ Atualizar estoque
         </button>
       </div>
