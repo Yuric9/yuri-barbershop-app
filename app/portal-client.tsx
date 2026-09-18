@@ -446,6 +446,12 @@ function AdminView({
           <p>Bom trabalho, Yuri!</p>
           <h2>Resumo de hoje</h2>
         </div>
+        <button
+          className="primary-button small"
+          onClick={() => onNavigate("caixa")}
+        >
+          + Nova movimentação
+        </button>
         <div className="welcome-actions">
           <button
             type="button"
