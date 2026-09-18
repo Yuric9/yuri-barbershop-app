@@ -434,9 +434,9 @@ function AdminView({
         </div>
         <button
           className="primary-button small"
-          onClick={() => onNavigate("agenda")}
+          onClick={() => onNavigate("caixa")}
         >
-          + Novo agendamento
+          + Nova movimentação
         </button>
       </div>
       <div className="metric-grid">
