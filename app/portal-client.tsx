@@ -112,6 +112,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [liveCollaborators, setLiveCollaborators] = useState<any[]>([]);
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedChartDayKey, setSelectedChartDayKey] = useState("");
   const today = useMemo(
     () =>
       new Intl.DateTimeFormat("pt-BR", {
@@ -421,6 +422,9 @@ function AdminView({
   });
   const sevenDayRevenue = lastSevenDays.reduce((sum, day) => sum + day.revenue, 0);
   const highestDailyRevenue = Math.max(...lastSevenDays.map((day) => day.revenue), 0);
+  const selectedChartDay =
+    lastSevenDays.find((day) => day.key === selectedChartDayKey) ||
+    lastSevenDays[lastSevenDays.length - 1];
   if (section === "mensagens") return <Inbox messages={data.messages || []} clients={data.clientSummaries || []} user={user} isAdmin onRefresh={onRefresh} />;
   if (section === "crescimento") return <GrowthCenter data={data} onRefresh={onRefresh} />;
   if (section === "agenda") return <Agenda appointments={data.appointments || []} collaborators={data.collaborators || []} onRefresh={onRefresh} />;
@@ -504,23 +508,33 @@ function AdminView({
           <p className="chart-hint">Passe o mouse ou toque em um dia para ver o valor.</p>
           <div className="bars">
             {lastSevenDays.map((day) => (
-              <div
+              <button
+                type="button"
                 key={day.key}
                 className="bar-item"
-                role="img"
-                tabIndex={0}
                 title={`${day.fullLabel}: ${money(day.revenue)}`}
                 aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
+                aria-pressed={selectedChartDay?.key === day.key}
                 data-tooltip={`${day.fullLabel}: ${money(day.revenue)}`}
+                onClick={() => setSelectedChartDayKey(day.key)}
               >
                 <span
                   aria-hidden="true"
                   style={{ height: `${highestDailyRevenue ? Math.max(2, (day.revenue / highestDailyRevenue) * 100) : 2}%` }}
                 />
                 <small>{day.label}</small>
-              </div>
+              </button>
             ))}
           </div>
+          {selectedChartDay && (
+            <div className="chart-detail" role="status">
+              <div>
+                <small>DETALHE SELECIONADO</small>
+                <strong>{selectedChartDay.fullLabel}</strong>
+              </div>
+              <b>{money(selectedChartDay.revenue)}</b>
+            </div>
+          )}
         </section>
       </div>
       <div className="quick-actions">
