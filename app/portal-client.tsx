@@ -432,12 +432,20 @@ function AdminView({
           <p>Bom trabalho, Yuri!</p>
           <h2>Resumo de hoje</h2>
         </div>
-        <button
-          className="primary-button small"
-          onClick={() => onNavigate("agenda")}
-        >
-          + Novo agendamento
-        </button>
+        <div className="welcome-actions">
+          <button
+            className="primary-button small"
+            onClick={() => onNavigate("agenda")}
+          >
+            + Novo agendamento
+          </button>
+          <button
+            className="primary-button small"
+            onClick={() => onNavigate("caixa")}
+          >
+            + Nova movimentação
+          </button>
+        </div>
       </div>
       <div className="metric-grid">
         <Metric
