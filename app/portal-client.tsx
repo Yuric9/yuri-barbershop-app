@@ -112,6 +112,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   const [liveCollaborators, setLiveCollaborators] = useState<any[]>([]);
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedChartDayKey, setSelectedChartDayKey] = useState("");
   const today = useMemo(
     () =>
       new Intl.DateTimeFormat("pt-BR", {
@@ -122,20 +123,23 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     [],
   );
   const adminItems = [
-    ["inicio", "Início"],
-    ["mensagens", "Caixa de entrada"],
-    ["agenda", "Agenda"],
-    ["caixa", "Caixa"],
-    ["clientes", "Clientes"],
-    ["colaboradores", "Colaboradores"],
-    ["remarketing", "Remarketing"],
-    ["servicos", "Serviços"],
-    ["produtos", "Produtos"],
-    ["relatorios", "Relatórios"],
+    ["inicio", "Início", "VISÃO GERAL"],
+    ["mensagens", "Caixa de entrada", "VISÃO GERAL"],
+    ["agenda", "Agenda", "OPERAÇÃO"],
+    ["caixa", "Caixa", "OPERAÇÃO"],
+    ["clientes", "Clientes", "GESTÃO"],
+    ["colaboradores", "Colaboradores", "GESTÃO"],
+    ["remarketing", "Remarketing", "CRESCIMENTO"],
+    ["servicos", "Serviços", "CATÁLOGO"],
+    ["produtos", "Produtos", "CATÁLOGO"],
+    ["relatorios", "Relatórios", "FINANCEIRO"],
   ];
   const barberItems = [
-    ["inicio", "Meu painel"], ["mensagens", "Caixa de entrada"], ["agenda", "Minha agenda"],
-    ["ganhos", "Meus ganhos"], ["perfil", "Meu perfil"],
+    ["inicio", "Meu painel", "VISÃO GERAL"],
+    ["mensagens", "Caixa de entrada", "VISÃO GERAL"],
+    ["agenda", "Minha agenda", "AGENDA"],
+    ["ganhos", "Meus ganhos", "FINANCEIRO"],
+    ["perfil", "Meu perfil", "CONTA"],
   ];
   const registeredClientItems = [
     ["agendar", "Agendar", "ATENDIMENTO"],
@@ -241,11 +245,15 @@ export default function PortalClient({ user, role, demo = false }: Props) {
     <main className="app-shell">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <Brand onClick={() => demo ? window.location.assign("/") : navigate(portalRole === "client" ? "agendar" : "inicio")} />
-        <nav>
+        <nav aria-label="Navegação principal">
           {items.map(([key, label, group], index) => (
             <Fragment key={key}>
-              {portalRole === "client" && group && (index === 0 || items[index - 1]?.[2] !== group) && <small className="menu-group-label">{group}</small>}
-              <button className={section === key ? "active" : ""} onClick={() => navigate(key)}>
+              {group && (index === 0 || items[index - 1]?.[2] !== group) && <small className="menu-group-label">{group}</small>}
+              <button
+                className={section === key ? "active" : ""}
+                onClick={() => navigate(key)}
+                aria-current={section === key ? "page" : undefined}
+              >
                 <span>{icons[key] || "•"}</span>
                 {label}
                 {key === "mensagens" && unreadMessages > 0 && <b className="inbox-badge">{unreadMessages}</b>}
@@ -298,6 +306,9 @@ export default function PortalClient({ user, role, demo = false }: Props) {
           <button
             className="menu-button"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-controls="mobile-primary-navigation"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Fechar menu principal" : "Abrir menu principal"}
           >
             ☰
           </button>
@@ -411,6 +422,9 @@ function AdminView({
   });
   const sevenDayRevenue = lastSevenDays.reduce((sum, day) => sum + day.revenue, 0);
   const highestDailyRevenue = Math.max(...lastSevenDays.map((day) => day.revenue), 0);
+  const selectedChartDay =
+    lastSevenDays.find((day) => day.key === selectedChartDayKey) ||
+    lastSevenDays[lastSevenDays.length - 1];
   if (section === "mensagens") return <Inbox messages={data.messages || []} clients={data.clientSummaries || []} user={user} isAdmin onRefresh={onRefresh} />;
   if (section === "crescimento") return <GrowthCenter data={data} onRefresh={onRefresh} />;
   if (section === "agenda") return <Agenda appointments={data.appointments || []} collaborators={data.collaborators || []} onRefresh={onRefresh} />;
@@ -438,6 +452,22 @@ function AdminView({
         >
           + Nova movimentação
         </button>
+        <div className="welcome-actions">
+          <button
+            type="button"
+            className="primary-button small dashboard-primary-action"
+            onClick={() => onNavigate("agenda")}
+          >
+            + Novo agendamento
+          </button>
+          <button
+            type="button"
+            className="secondary-button small dashboard-secondary-action"
+            onClick={() => onNavigate("caixa")}
+          >
+            + Nova movimentação
+          </button>
+        </div>
       </div>
       <div className="metric-grid">
         <Metric
@@ -461,7 +491,7 @@ function AdminView({
               <small>AGENDA</small>
               <h3>Próximos atendimentos</h3>
             </div>
-            <button onClick={() => onNavigate("agenda")}>Ver agenda</button>
+            <button type="button" className="panel-link-button" onClick={() => onNavigate("agenda")}>Ver agenda</button>
           </div>
           {upcomingAppointments.length ? upcomingAppointments.map((item: any) => (
             <Appointment
@@ -481,28 +511,46 @@ function AdminView({
             </div>
             <b>{money(sevenDayRevenue)}</b>
           </div>
+          <p className="chart-hint">Passe o mouse ou toque em um dia para ver o valor.</p>
           <div className="bars">
             {lastSevenDays.map((day) => (
-              <div key={day.key} title={`${day.fullLabel}: ${money(day.revenue)}`}>
+              <button
+                type="button"
+                key={day.key}
+                className="bar-item"
+                title={`${day.fullLabel}: ${money(day.revenue)}`}
+                aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
+                aria-pressed={selectedChartDay?.key === day.key}
+                data-tooltip={`${day.fullLabel}: ${money(day.revenue)}`}
+                onClick={() => setSelectedChartDayKey(day.key)}
+              >
                 <span
-                  role="img"
-                  aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
+                  aria-hidden="true"
                   style={{ height: `${highestDailyRevenue ? Math.max(2, (day.revenue / highestDailyRevenue) * 100) : 2}%` }}
                 />
                 <small>{day.label}</small>
-              </div>
+              </button>
             ))}
           </div>
+          {selectedChartDay && (
+            <div className="chart-detail" role="status">
+              <div>
+                <small>DETALHE SELECIONADO</small>
+                <strong>{selectedChartDay.fullLabel}</strong>
+              </div>
+              <b>{money(selectedChartDay.revenue)}</b>
+            </div>
+          )}
         </section>
       </div>
       <div className="quick-actions">
-        <button onClick={() => onNavigate("caixa")}>
+        <button type="button" className="quick-action" onClick={() => onNavigate("caixa")}>
           ＋ Registrar despesa
         </button>
-        <button onClick={() => onNavigate("clientes")}>
+        <button type="button" className="quick-action" onClick={() => onNavigate("clientes")}>
           ♙ Cadastrar cliente
         </button>
-        <button onClick={() => onNavigate("produtos")}>
+        <button type="button" className="quick-action" onClick={() => onNavigate("produtos")}>
           ◇ Atualizar estoque
         </button>
       </div>
