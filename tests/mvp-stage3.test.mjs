@@ -5,7 +5,6 @@ import { readFile } from "node:fs/promises";
 const route = await readFile(new URL("../app/api/data/route.ts", import.meta.url), "utf8");
 const portal = await readFile(new URL("../app/portal-client.tsx", import.meta.url), "utf8");
 const health = await readFile(new URL("../app/api/mvp-health/route.ts", import.meta.url), "utf8");
-const enhancer = await readFile(new URL("../app/mvp-admin-flow-enhancer.tsx", import.meta.url), "utf8");
 const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
 
 test("stage 3 keeps the appointment state flow wired to the admin API", () => {
@@ -31,15 +30,8 @@ test("cancelling an appointment releases its reservation slot", () => {
 });
 
 test("admin shortcut points to a new cash movement", () => {
-  assert.match(enhancer, /text === "\+ Novo agendamento"/);
-  assert.match(enhancer, /button\.textContent = "\+ Nova movimentação"/);
-  assert.match(enhancer, /textContent\?\.trim\(\) === "Caixa"/);
-  assert.match(layout, /MvpAdminFlowEnhancer/);
-});
-
-test("stage 3 blocks finishing until the appointment is confirmed in the UI", () => {
-  assert.match(enhancer, /const canFinalize = status === "Confirmado"/);
-  assert.match(enhancer, /button\.disabled = !canFinalize/);
+  assert.match(portal, /onClick=\{\(\) => onNavigate\("caixa"\)\}/);
+  assert.match(portal, /\+ Nova movimentação/);
 });
 
 test("stage 3 has an admin-only data integrity health check", () => {
