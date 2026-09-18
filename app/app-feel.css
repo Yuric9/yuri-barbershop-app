@@ -237,9 +237,59 @@ textarea:focus {
 
 .dashboard .bar-item {
   position: relative;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   border-radius: 9px;
   outline: none;
   cursor: help;
+}
+
+.dashboard .bar-item[aria-pressed="true"] span {
+  background: var(--black);
+}
+
+.dashboard .chart-detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fcfaf6;
+}
+
+.dashboard .chart-detail div {
+  display: grid;
+  gap: 2px;
+}
+
+.dashboard .chart-detail small {
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.dashboard .chart-detail strong {
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.dashboard .chart-detail > b {
+  color: var(--green);
+  font-size: 15px;
 }
 
 .dashboard .bar-item::after {
