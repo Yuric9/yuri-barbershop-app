@@ -100,7 +100,9 @@ export default function PortalClient({ user, role, demo = false, initialSection 
   const [notice, setNotice] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [liveServices, setLiveServices] = useState(defaultServices);
-  const [liveProducts, setLiveProducts] = useState(defaultProducts);
+  const [liveProducts, setLiveProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
   const [clientProfile, setClientProfile] = useState<any>(null);
   const [clientLoyalty, setClientLoyalty] = useState<any>(null);
   const [clientAppointments, setClientAppointments] = useState<any[]>([]);
@@ -169,7 +171,8 @@ export default function PortalClient({ user, role, demo = false, initialSection 
     setNotice("");
   }
   async function loadData() {
-    if (demo) return;
+    setProductsLoading(true);
+    setProductsError("");
     return fetch("/api/data")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
@@ -182,9 +185,8 @@ export default function PortalClient({ user, role, demo = false, initialSection 
               time: `${s.durationMin} min`,
             })),
           );
-        if (data.products?.length)
-          setLiveProducts(
-            data.products.map((p: any) => ({
+        setLiveProducts(
+          (data.products || []).map((p: any) => ({
               id: p.id,
               name: p.name,
               price: p.priceCents / 100,
@@ -193,8 +195,8 @@ export default function PortalClient({ user, role, demo = false, initialSection 
               stock: p.stock,
               featured: p.featured,
               showOnLogin: p.showOnLogin,
-            })),
-          );
+          })),
+        );
         if (data.profiles?.[0]) setClientProfile(data.profiles[0]);
         setClientLoyalty(data.clientLoyalty || null);
         setClientAppointments(data.appointments || []);
@@ -204,10 +206,15 @@ export default function PortalClient({ user, role, demo = false, initialSection 
         setSubscriptionCampaigns(data.subscriptionCampaigns || []);
         setLiveMessages(data.messages || []);
         setLiveCollaborators(data.collaborators || []);
+        setProductsLoading(false);
         setGrowthData({ reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], settings: data.settings || {} });
         if (data.isAdmin || data.isBarber) setAdminData({ ...data, clientSummaries: data.clientSummaries || [], appointments: data.appointments || [], transactions: data.transactions || [], services: data.services || [], products: data.products || [], promotions: data.promotions || [], catalogItems: data.catalogItems || [], subscriptions: data.subscriptions || [], subscriptionCampaigns: data.subscriptionCampaigns || [], messages: data.messages || [], reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], marketingContacts: data.marketingContacts || [], settings: data.settings || {} });
       })
-      .catch(() => setNotice("Não foi possível carregar os dados agora."));
+      .catch(() => {
+        setProductsLoading(false);
+        setProductsError("Não foi possível carregar o catálogo agora. Tente novamente.");
+        if (!demo) setNotice("Não foi possível carregar os dados agora.");
+      });
   }
   useEffect(() => {
     loadData();
@@ -607,7 +614,7 @@ function ClientView({
       />
     );
   if (section === "produtos")
-    return <><ProductAds items={(products || []).filter((p:any)=>p.featured)}/><ProductGallery items={products || []} /></>;
+    return <><ProductAds items={(products || []).filter((p:any)=>p.featured)}/><ProductGallery items={products || []} loading={productsLoading} error={productsError} onRetry={onRefresh} /></>;
   if (section === "perfil")
     return <ClientProfile user={user} profile={profile} demo={demo} onRefresh={onRefresh} />;
   if (section === "promocoes") return <Promotions items={promotions || []} subscriptions={subscriptions || []} demo={demo} />;
@@ -761,8 +768,12 @@ function Location() {
 
 function storedImage(key?:string) { return key ? `/api/upload?key=${encodeURIComponent(key)}` : ""; }
 
-function ProductGallery({items}:any) {
-  return <section><div className="section-title"><div><small>PRODUTOS</small><h2>Produtos disponíveis</h2></div></div><div className="shop-grid">{items.length?items.map((p:any)=><article className="shop-card" key={p.id}><div className="shop-image">{p.imageKey?<img src={storedImage(p.imageKey)} alt={p.name}/>:<span>◇</span>}</div><div><small>{p.stock>0?"DISPONÍVEL":"CONSULTE O ESTOQUE"}</small><h3>{p.name}</h3><p>{p.description}</p><strong>R$ {Number(p.price).toFixed(2).replace(".",",")}</strong></div></article>):<div className="empty-promotion"><h3>Produtos em breve</h3><p>Os produtos cadastrados pela barbearia aparecerão aqui.</p></div>}</div></section>;
+function ProductGallery({items,loading=false,error="",onRetry}:any) {
+  return <section><div className="section-title"><div><small>PRODUTOS</small><h2>Produtos disponíveis</h2></div></div>
+    {loading ? <div className="shop-grid product-loading-grid" aria-label="Carregando produtos" aria-busy="true">{[1,2,3].map((item)=><div className="shop-card product-skeleton" key={item}><div className="shop-image"/><div><span/><span/><span/></div></div>)}</div>
+      : error ? <div className="product-catalog-error" role="alert"><strong>Não foi possível carregar os produtos.</strong><p>{error}</p>{onRetry&&<button className="secondary-button small" onClick={onRetry}>Tentar novamente</button>}</div>
+      : <div className="shop-grid">{items.length ? items.map((p:any)=><article className="shop-card" key={p.id}><div className={`shop-image ${p.imageKey?"":"image-error"}`}><span className="shop-image-placeholder">◇</span>{p.imageKey&&<img src={storedImage(p.imageKey)} alt={p.name} onError={(event)=>{event.currentTarget.style.display="none";event.currentTarget.parentElement?.classList.add("image-error");}}/>}</div><div><small>{p.stock>0?"DISPONÍVEL":"CONSULTE O ESTOQUE"}</small><h3>{p.name}</h3><p>{p.description}</p><strong>R$ {Number(p.price).toFixed(2).replace(".",",")}</strong></div></article>) : <div className="empty-promotion"><h3>Catálogo vazio</h3><p>Ainda não há produtos cadastrados para exibição.</p></div>}</div>}
+  </section>;
 }
 
 function ProductAds({items}:any){if(!items.length)return null;return <section className="product-ads"><small>PRODUTOS EM DESTAQUE</small><div>{items.map((p:any)=><article key={p.id}>{p.imageKey&&<img src={storedImage(p.imageKey)} alt={p.name}/>}<div><h3>{p.name}</h3><p>{p.description}</p><strong>R$ {Number(p.price).toFixed(2).replace(".",",")}</strong></div></article>)}</div></section>}
