@@ -243,7 +243,7 @@ export default function PortalClient({ user, role, demo = false }: Props) {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${portalRole === "client" ? "client-public-shell" : ""}`}>
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <Brand onClick={() => demo ? window.location.assign("/") : navigate(portalRole === "client" ? "agendar" : "inicio")} />
         <nav aria-label="Navegação principal">
@@ -892,7 +892,7 @@ function BookingChat({
         </div>
         <div className="chat-progress"><span style={{ width: step < 0 ? "0%" : `${Math.min(100, (Math.min(step, 7) + 1) * 14)}%` }} /></div>
         <div className="chat-body conversational-flow" aria-live="polite">
-          {step === -1 && <div className="chat-welcome"><div className="welcome-mark brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="Logo Yuri Barbershop" /></div><span>ATENDIMENTO ONLINE</span><h2>Bem-vindo à Yuri Barbershop</h2><p>Converse com o Assistente Yuri e envie seu pedido pronto pelo WhatsApp.</p><button className="primary-button start-chat" onClick={() => setStep(0)}>Iniciar conversa</button></div>}
+          {step === -1 && <div className="chat-welcome"><div className="welcome-mark brand-avatar"><img src="/brand/yuri-barbershop-logo.png" alt="Logo Yuri Barbershop" /></div><span>ATENDIMENTO ONLINE</span><h2>Reserve sua experiência</h2><p>Escolha seu serviço, profissional e horário. Enviaremos seu pedido pelo WhatsApp para confirmação.</p><button className="primary-button start-chat" onClick={() => setStep(0)}>Iniciar conversa</button></div>}
 
           {step >= 0 && <><BotBubble>{greeting}, {firstName}! Tudo bem? 👋</BotBubble><BotBubble>Posso te ajudar? Você quer solicitar um serviço?</BotBubble></>}
           {step === 0 && <ChatOptions>
