@@ -12,35 +12,6 @@ type Props = {
   initialSection?: string;
 };
 
-const defaultServices = [
-  { id: 1, name: "Corte", price: 30, time: "60 min" },
-  { id: 2, name: "Barba", price: 30, time: "40 min" },
-  { id: 3, name: "Corte + Barba", price: 50, time: "90 min" },
-  { id: 4, name: "Sobrancelha", price: 15, time: "15 min" },
-  { id: 5, name: "Pigmentação", price: 30, time: "30 min" },
-];
-
-const defaultProducts = [
-  {
-    id: 1,
-    name: "Pomada modeladora",
-    price: 30,
-    description: "Fixação e acabamento",
-  },
-  {
-    id: 2,
-    name: "Óleo para barba",
-    price: 35,
-    description: "Hidratação diária",
-  },
-  {
-    id: 3,
-    name: "Shampoo anticaspa",
-    price: 28,
-    description: "Limpeza e proteção",
-  },
-];
-
 const visitorPromotions = [
   { id: "visitor-promo-1", title: "Primeira visita com um cuidado especial", description: "Converse com o Yuri pelo WhatsApp e conheça as condições disponíveis para novos clientes.", validUntil: null },
   { id: "visitor-promo-2", title: "Clube Yuri: visual em dia o mês inteiro", description: "Plano individual com serviços ilimitados durante 30 dias, mediante agendamento e confirmação do pagamento.", validUntil: null },
@@ -99,7 +70,7 @@ export default function PortalClient({ user, role, demo = false, initialSection 
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [notice, setNotice] = useState("");
   const [bookingDate, setBookingDate] = useState("");
-  const [liveServices, setLiveServices] = useState(defaultServices);
+  const [liveServices, setLiveServices] = useState<any[]>([]);
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
@@ -176,39 +147,40 @@ export default function PortalClient({ user, role, demo = false, initialSection 
     return fetch("/api/data")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        if (data.services?.length)
-          setLiveServices(
-            data.services.map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              price: s.priceCents / 100,
-              time: `${s.durationMin} min`,
-            })),
-          );
-        setLiveProducts(
-          (data.products || []).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              price: p.priceCents / 100,
-              description: p.description,
-              imageKey: p.imageKey,
-              stock: p.stock,
-              featured: p.featured,
-              showOnLogin: p.showOnLogin,
+        setLiveServices(
+          (data.services || []).map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            price: s.priceCents / 100,
+            time: `${s.durationMin} min`,
           })),
         );
-        if (data.profiles?.[0]) setClientProfile(data.profiles[0]);
-        setClientLoyalty(data.clientLoyalty || null);
-        setClientAppointments(data.appointments || []);
-        setLivePromotions(data.promotions || []);
-        setLiveCatalog(data.catalogItems || []);
-        setLiveSubscriptions(data.subscriptions || []);
-        setSubscriptionCampaigns(data.subscriptionCampaigns || []);
-        setLiveMessages(data.messages || []);
+        setLiveProducts(
+          (data.products || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.priceCents / 100,
+            description: p.description,
+            imageKey: p.imageKey,
+            stock: p.stock,
+            featured: p.featured,
+            showOnLogin: p.showOnLogin,
+          })),
+        );
         setLiveCollaborators(data.collaborators || []);
         setProductsLoading(false);
-        setGrowthData({ reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], settings: data.settings || {} });
-        if (data.isAdmin || data.isBarber) setAdminData({ ...data, clientSummaries: data.clientSummaries || [], appointments: data.appointments || [], transactions: data.transactions || [], services: data.services || [], products: data.products || [], promotions: data.promotions || [], catalogItems: data.catalogItems || [], subscriptions: data.subscriptions || [], subscriptionCampaigns: data.subscriptionCampaigns || [], messages: data.messages || [], reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], marketingContacts: data.marketingContacts || [], settings: data.settings || {} });
+        if (!demo) {
+          if (data.profiles?.[0]) setClientProfile(data.profiles[0]);
+          setClientLoyalty(data.clientLoyalty || null);
+          setClientAppointments(data.appointments || []);
+          setLivePromotions(data.promotions || []);
+          setLiveCatalog(data.catalogItems || []);
+          setLiveSubscriptions(data.subscriptions || []);
+          setSubscriptionCampaigns(data.subscriptionCampaigns || []);
+          setLiveMessages(data.messages || []);
+          setGrowthData({ reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], settings: data.settings || {} });
+          if (data.isAdmin || data.isBarber) setAdminData({ ...data, clientSummaries: data.clientSummaries || [], appointments: data.appointments || [], transactions: data.transactions || [], services: data.services || [], products: data.products || [], promotions: data.promotions || [], catalogItems: data.catalogItems || [], subscriptions: data.subscriptions || [], subscriptionCampaigns: data.subscriptionCampaigns || [], messages: data.messages || [], reviews: data.reviews || [], waitlist: data.waitlist || [], scheduleBlocks: data.scheduleBlocks || [], marketingContacts: data.marketingContacts || [], settings: data.settings || {} });
+        }
       })
       .catch(() => {
         setProductsLoading(false);
