@@ -2938,3 +2938,35 @@ a {
     padding: 14px 0 0;
   }
 }
+
+
+/* Public catalog overrides the optional product enhancer without changing its behavior */
+.client-public-shell .shop-card {
+  background: #171717 !important;
+  border-color: #2a2a2a !important;
+  color: #f5f2ea !important;
+  box-shadow: 0 18px 50px rgba(0,0,0,.24) !important;
+}
+.client-public-shell .shop-image {
+  background: #0f0f0f !important;
+  border-bottom-color: #2a2a2a !important;
+}
+.client-public-shell .shop-image img {
+  object-fit: cover !important;
+  padding: 0 !important;
+}
+.client-public-shell .shop-card > div:last-child {
+  background: #171717 !important;
+}
+.client-public-shell .shop-card h3 {
+  color: #f5f2ea !important;
+}
+.client-public-shell .shop-card p {
+  color: #aaa69d !important;
+}
+.client-public-shell .shop-card strong {
+  color: #e0b44d !important;
+}
+.client-public-shell .shop-card > div:last-child > small {
+  color: #d4af37 !important;
+}
