@@ -66,10 +66,9 @@ test("public login does not expose an administrator tab", async () => {
 
 test("public home leads visitors into booking before restricted access", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /<h1 id="agendamento-title">Agende seu horário<\/h1>/);
-  assert.match(page, /className="booking-with-ads"/);
+  assert.match(page, /<h1 id="public-home-title">YURI BARBERSHOP<\/h1>/);
+  assert.match(page, /href="\/agendamentos">AGENDAR MEU HORÁRIO/);
   assert.match(page, /href="\/acesso-administrativo">Acesso administrativo/);
-  assert.match(page, /A confirmação acontece pelo WhatsApp/);
   assert.match(page, /Privacidade e proteção de dados/);
   assert.doesNotMatch(page, /LoginPanel/);
   assert.doesNotMatch(page, /public-access-section/);
