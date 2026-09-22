@@ -9,6 +9,7 @@ type Props = {
   user: { name: string; email: string };
   role: Role;
   demo?: boolean;
+  initialSection?: string;
 };
 
 const defaultServices = [
@@ -89,10 +90,10 @@ const icons: Record<string, string> = {
   perfil: "◉",
 };
 
-export default function PortalClient({ user, role, demo = false }: Props) {
+export default function PortalClient({ user, role, demo = false, initialSection }: Props) {
   const [portalRole, setPortalRole] = useState<Role>(role);
   const [section, setSection] = useState(
-    role === "admin" || role === "barber" ? "inicio" : "agendar",
+    initialSection || (role === "admin" || role === "barber" ? "inicio" : "agendar"),
   );
   const [selectedService, setSelectedService] = useState("Corte");
   const [selectedTime, setSelectedTime] = useState("18:00");
