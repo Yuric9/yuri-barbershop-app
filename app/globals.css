@@ -2754,13 +2754,13 @@ a {
 }
 
 .public-gallery-item:nth-child(1) {
-  background-image: url("https://images.unsplash.com/photo-1759134198561-e2041049419c?auto=format&fit=crop&q=82&w=1400);
+  background-image: url("https://images.unsplash.com/photo-1759134198561-e2041049419c?auto=format&fit=crop&q=82&w=1400");
 }
 .public-gallery-item:nth-child(2) {
-  background-image: url("https://images.unsplash.com/photo-1781455793310-8427c96454c7?auto=format&fit=crop&q=82&w=1000);
+  background-image: url("https://images.unsplash.com/photo-1781455793310-8427c96454c7?auto=format&fit=crop&q=82&w=1000");
 }
 .public-gallery-item:nth-child(3) {
-  background-image: url("https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=82&w=1000);
+  background-image: url("https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=82&w=1000");
 }
 
 
@@ -2875,5 +2875,66 @@ a {
   }
   .client-public-shell .shop-image {
     aspect-ratio: 16 / 10;
+  }
+}
+
+
+/* Product orders — keep the existing workflow, but match the Yuri dark/gold identity */
+.client-public-shell .product-orders-admin {
+  border-color: #2a2a2a;
+  background: #171717;
+  color: #f5f2ea;
+  box-shadow: 0 18px 50px rgba(0,0,0,.24);
+}
+.client-public-shell .product-orders-head small,
+.client-public-shell .product-orders-head p,
+.client-public-shell .product-orders-grid header small,
+.client-public-shell .product-orders-grid header span,
+.client-public-shell .product-orders-empty {
+  color: #aaa69d;
+  opacity: 1;
+}
+.client-public-shell .product-orders-head h2,
+.client-public-shell .product-orders-grid header strong {
+  color: #f5f2ea;
+}
+.client-public-shell .product-orders-head > span {
+  background: #2b2415;
+  color: #f0ca6b;
+  border: 1px solid #604a20;
+}
+.client-public-shell .product-orders-message {
+  background: #2b2415;
+  color: #f0ca6b;
+  border: 1px solid #604a20;
+}
+.client-public-shell .product-orders-grid article {
+  border-color: #2a2a2a;
+  background: #1d1d1d;
+}
+.client-public-shell .product-order-items {
+  border-top-color: #2a2a2a;
+  border-bottom-color: #2a2a2a;
+}
+.client-public-shell .product-order-items > div,
+.client-public-shell .product-order-items > div b {
+  color: #e8e4db;
+}
+.client-public-shell .product-order-actions select {
+  border-color: #3a3833;
+  background: #111;
+  color: #f5f2ea;
+}
+.client-public-shell .product-order-actions .cancel {
+  background: #2a2a2a;
+  color: #f5f2ea;
+}
+.client-public-shell .product-order-actions .finish {
+  background: #d0a343;
+  color: #12100c;
+}
+@media (max-width: 620px) {
+  .client-public-shell .product-orders-admin-mount {
+    padding: 14px 0 0;
   }
 }
