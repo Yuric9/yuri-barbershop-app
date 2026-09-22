@@ -391,7 +391,7 @@ type DashboardChartDay = {
 type AdminDashboardData = {
   transactions?: Array<{ id?: number | string; date: string; kind?: string; amountCents?: number; description?: string }>;
   appointments?: Array<{ id?: number | string; date: string; time: string; status?: string; clientName?: string; serviceName?: string; totalCents?: number }>;
-  [key: string]: unknown;
+  [key: string]: any;
 };
 
 function AdminView({
@@ -551,6 +551,12 @@ function AdminView({
               </div>
             );
           })()}
+        </section>
+      </div>
+      <div className="quick-actions" aria-label="Ações rápidas">
+        <Button type="button" variant="tertiary" className="quick-action" onClick={() => onNavigate("caixa")}>＋ Registrar despesa</Button>
+        <Button type="button" variant="tertiary" className="quick-action" onClick={() => onNavigate("clientes")}>♙ Cadastrar cliente</Button>
+        <Button type="button" variant="tertiary" className="quick-action" onClick={() => onNavigate("produtos")}>◇ Atualizar estoque</Button>
       </div>
     </div>
   );
