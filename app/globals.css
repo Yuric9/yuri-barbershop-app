@@ -776,8 +776,9 @@ a {
   background: var(--gold);
 }
 .bars small {
-  color: var(--muted);
-  font-size: 8px;
+  color: #5f5b53;
+  font-size: 11px;
+  font-weight: 700;
 }
 .quick-actions {
   display: grid;
@@ -1670,7 +1671,7 @@ a {
 .bar-item:hover,.bar-item:focus-visible,.bar-item.hovered{opacity:1;transform:translateY(-2px)}
 .bar-item.selected{opacity:1}
 .bar-item.selected>span:first-child{filter:brightness(.88);box-shadow:0 0 0 3px rgba(197,154,61,.18)}
-.bar-tooltip{position:absolute;left:50%;bottom:calc(100% + 10px);z-index:20;width:max-content;max-width:220px;padding:8px 10px;border-radius:8px;background:#201f1b;color:#fff;font-size:11px;line-height:1.3;pointer-events:none;opacity:0;transform:translate(-50%,4px);transition:opacity .16s ease,transform .16s ease;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.bars .bar-tooltip{position:absolute;left:50%;bottom:calc(100% + 10px);z-index:20;width:max-content;max-width:220px;min-width:0;min-height:0;width:max-content;padding:8px 10px;border-radius:8px;background:#201f1b;color:#fff;font-size:11px;line-height:1.3;pointer-events:none;opacity:0;transform:translate(-50%,4px);transition:opacity .16s ease,transform .16s ease;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 .bar-item:hover .bar-tooltip,.bar-item:focus-visible .bar-tooltip,.bar-item.hovered .bar-tooltip{opacity:1;transform:translate(-50%,0)}
 .chart-detail{animation:dashboard-detail-in .18s ease both}
 .chart-detail>div{display:grid;gap:3px}
