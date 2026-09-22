@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Brand from "./brand";
+import { Button } from "./ui/button";
 
 type Role = "admin" | "client" | "barber";
 type Props = {
@@ -380,6 +381,19 @@ function BarberView({ section, data, user, onRefresh }: any) {
   return <section className="dashboard"><div className="welcome-line"><div><p>Olá, {user.name.split(" ")[0]}!</p><h2>Seu resumo de hoje</h2></div></div><div className="metric-grid"><Metric label="Atendimentos hoje" value={String(todayRows.length)} hint={`${todayRows.filter((item:any)=>item.status==="Pendente").length} pendentes`} tone="gold"/><Metric label="Comissão acumulada" value={money(total)} hint="Atendimentos finalizados"/><Metric label="Próximo cliente" value={todayRows[0]?.time || "—"} hint={todayRows[0]?.clientName || "Agenda livre"}/></div><Agenda appointments={todayRows} collaborators={data.collaborators || []} onRefresh={onRefresh} barberMode /></section>;
 }
 
+type DashboardChartDay = {
+  key: string;
+  revenue: number;
+  label: string;
+  fullLabel: string;
+};
+
+type AdminDashboardData = {
+  transactions?: Array<{ id?: number | string; date: string; kind?: string; amountCents?: number; description?: string }>;
+  appointments?: Array<{ id?: number | string; date: string; time: string; status?: string; clientName?: string; serviceName?: string; totalCents?: number }>;
+  [key: string]: unknown;
+};
+
 function AdminView({
   section,
   onNavigate,
@@ -389,10 +403,12 @@ function AdminView({
 }: {
   section: string;
   onNavigate: (s: string) => void;
-  data: any;
-  user: any;
+  data: AdminDashboardData;
+  user: { name: string; email: string };
   onRefresh: () => Promise<any> | undefined;
 }) {
+  const [selectedChartDayKey, setSelectedChartDayKey] = useState("");
+  const [chartHoveredDayKey, setChartHoveredDayKey] = useState("");
   const isoToday = localDateKey();
   const month = isoToday.slice(0,7);
   const todayTransactions = (data.transactions||[]).filter((t:any)=>t.date===isoToday);
@@ -406,7 +422,7 @@ function AdminView({
     .sort((a: any, b: any) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
     .slice(0, 3);
   const todayAtNoon = new Date(`${isoToday}T12:00:00`);
-  const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
+  const lastSevenDays: DashboardChartDay[] = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(todayAtNoon);
     date.setDate(date.getDate() - (6 - index));
     const key = localDateKey(date);
@@ -447,20 +463,12 @@ function AdminView({
           <h2>Resumo de hoje</h2>
         </div>
         <div className="welcome-actions">
-          <button
-            type="button"
-            className="primary-button small dashboard-primary-action"
-            onClick={() => onNavigate("agenda")}
-          >
+          <Button type="button" variant="primary" className="dashboard-primary-action" onClick={() => onNavigate("agenda")}>
             + Novo agendamento
-          </button>
-          <button
-            type="button"
-            className="secondary-button small dashboard-secondary-action"
-            onClick={() => onNavigate("caixa")}
-          >
+          </Button>
+          <Button type="button" variant="secondary" className="dashboard-secondary-action" onClick={() => onNavigate("caixa")}>
             + Nova movimentação
-          </button>
+          </Button>
         </div>
       </div>
       <div className="metric-grid">
@@ -505,48 +513,44 @@ function AdminView({
             </div>
             <b>{money(sevenDayRevenue)}</b>
           </div>
-          <p className="chart-hint">Passe o mouse ou toque em um dia para ver o valor.</p>
-          <div className="bars">
+          <p className="chart-hint">Passe o mouse ou toque em um dia para ver o valor. Clique para detalhar.</p>
+          <div className="bars" role="group" aria-label="Faturamento dos últimos 7 dias">
             {lastSevenDays.map((day) => (
               <button
                 type="button"
                 key={day.key}
-                className="bar-item"
+                className={`bar-item ${selectedChartDayKey === day.key ? "selected" : ""} ${chartHoveredDayKey === day.key ? "hovered" : ""}`}
                 title={`${day.fullLabel}: ${money(day.revenue)}`}
                 aria-label={`${day.fullLabel}: ${money(day.revenue)}`}
-                aria-pressed={selectedChartDay?.key === day.key}
-                data-tooltip={`${day.fullLabel}: ${money(day.revenue)}`}
+                aria-pressed={selectedChartDayKey === day.key}
+                onMouseEnter={() => setChartHoveredDayKey(day.key)}
+                onMouseLeave={() => setChartHoveredDayKey("")}
+                onFocus={() => setChartHoveredDayKey(day.key)}
+                onBlur={() => setChartHoveredDayKey("")}
                 onClick={() => setSelectedChartDayKey(day.key)}
               >
-                <span
-                  aria-hidden="true"
-                  style={{ height: `${highestDailyRevenue ? Math.max(2, (day.revenue / highestDailyRevenue) * 100) : 2}%` }}
-                />
+                <span aria-hidden="true" style={{ height: `${highestDailyRevenue ? Math.max(2, (day.revenue / highestDailyRevenue) * 100) : 2}%` }} />
                 <small>{day.label}</small>
+                <span className="bar-tooltip" role="tooltip">{day.fullLabel} · {money(day.revenue)}</span>
               </button>
             ))}
           </div>
-          {selectedChartDay && (
-            <div className="chart-detail" role="status">
-              <div>
-                <small>DETALHE SELECIONADO</small>
-                <strong>{selectedChartDay.fullLabel}</strong>
+          {(() => {
+            const selected = lastSevenDays.find((day) => day.key === selectedChartDayKey);
+            if (!selected) return null;
+            const dayAppointments = (data.appointments || []).filter((item) => item.date === selected.key && item.status !== "Cancelado");
+            const dayTransactions = (data.transactions || []).filter((item) => item.date === selected.key);
+            return (
+              <div className="chart-detail" role="status" aria-live="polite">
+                <div>
+                  <small>DETALHE SELECIONADO</small>
+                  <strong>{selected.fullLabel}</strong>
+                  <span>{dayAppointments.length} atendimento{dayAppointments.length === 1 ? "" : "s"} · {dayTransactions.length} lançamento{dayTransactions.length === 1 ? "" : "s"}</span>
+                </div>
+                <b>{money(selected.revenue)}</b>
               </div>
-              <b>{money(selectedChartDay.revenue)}</b>
-            </div>
-          )}
-        </section>
-      </div>
-      <div className="quick-actions">
-        <button type="button" className="quick-action" onClick={() => onNavigate("caixa")}>
-          ＋ Registrar despesa
-        </button>
-        <button type="button" className="quick-action" onClick={() => onNavigate("clientes")}>
-          ♙ Cadastrar cliente
-        </button>
-        <button type="button" className="quick-action" onClick={() => onNavigate("produtos")}>
-          ◇ Atualizar estoque
-        </button>
+            );
+          })()}
       </div>
     </div>
   );
