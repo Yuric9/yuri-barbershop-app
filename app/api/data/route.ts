@@ -170,7 +170,21 @@ async function finalizeAppointment(db: ReturnType<typeof getDb>, appointment: ty
 
 export async function GET(request: Request) {
   const user = await getChatGPTUser();
-  if (!user) return unauthorized();
+  if (!user) {
+    const db = getDb();
+    const [serviceRows, productRows, collaboratorRows] = await Promise.all([
+      db.select().from(services).where(eq(services.active, true)),
+      db.select().from(products).where(eq(products.active, true)),
+      db.select().from(collaborators).where(eq(collaborators.active, true)).orderBy(collaborators.name),
+    ]);
+    return Response.json({
+      isAdmin: false,
+      isBarber: false,
+      services: serviceRows,
+      products: productRows,
+      collaborators: collaboratorRows.map((item) => ({ id: item.id, name: item.name, active: item.active })),
+    });
+  }
   await seedServices();
   const db = getDb();
   const isAdmin = user.role === "admin";
