@@ -10,28 +10,45 @@ export default async function Home() {
   if (!user) {
     return (
       <main className="landing-shell public-landing">
-        <div className="landing-orb orb-one" />
-        <div className="landing-orb orb-two" />
         <header className="public-header">
-          <div className="public-header-brand">
+          <a className="public-header-brand" href="/" aria-label="Yuri Barbershop — início">
             <img src="/brand/yuri-barbershop-logo.png" alt="Yuri Barbershop" />
-            <span>YURI BARBERSHOP</span>
-          </div>
-          <a className="public-admin-link" href="/acesso-administrativo">Acesso administrativo</a>
+          </a>
+          <a className="public-admin-link" href="/acesso-administrativo">
+            Acesso administrativo
+          </a>
         </header>
-        <section className="public-booking-section" id="agendamento" aria-labelledby="agendamento-title">
-          <div className="public-section-heading">
-            <span className="eyebrow">ATENDIMENTO ONLINE</span>
-            <h1 id="agendamento-title">Agende seu horário</h1>
-            <p>Escolha seu serviço e envie a solicitação. A confirmação acontece pelo WhatsApp.</p>
-          </div>
-          <div className="booking-with-ads" />
-          <div className="public-booking-meta">
-            <span>Segunda a sexta: 18h às 20h30</span>
-            <span>Sábado: 8h às 20h30 · Domingo: 8h às 12h</span>
-            <a href="/privacidade">Privacidade e proteção de dados</a>
+
+        <section className="public-home-hero" aria-labelledby="public-home-title">
+          <span className="public-home-eyebrow">BEM-VINDO À</span>
+          <h1 id="public-home-title">YURI <strong>BARBERSHOP</strong></h1>
+
+          <div className="public-home-actions" aria-label="Escolha uma opção">
+            <a className="public-home-action" href="/agendamentos">
+              <span className="public-home-action-icon" aria-hidden="true">◫</span>
+              <span className="public-home-action-copy">
+                <strong>Agendamentos</strong>
+                <small>Escolha seu serviço e horário</small>
+              </span>
+              <span className="public-home-action-arrow" aria-hidden="true">→</span>
+            </a>
+
+            <a className="public-home-action" href="/produtos">
+              <span className="public-home-action-icon" aria-hidden="true">◇</span>
+              <span className="public-home-action-copy">
+                <strong>Produtos</strong>
+                <small>Conheça nossos produtos</small>
+              </span>
+              <span className="public-home-action-arrow" aria-hidden="true">→</span>
+            </a>
           </div>
         </section>
+
+        <footer className="public-home-footer">
+          <span>Segunda a sexta: 18h às 20h30</span>
+          <span>Sábado: 8h às 20h30 · Domingo: 8h às 12h</span>
+          <a href="/privacidade">Privacidade e proteção de dados</a>
+        </footer>
       </main>
     );
   }
