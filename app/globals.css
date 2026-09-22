@@ -1678,3 +1678,293 @@ a {
 .chart-detail>div>span{color:var(--muted);font-size:12px}
 @keyframes dashboard-detail-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media (max-width:760px){.welcome-actions{width:100%;display:grid;grid-template-columns:1fr;gap:8px}.dashboard-primary-action,.dashboard-secondary-action{width:100%;min-width:0}.quick-actions{grid-template-columns:1fr;gap:10px}.bar-tooltip{display:none}}
+
+/* Public client booking — premium dark design system */
+:root {
+  --client-bg: #0d0d0d;
+  --client-surface: #171717;
+  --client-card: #1e1e1e;
+  --client-border: #2a2a2a;
+  --client-text: #f5f2ea;
+  --client-muted: #aaa69d;
+  --client-gold: #d4af37;
+  --client-gold-dark: #c59b27;
+}
+.client-public-shell {
+  min-height: 100svh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(212,175,55,.10), transparent 28%),
+    radial-gradient(circle at 8% 85%, rgba(212,175,55,.055), transparent 24%),
+    var(--client-bg);
+  color: var(--client-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.client-public-shell .sidebar {
+  background: rgba(13,13,13,.96);
+  border-right: 1px solid var(--client-border);
+}
+.client-public-shell .sidebar nav button,
+.client-public-shell .sidebar-social a {
+  color: #bdb9b0;
+}
+.client-public-shell .sidebar nav button:hover,
+.client-public-shell .sidebar nav button.active,
+.client-public-shell .sidebar-social a:hover {
+  background: #1b1b1b;
+  color: #fff;
+}
+.client-public-shell .sidebar nav button span,
+.client-public-shell .sidebar-social svg,
+.client-public-shell .sidebar-social .google-business-icon {
+  color: var(--client-gold);
+}
+.client-public-shell .sidebar-user {
+  border-top-color: var(--client-border);
+}
+.client-public-shell .sidebar-user strong { color: #fff; }
+.client-public-shell .sidebar-user small,
+.client-public-shell .user-email { color: #8f8b83; }
+
+.client-public-shell .app-content {
+  min-width: 0;
+  padding: 0 clamp(16px, 4vw, 56px) 48px;
+}
+.client-public-shell .app-header {
+  max-width: 1180px;
+  margin: 0 auto;
+  border-bottom-color: var(--client-border);
+}
+.client-public-shell .app-header small { color: #8f8b83; }
+.client-public-shell .app-header h1 {
+  color: #fff;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+.client-public-shell .icon-button,
+.client-public-shell .menu-button {
+  border-color: var(--client-border);
+  background: #181818;
+  color: #fff;
+}
+.client-public-shell .demo-badge {
+  background: rgba(212,175,55,.12);
+  color: #e8c967;
+  border: 1px solid rgba(212,175,55,.28);
+}
+.client-public-shell .app-content > section {
+  max-width: 1180px;
+  margin: 34px auto 0;
+}
+
+/* Booking panel */
+.client-public-shell .booking-with-ads {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 250px);
+  gap: clamp(16px, 2.5vw, 28px);
+  align-items: start;
+  width: 100%;
+  margin: 0;
+}
+.client-public-shell .chat-booking {
+  max-width: none !important;
+  background: rgba(23,23,23,.92);
+  border: 1px solid var(--client-border);
+  border-radius: 22px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.34);
+}
+.client-public-shell .chat-top {
+  height: 76px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg,#181818,#111);
+  border-bottom: 1px solid var(--client-border);
+}
+.client-public-shell .chat-top strong {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+.client-public-shell .chat-progress { background: #242424; }
+.client-public-shell .chat-progress span { background: linear-gradient(90deg,var(--client-gold-dark),var(--client-gold)); }
+.client-public-shell .chat-body {
+  min-height: 560px;
+  padding: clamp(22px,4vw,42px);
+  background:
+    radial-gradient(circle at 75% 0%, rgba(212,175,55,.08), transparent 28%),
+    #141414;
+}
+.client-public-shell .chat-welcome {
+  min-height: 500px;
+  padding: 42px 20px;
+}
+.client-public-shell .welcome-mark {
+  width: 84px;
+  height: 84px;
+  margin-bottom: 22px;
+  border-color: rgba(212,175,55,.7);
+  background: #101010;
+  box-shadow: 0 16px 45px rgba(0,0,0,.35);
+}
+.client-public-shell .chat-welcome > span {
+  color: var(--client-gold);
+  font-size: 10px;
+  letter-spacing: .18em;
+}
+.client-public-shell .chat-welcome h2 {
+  margin: 12px 0 10px;
+  max-width: 680px;
+  color: #fff;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(30px,5vw,52px);
+  font-weight: 850;
+  letter-spacing: -.045em;
+  line-height: 1.03;
+}
+.client-public-shell .chat-welcome h2::first-letter { color: #fff; }
+.client-public-shell .chat-welcome p {
+  max-width: 540px;
+  color: #aaa69d;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.client-public-shell .start-chat,
+.client-public-shell .primary-button {
+  min-height: 48px;
+  border-radius: 8px;
+  background: var(--client-gold);
+  color: #15120b;
+  box-shadow: 0 4px 15px rgba(197,155,39,.2);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.client-public-shell .start-chat:hover,
+.client-public-shell .primary-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 8px 24px rgba(197,155,39,.24);
+}
+.client-public-shell .start-chat:active,
+.client-public-shell .primary-button:active { transform: scale(.98); }
+
+.client-public-shell .chat-options {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  margin: 8px 0 12px 35px;
+}
+.client-public-shell .chat-choice {
+  min-height: 76px;
+  padding: 13px 14px;
+  border: 1px solid var(--client-border);
+  border-radius: 14px;
+  background: linear-gradient(145deg,#202020,#191919);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+.client-public-shell .chat-choice:hover,
+.client-public-shell .chat-choice:focus-visible {
+  border-color: rgba(212,175,55,.72);
+  background: linear-gradient(145deg,#25251f,#1b1b19);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(212,175,55,.10);
+}
+.client-public-shell .chat-choice > span {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(212,175,55,.12);
+  color: var(--client-gold);
+}
+.client-public-shell .chat-choice strong { color: #fff; font-size: 13px; }
+.client-public-shell .chat-choice small { color: #9d9991; font-size: 11px; line-height: 1.35; }
+.client-public-shell .chat-choice > b { color: var(--client-gold); }
+.client-public-shell .bot-bubble {
+  background: #202020;
+  border: 1px solid var(--client-border);
+  color: #e9e6df;
+}
+.client-public-shell .user-bubble {
+  background: #2a2415;
+  border: 1px solid rgba(212,175,55,.25);
+}
+.client-public-shell .chat-date,
+.client-public-shell .client-register,
+.client-public-shell .booking-summary {
+  background: #1c1c1c;
+  border-color: var(--client-border);
+  color: #f2efe8;
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+}
+.client-public-shell .chat-date label,
+.client-public-shell .client-register label { color: #aaa69d; }
+.client-public-shell .chat-date input,
+.client-public-shell .client-register input,
+.client-public-shell .client-register select,
+.client-public-shell .client-register textarea {
+  background: #111;
+  color: #fff;
+  border-color: #333;
+}
+.client-public-shell .date-continue {
+  min-height: 48px;
+  border-radius: 8px;
+  background: var(--client-gold);
+  color: #15120b;
+}
+.client-public-shell .chat-times button {
+  min-height: 48px;
+  border-color: #333;
+  background: #1d1d1d;
+  color: #fff;
+}
+.client-public-shell .chat-times button:hover {
+  background: var(--client-gold);
+  border-color: var(--client-gold);
+  color: #15120b;
+}
+.client-public-shell .story-ad {
+  width: 100%;
+  max-width: 250px;
+  border: 1px solid var(--client-border);
+  border-radius: 18px;
+  box-shadow: 0 24px 55px rgba(0,0,0,.35);
+}
+
+/* Public shell footer/meta and accessibility */
+.client-public-shell :focus-visible {
+  outline: 3px solid rgba(212,175,55,.62);
+  outline-offset: 3px;
+}
+.client-public-shell a { color: inherit; }
+.client-public-shell .section-description { color: #aaa69d; }
+@media (max-width: 900px) {
+  .client-public-shell .booking-with-ads { grid-template-columns: 1fr; }
+  .client-public-shell .story-ad { position: relative; top: auto; max-width: 100%; width: 100%; aspect-ratio: 16 / 7; }
+}
+@media (max-width: 720px) {
+  .client-public-shell .app-content { padding: 0 14px 28px; }
+  .client-public-shell .app-header { height: 76px; gap: 10px; }
+  .client-public-shell .app-header h1 { font-size: 24px; }
+  .client-public-shell .app-content > section { margin-top: 20px; }
+  .client-public-shell .chat-body { min-height: 0; padding: 20px 14px 28px; }
+  .client-public-shell .chat-welcome { min-height: 430px; padding: 32px 8px; }
+  .client-public-shell .chat-welcome h2 { font-size: clamp(30px,10vw,42px); }
+  .client-public-shell .chat-options { grid-template-columns: 1fr; margin-left: 0; }
+  .client-public-shell .chat-choice { min-height: 82px; }
+  .client-public-shell .bubble-row { max-width: 100%; }
+  .client-public-shell .user-bubble { max-width: 90%; }
+  .client-public-shell .chat-date,
+  .client-public-shell .client-register,
+  .client-public-shell .booking-summary,
+  .client-public-shell .chat-times { margin-left: 0; max-width: none; }
+  .client-public-shell .chat-times { grid-template-columns: repeat(2,1fr); }
+  .client-public-shell .story-ad { aspect-ratio: 16 / 9; }
+}
+@media (max-width: 520px) {
+  .client-public-shell .sidebar { width: min(88vw,320px); }
+  .client-public-shell .header-actions .demo-badge { display: none; }
+  .client-public-shell .chat-top { padding: 12px 14px; }
+  .client-public-shell .chat-top > span { display: none; }
+  .client-public-shell .chat-welcome h2 { font-size: 34px; }
+  .client-public-shell .start-chat { width: 100%; max-width: 320px; }
+}
