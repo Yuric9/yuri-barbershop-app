@@ -93,7 +93,6 @@ export default async function Home() {
                 key={item.image}
                 role="img"
                 aria-label={item.alt}
-                style={{ backgroundImage: `url("${item.image}")` }}
               />
             ))}
           </div>
