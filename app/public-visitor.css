@@ -1,0 +1,523 @@
+/* Páginas públicas de Agendamento e Produtos — shell enxuto, sem chrome de painel admin */
+
+.visitor-shell {
+  min-height: 100dvh;
+  background: var(--yuri-black);
+  color: var(--yuri-cream);
+  display: flex;
+  flex-direction: column;
+}
+
+.visitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid color-mix(in srgb, var(--yuri-gold) 18%, transparent);
+  flex-wrap: wrap;
+}
+
+.visitor-brand img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.visitor-nav {
+  display: flex;
+  gap: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.visitor-nav a {
+  color: var(--yuri-cream);
+  opacity: 0.72;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+}
+
+.visitor-nav a.active,
+.visitor-nav a:hover {
+  opacity: 1;
+  border-bottom-color: var(--yuri-gold);
+}
+
+.visitor-contacts {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.visitor-contacts a {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--yuri-gold) 30%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--yuri-gold-soft);
+}
+
+.visitor-contacts svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.visitor-google-icon {
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.visitor-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4) var(--space-10);
+}
+
+.visitor-section {
+  width: 100%;
+  max-width: 620px;
+}
+
+.visitor-section-heading {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.visitor-section-heading span {
+  color: var(--yuri-gold);
+  letter-spacing: 0.12em;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+.visitor-section-heading h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  margin: var(--space-2) 0;
+}
+
+.visitor-section-heading p {
+  color: color-mix(in srgb, var(--yuri-cream) 70%, transparent);
+  font-size: var(--text-sm);
+}
+
+.visitor-error {
+  text-align: center;
+  color: var(--yuri-cream);
+  opacity: 0.8;
+}
+
+/* Chat de agendamento */
+
+.visitor-chat {
+  background: var(--yuri-surface-dark);
+  border: 1px solid color-mix(in srgb, var(--yuri-gold) 16%, transparent);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-elevated);
+}
+
+.visitor-chat-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid color-mix(in srgb, var(--yuri-gold) 14%, transparent);
+}
+
+.visitor-chat-top img {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+
+.visitor-chat-top strong {
+  display: block;
+  font-size: var(--text-md);
+}
+
+.visitor-chat-top small {
+  color: color-mix(in srgb, var(--yuri-cream) 60%, transparent);
+  font-size: var(--text-xs);
+}
+
+.visitor-chat-progress {
+  height: 3px;
+  background: color-mix(in srgb, var(--yuri-cream) 10%, transparent);
+}
+
+.visitor-chat-progress span {
+  display: block;
+  height: 100%;
+  background: var(--yuri-gold);
+  transition: width var(--motion-normal) ease;
+}
+
+.visitor-chat-body {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.visitor-chat-welcome {
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+}
+
+.visitor-chat-welcome img {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-pill);
+  margin-bottom: var(--space-4);
+}
+
+.visitor-chat-welcome span {
+  color: var(--yuri-gold);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.visitor-chat-welcome h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  margin: var(--space-2) 0;
+}
+
+.visitor-chat-welcome p {
+  color: color-mix(in srgb, var(--yuri-cream) 70%, transparent);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-5);
+}
+
+.visitor-bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.visitor-tiny-bot {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--yuri-gold);
+  color: var(--yuri-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.visitor-bubble {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  line-height: var(--line-body);
+  max-width: 86%;
+}
+
+.visitor-bot-bubble {
+  background: color-mix(in srgb, var(--yuri-cream) 8%, transparent);
+}
+
+.visitor-user-bubble {
+  background: var(--yuri-gold);
+  color: var(--yuri-black);
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.visitor-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.visitor-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--yuri-gold) 20%, transparent);
+  background: transparent;
+  color: var(--yuri-cream);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  min-height: var(--touch-min);
+}
+
+.visitor-choice:hover {
+  border-color: var(--yuri-gold);
+}
+
+.visitor-choice > span:first-child {
+  color: var(--yuri-gold);
+}
+
+.visitor-choice div {
+  flex: 1;
+}
+
+.visitor-choice strong {
+  display: block;
+  font-size: var(--text-sm);
+}
+
+.visitor-choice small {
+  color: color-mix(in srgb, var(--yuri-cream) 60%, transparent);
+  font-size: var(--text-xs);
+}
+
+.visitor-date-picker,
+.visitor-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.visitor-date-picker input,
+.visitor-form input {
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--yuri-gold) 24%, transparent);
+  background: color-mix(in srgb, var(--yuri-cream) 6%, transparent);
+  color: var(--yuri-cream);
+  font-size: var(--text-sm);
+}
+
+.visitor-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: color-mix(in srgb, var(--yuri-cream) 70%, transparent);
+}
+
+.visitor-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--space-2);
+}
+
+.visitor-time-grid button {
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--yuri-gold) 24%, transparent);
+  background: transparent;
+  color: var(--yuri-cream);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.visitor-time-grid button:hover {
+  border-color: var(--yuri-gold);
+}
+
+.visitor-form-error {
+  color: var(--yuri-danger);
+  font-size: var(--text-xs);
+}
+
+.visitor-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: color-mix(in srgb, var(--yuri-cream) 6%, transparent);
+  border-radius: var(--radius-control);
+  padding: var(--space-4);
+}
+
+.visitor-summary span {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  color: color-mix(in srgb, var(--yuri-cream) 70%, transparent);
+}
+
+.visitor-summary-total strong {
+  color: var(--yuri-gold);
+}
+
+.visitor-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.visitor-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--yuri-gold);
+  color: var(--yuri-black);
+  font-weight: 600;
+  font-size: var(--text-button);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  min-height: var(--touch-min);
+}
+
+.visitor-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.visitor-success {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+}
+
+.visitor-success b {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background: var(--yuri-success);
+  color: var(--yuri-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.visitor-success a {
+  color: var(--yuri-gold);
+}
+
+.visitor-link-button {
+  background: none;
+  border: none;
+  color: color-mix(in srgb, var(--yuri-cream) 60%, transparent);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: var(--text-xs);
+}
+
+/* Galeria de produtos */
+
+.visitor-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.visitor-product-card {
+  background: var(--yuri-surface-dark);
+  border: 1px solid color-mix(in srgb, var(--yuri-gold) 16%, transparent);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.visitor-product-image {
+  aspect-ratio: 1 / 1;
+  background: color-mix(in srgb, var(--yuri-cream) 6%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--yuri-gold);
+  font-size: var(--text-h3);
+}
+
+.visitor-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.visitor-product-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.visitor-product-body small {
+  color: var(--yuri-gold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.visitor-product-body h3 {
+  font-size: var(--text-md);
+  margin: 0;
+}
+
+.visitor-product-body p {
+  font-size: var(--text-xs);
+  color: color-mix(in srgb, var(--yuri-cream) 65%, transparent);
+  margin: 0;
+}
+
+.visitor-product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+}
+
+.visitor-product-footer strong {
+  color: var(--yuri-gold);
+}
+
+.visitor-product-footer a {
+  font-size: var(--text-xs);
+  color: var(--yuri-black);
+  background: var(--yuri-gold);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.visitor-empty {
+  text-align: center;
+  color: color-mix(in srgb, var(--yuri-cream) 65%, transparent);
+  padding: var(--space-8) 0;
+}
+
+/* Estados de carregamento */
+
+.visitor-skeleton .visitor-skeleton-line,
+.visitor-skeleton-chat .visitor-skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--yuri-cream) 10%, transparent);
+  margin-top: var(--space-2);
+}
+
+.visitor-skeleton-line.short {
+  width: 60%;
+}
+
+@media (max-width: 640px) {
+  .visitor-header {
+    padding: var(--space-3) var(--space-4);
+  }
+  .visitor-content {
+    padding: var(--space-4) var(--space-3) var(--space-8);
+  }
+}

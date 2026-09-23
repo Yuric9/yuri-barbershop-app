@@ -23,6 +23,7 @@ import "./reports-v2.css";
 import "./booking-v3.css";
 import "./booking-v3-contrast.css";
 import "./product-orders-admin.css";
+import "./public-visitor.css";
 import BookingDateGuard from "./booking-date-guard";
 import BookingErrorBoundary from "./booking-error-boundary";
 import BookingV3 from "./booking-v3";

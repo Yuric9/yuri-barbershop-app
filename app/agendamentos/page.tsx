@@ -1,14 +1,7 @@
-import PortalClient from "../portal-client";
+import PublicVisitorShell from "../public-visitor-shell";
 
 export const dynamic = "force-dynamic";
 
 export default function AgendamentosPage() {
-  return (
-    <PortalClient
-      user={{ name: "Visitante", email: "" }}
-      role="client"
-      demo
-      initialSection="agendar"
-    />
-  );
+  return <PublicVisitorShell section="agendar" />;
 }
