@@ -3184,3 +3184,12 @@ body { overflow-x: hidden; }
   .mobile-card-table td { grid-template-columns: 1fr; gap: 4px; }
   .mobile-card-table td::before { font-size: 9px; }
 }
+
+
+@media (max-width: 720px) {
+  /* Registry tables use their own data labels so no horizontal scrolling is needed. */
+  .registry-table td::before { content: attr(data-label); }
+  .registry-table td { grid-template-columns: minmax(105px, 38%) minmax(0, 1fr); }
+  .registry-table td > * { min-width: 0; overflow-wrap: anywhere; }
+  .registry-table td { overflow-wrap: anywhere; }
+}
