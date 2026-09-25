@@ -3133,3 +3133,54 @@ body { overflow-x: hidden; }
   .chat-top strong { font-size: 15px; }
   .chat-body { padding-left: 10px; padding-right: 10px; }
 }
+
+
+/* Mobile data tables: turn wide desktop rows into readable stacked cards. */
+@media (max-width: 720px) {
+  .mobile-card-table { overflow: visible; border: 0; background: transparent; }
+  .mobile-card-table table { display: block; width: 100%; min-width: 0; }
+  .mobile-card-table thead { display: none; }
+  .mobile-card-table tbody, .mobile-card-table tr { display: block; width: 100%; }
+  .mobile-card-table tr {
+    margin-bottom: 12px; padding: 14px 15px; border: 1px solid var(--line);
+    border-radius: 14px; background: white; box-shadow: 0 4px 16px #2923180a;
+  }
+  .mobile-card-table td {
+    display: grid; grid-template-columns: minmax(105px,38%) minmax(0,1fr);
+    gap: 10px; width: 100%; padding: 9px 0; border-bottom: 1px solid #eee9df;
+    font-size: 14px; overflow-wrap: anywhere;
+  }
+  .mobile-card-table td:last-child { border-bottom: 0; }
+  .mobile-card-table td::before {
+    color: var(--muted); font-size: 10px; font-weight: 900;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .client-list-table td:nth-child(1)::before { content: "Cliente"; }
+  .client-list-table td:nth-child(2)::before { content: "Assinatura"; }
+  .client-list-table td:nth-child(3)::before { content: "Telefone"; }
+  .client-list-table td:nth-child(4)::before { content: "Aniversário"; }
+  .client-list-table td:nth-child(5)::before { content: "Último atendimento"; }
+  .client-list-table td:nth-child(6)::before { content: "Serviço"; }
+  .client-list-table td:nth-child(7)::before { content: "Atendimentos"; }
+  .client-list-table td:nth-child(8)::before { content: "Total"; }
+  .client-list-table td:nth-child(9)::before { content: "Ação"; }
+  .annual-summary-table td:nth-child(1)::before { content: "Mês"; }
+  .annual-summary-table td:nth-child(2)::before { content: "Faturamento"; }
+  .annual-summary-table td:nth-child(3)::before { content: "Despesas"; }
+  .annual-summary-table td:nth-child(4)::before { content: "Saldo"; }
+  .annual-summary-table td:nth-child(5)::before { content: "Agendamentos"; }
+  .annual-summary-table td:nth-child(6)::before { content: "Atendimentos estimados"; }
+  .report-table td:nth-child(1)::before { content: "Data"; }
+  .report-table td:nth-child(2)::before { content: "Descrição"; }
+  .report-table td:nth-child(3)::before { content: "Tipo"; }
+  .report-table td:nth-child(4)::before { content: "Valor"; }
+  .mobile-card-table .empty-table { display: block; padding: 25px 8px !important; }
+  .mobile-card-table .empty-table::before { content: none; }
+  .mobile-card-table .client-subscription-badge { justify-self: start; }
+  .mobile-card-table .secondary-button.small { width: 100%; min-height: 44px; }
+  .mobile-card-table .estimation-note { white-space: normal; }
+}
+@media (max-width: 380px) {
+  .mobile-card-table td { grid-template-columns: 1fr; gap: 4px; }
+  .mobile-card-table td::before { font-size: 9px; }
+}
