@@ -3286,3 +3286,80 @@ body { overflow-x: hidden; }
     text-align: left;
   }
 }
+
+
+/* Reports: keep the rendered mobile layout stable after client hydration/data refresh. */
+.reports-page,
+.reports-page > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.reports-page .section-title,
+.reports-page .report-actions,
+.reports-page .report-filters,
+.reports-page .report-estimator,
+.reports-page .report-chart-head {
+  min-width: 0;
+}
+.reports-page .report-estimator select,
+.reports-page .report-filters select {
+  max-width: 100%;
+}
+.reports-page .monthly-bars {
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .reports-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  .reports-page .section-title,
+  .reports-page .section-title > div,
+  .reports-page .report-actions,
+  .reports-page .report-filters,
+  .reports-page .report-estimator,
+  .reports-page .report-bars,
+  .reports-page .annual-summary-table,
+  .reports-page .report-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .reports-page .report-table table,
+  .reports-page .annual-summary-table table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+  .reports-page .report-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .reports-page .report-filters {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+  .reports-page .report-filters label,
+  .reports-page .report-filters select,
+  .reports-page .report-estimator label,
+  .reports-page .report-estimator select {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .reports-page .monthly-bars {
+    width: 100% !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+  }
+}
+@media (max-width: 380px) {
+  .reports-page .report-filters {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .reports-page .monthly-bars {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
