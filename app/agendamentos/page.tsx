@@ -1,7 +1,7 @@
-import PublicVisitorShell from "../public-visitor-shell";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default function AgendamentosPage() {
-  return <PublicVisitorShell section="agendar" />;
+  redirect("/acesso-administrativo");
 }
