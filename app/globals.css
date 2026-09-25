@@ -3209,3 +3209,80 @@ body { overflow-x: hidden; }
   .monthly-bars { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
   .monthly-bars button { min-height: 105px; }
 }
+
+
+/* Critical mobile fix: prevent the CSS grid's second column from using
+   content min-width as its track size. This was causing the Reports page
+   to occupy only part of the viewport while its content overflowed right. */
+.app-shell {
+  grid-template-columns: 250px minmax(0, 1fr);
+}
+.app-content,
+.app-content > section,
+.dashboard {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+.app-content > section,
+.dashboard {
+  overflow-wrap: anywhere;
+}
+.section-title,
+.welcome-line,
+.panel-head,
+.report-actions,
+.report-filters,
+.report-estimator,
+.report-chart-head {
+  min-width: 0;
+}
+.section-title > div,
+.report-actions > div,
+.report-filters > label {
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
+  .section-title > div { max-width: 100%; }
+  .report-actions { width: 100%; max-width: 100%; }
+  .report-actions > .primary-button { max-width: 100%; }
+}
+@media (max-width: 720px) {
+  .section-title > div { width: 100%; }
+  .section-title .section-description {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .report-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+  .report-actions .report-filters {
+    width: 100%;
+    max-width: 100%;
+  }
+  .report-actions .primary-button {
+    width: 100%;
+    min-width: 0;
+  }
+  .report-estimator {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .report-estimator label,
+  .report-estimator select {
+    min-width: 0;
+    width: 100%;
+  }
+  .report-chart-head {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .report-chart-head > div:last-child {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
