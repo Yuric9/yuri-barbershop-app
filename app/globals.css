@@ -3058,7 +3058,7 @@ body { overflow-x: hidden; }
   .appointment > :nth-child(4),
   .appointment > :nth-child(5) { grid-column: 3; justify-self: start; }
   .feature-tabs,
-  .remarketing-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .remarketing-tabs { overflow: visible; flex-wrap: wrap; padding-bottom: 4px; }
   .feature-tabs button,
   .remarketing-tabs button { flex: 0 0 auto; min-height: 44px; }
   .loyalty-card { padding: 26px 20px; }
@@ -3192,4 +3192,20 @@ body { overflow-x: hidden; }
   .registry-table td { grid-template-columns: minmax(105px, 38%) minmax(0, 1fr); }
   .registry-table td > * { min-width: 0; overflow-wrap: anywhere; }
   .registry-table td { overflow-wrap: anywhere; }
+}
+
+
+@media (max-width: 720px) {
+  /* The annual chart must fit the viewport; do not create a horizontal page/chart scrollbar. */
+  .monthly-bars {
+    height: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+    padding: 18px 0 4px;
+  }
+  .monthly-bars button { min-width: 0; min-height: 120px; }
+}
+@media (max-width: 380px) {
+  .monthly-bars { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .monthly-bars button { min-height: 105px; }
 }
