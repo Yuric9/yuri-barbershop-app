@@ -12,14 +12,14 @@ export default function AdministrativeAccessPage() {
           <span>YURI BARBERSHOP</span>
         </div>
         <Link className="public-admin-link" href="/">
-          Voltar ao agendamento
+          Voltar
         </Link>
       </header>
       <section className="public-access-section" aria-labelledby="acesso-administrativo-title">
         <div className="public-section-heading">
-          <span className="eyebrow">ÁREA RESTRITA</span>
+          <span className="eyebrow">SISTEMA PRIVADO</span>
           <h1 id="acesso-administrativo-title">Acesso administrativo</h1>
-          <p>Entre com seu acesso cadastrado para abrir a área correspondente ao seu perfil.</p>
+          <p>Entre com suas credenciais para abrir o painel de gestão.</p>
         </div>
         <LoginPanel />
       </section>
