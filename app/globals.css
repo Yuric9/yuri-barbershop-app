@@ -2970,3 +2970,166 @@ a {
 .client-public-shell .shop-card > div:last-child > small {
   color: #d4af37 !important;
 }
+
+
+/* Responsive hardening — mobile/tablet/desktop */
+html { overflow-x: hidden; }
+body { overflow-x: hidden; }
+.app-shell { min-width: 0; }
+.app-content { min-width: 0; overflow-x: clip; }
+.app-content > section,
+.dashboard { width: 100%; min-width: 0; }
+.section-title { gap: 16px; }
+.section-title > * { min-width: 0; }
+.table-card { min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-card table { width: 100%; min-width: 680px; }
+.inbox-layout { min-width: 0; }
+.message-list,
+.message-reader { min-width: 0; }
+.message-reader { overflow-wrap: anywhere; }
+.panel,
+.form-panel,
+.table-card { max-width: 100%; }
+.form-panel input,
+.form-panel select,
+.form-panel textarea,
+.panel input,
+.panel select,
+.panel textarea { max-width: 100%; }
+.history-entry,
+.cash-form,
+.cash-client-form,
+.catalog-form,
+.promotion-form,
+.catalog-upload-form,
+.client-quick-form { min-width: 0; }
+.history-entry > *,
+.cash-form > *,
+.cash-client-form > *,
+.catalog-form > *,
+.promotion-form > *,
+.catalog-upload-form > *,
+.client-quick-form > * { min-width: 0; }
+.appointment > * { min-width: 0; }
+.appointment strong,
+.appointment span,
+.appointment small { overflow-wrap: anywhere; }
+
+@media (max-width: 980px) {
+  .app-content { padding-left: 18px; padding-right: 18px; }
+  .dashboard,
+  .app-content > section { margin-top: 22px; margin-bottom: 22px; }
+  .section-title { align-items: flex-start; flex-wrap: wrap; }
+  .section-title > .report-actions,
+  .section-title > .header-actions { width: 100%; }
+  .content-grid,
+  .growth-grid,
+  .inbox-layout { grid-template-columns: 1fr; }
+  .message-list { border-right: 0; border-bottom: 1px solid var(--line); max-height: 320px; overflow-y: auto; }
+  .message-reader { min-height: 360px; }
+  .google-review-promo { grid-template-columns: 90px minmax(0,1fr); gap: 20px; padding: 24px; }
+  .google-review-promo .google-review-button { grid-column: 1 / -1; min-height: 64px; }
+  .google-promo-brand { padding-right: 20px; }
+}
+
+@media (max-width: 720px) {
+  .app-content { padding: 0 14px 32px; }
+  .app-header { height: auto; min-height: 72px; padding: 12px 0; gap: 10px; }
+  .app-header > div:nth-child(2) { min-width: 0; flex: 1; }
+  .app-header small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-header h1 { font-size: 22px; overflow-wrap: anywhere; }
+  .header-actions { flex: 0 0 auto; }
+  .metric-grid,
+  .history-summary,
+  .growth-metrics,
+  .promotion-admin-metrics { grid-template-columns: 1fr 1fr; }
+  .welcome-line,
+  .section-title,
+  .panel-head { align-items: flex-start; flex-wrap: wrap; }
+  .welcome-line > *,
+  .section-title > *,
+  .panel-head > * { max-width: 100%; }
+  .section-title h2,
+  .welcome-line h2 { font-size: 26px; }
+  .panel,
+  .table-card,
+  .form-panel { padding: 16px; border-radius: 14px; }
+  .appointment { grid-template-columns: 46px 34px minmax(0,1fr); }
+  .appointment > :nth-child(4),
+  .appointment > :nth-child(5) { grid-column: 3; justify-self: start; }
+  .feature-tabs,
+  .remarketing-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .feature-tabs button,
+  .remarketing-tabs button { flex: 0 0 auto; min-height: 44px; }
+  .loyalty-card { padding: 26px 20px; }
+  .loyalty-card h3 { font-size: 28px; }
+  .loyalty-stamps { gap: 8px; }
+  .google-review-promo { grid-template-columns: 1fr; }
+  .google-promo-brand { padding: 0 0 18px; border-right: 0; border-bottom: 1px solid #ffffff18; }
+  .google-review-promo .google-review-button { grid-column: auto; }
+  .membership-creative { grid-template-columns: 1fr; }
+  .membership-creative img { max-height: 250px; }
+  .campaign-popup-backdrop { padding: 12px; }
+  .campaign-popup { grid-template-columns: 1fr; max-height: calc(100svh - 24px); overflow-y: auto; }
+  .campaign-popup > img { min-height: 210px; max-height: 260px; }
+  .campaign-popup > div { padding: 24px; }
+  .campaign-popup h2 { font-size: 29px; }
+  .booking-with-ads { grid-template-columns: 1fr; margin: 16px auto; }
+  .chat-booking { border-radius: 16px; }
+  .chat-body { min-height: 0; padding: 18px 14px 28px; }
+  .chat-options { grid-template-columns: 1fr; margin-left: 0; }
+  .chat-choice { min-height: 60px; }
+  .bubble-row { max-width: 94%; }
+  .user-bubble { max-width: 90%; }
+  .story-ad { aspect-ratio: 16 / 8; border-radius: 16px; }
+  .product-ads { padding: 16px; }
+  .product-ads article { min-width: min(420px, 88vw); grid-template-columns: 120px 1fr; }
+  .product-ads img { height: 160px; }
+}
+
+@media (max-width: 520px) {
+  .metric-grid,
+  .history-summary,
+  .growth-metrics,
+  .promotion-admin-metrics { grid-template-columns: 1fr; }
+  .app-header h1 { font-size: 20px; }
+  .header-actions .demo-badge { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .section-title h2,
+  .welcome-line h2 { font-size: 24px; }
+  .section-title .primary-button,
+  .section-title .report-actions,
+  .report-actions,
+  .report-filters { width: 100%; }
+  .report-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .report-filters label,
+  .report-actions select { min-width: 0; }
+  .google-review-promo h3 { font-size: 26px; }
+  .google-review-promo { padding: 18px; }
+  .collaborator-card { padding: 14px; }
+  .service-commission-list { padding: 12px; }
+  .service-commission-list > div { grid-template-columns: minmax(0,1fr) 72px 16px; }
+  .appointment { grid-template-columns: 42px 30px minmax(0,1fr); gap: 8px; }
+  .appointment time { font-size: 11px; }
+  .appointment > :nth-child(4),
+  .appointment > :nth-child(5) { grid-column: 3; }
+  .product-ads article { grid-template-columns: 1fr; }
+  .product-ads img { height: 190px; }
+  .promotion-admin-list article { grid-template-columns: 52px minmax(0,1fr); }
+  .promotion-admin-list span { grid-column: 2; text-align: left; }
+  .public-access-section .login-card { padding: 24px 18px; }
+  .login-card h1 { font-size: 30px; }
+}
+
+@media (max-width: 360px) {
+  .app-content { padding-left: 10px; padding-right: 10px; }
+  .menu-button,
+  .icon-button { width: 42px; height: 42px; flex-basis: 42px; }
+  .app-header h1 { font-size: 18px; }
+  .panel,
+  .table-card,
+  .form-panel { padding: 13px; }
+  .report-filters { grid-template-columns: 1fr; }
+  .chat-top { padding-left: 14px; padding-right: 14px; }
+  .chat-top strong { font-size: 15px; }
+  .chat-body { padding-left: 10px; padding-right: 10px; }
+}
