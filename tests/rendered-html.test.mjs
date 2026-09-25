@@ -64,14 +64,15 @@ test("public login does not expose an administrator tab", async () => {
   assert.doesNotMatch(login, />Administrador<\/button>/);
 });
 
-test("public home leads visitors into booking before restricted access", async () => {
+test("home is restricted to administrators", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /<h1 id="public-home-title">YURI BARBERSHOP<\/h1>/);
-  assert.match(page, /href="\/agendamentos">AGENDAR MEU HORÁRIO/);
-  assert.match(page, /href="\/acesso-administrativo">Acesso administrativo/);
-  assert.match(page, /Privacidade e proteção de dados/);
-  assert.doesNotMatch(page, /LoginPanel/);
-  assert.doesNotMatch(page, /public-access-section/);
+  assert.match(page, /getChatGPTUser/);
+  assert.match(page, /user\?\.role === "admin"/);
+  assert.match(page, /<PortalClient[^>]+role="admin"/);
+  assert.match(page, /Acesso administrativo/);
+  assert.match(page, /<LoginPanel \/>/);
+  assert.doesNotMatch(page, /public-home-title/);
+  assert.doesNotMatch(page, /AGENDAR MEU HORÁRIO/);
 });
 
 test("administrative access has its own route and reuses the existing login panel", async () => {
