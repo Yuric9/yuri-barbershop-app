@@ -1,7 +1,7 @@
-import PublicVisitorShell from "../public-visitor-shell";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default function ProdutosPage() {
-  return <PublicVisitorShell section="produtos" />;
+  redirect("/acesso-administrativo");
 }
