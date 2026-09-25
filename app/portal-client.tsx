@@ -1152,7 +1152,7 @@ function Registry({ title, headers, rows, showAdd = false }: any) {
         </div>
         {showAdd && <button className="primary-button small">+ Adicionar</button>}
       </div>
-      <div className="table-card">
+      <div className="table-card mobile-card-table registry-table">
         <table>
           <thead>
             <tr>
@@ -1165,7 +1165,7 @@ function Registry({ title, headers, rows, showAdd = false }: any) {
             {rows.map((r: string[], i: number) => (
               <tr key={i}>
                 {r.map((c, j) => (
-                  <td key={j}>{c}</td>
+                  <td key={j} data-label={headers[j] || ""}>{c}</td>
                 ))}
               </tr>
             ))}
