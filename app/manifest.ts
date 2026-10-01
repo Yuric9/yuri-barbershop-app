@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Yuri Barbershop",
     short_name: "Yuri Barber",
-    description: "Agendamento, relacionamento e gestão da Yuri Barbershop.",
+    description: "Gestão da Yuri Barbershop: agenda, caixa, clientes e relatórios.",
     start_url: "/",
     display: "standalone",
     background_color: "#171714",

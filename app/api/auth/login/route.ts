@@ -1,92 +1,70 @@
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { z } from "zod";
 import { getDb } from "../../../../db";
 import { accounts } from "../../../../db/schema";
-import { verifyPassword } from "../../../password-security";
-import { adminRuntimeConfig } from "../../../runtime-config";
-import { checkLoginLimit, clearLoginFailures, recordLoginFailure } from "../../../auth-rate-limit";
-import { createSession, SESSION_COOKIE } from "../../../session-auth";
-import { rejectCrossSiteWrite } from "../../../request-security";
+import { ADMIN_ROLE } from "../../../../lib/server/auth";
+import { ensureOwnerCollaborator } from "../../../../lib/server/collaborators";
+import { hashPassword, needsRehash, verifyPassword } from "../../../../lib/server/passwords";
+import { checkLoginLimit, clearLoginFailures, recordLoginFailure } from "../../../../lib/server/rate-limit";
+import { rejectCrossSiteWrite } from "../../../../lib/server/request-security";
+import { adminRuntimeConfig } from "../../../../lib/server/runtime-config";
+import { startSession } from "../../../../lib/server/session";
 
 export const dynamic = "force-dynamic";
 
+const credentials = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(1).max(256),
+});
+
+const fail = (status: number, error: string) => Response.json({ error }, { status, headers: { "cache-control": "no-store" } });
+
 export async function POST(request: Request) {
- let stage = "entrada";
- try {
-  const originError = rejectCrossSiteWrite(request);
-  if (originError) return originError;
+  const crossSite = rejectCrossSiteWrite(request);
+  if (crossSite) return crossSite;
 
-  const body = await request.json() as Record<string, unknown>;
-  const email = String(body.email || "").trim().toLowerCase();
-  const password = String(body.password || "");
-  const requestedArea = body.area === "admin" ? "admin" : "client";
-  if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email) || !password || password.length > 256) {
-    return Response.json({ error: "Informe e-mail e senha válidos." }, { status: 400 });
-  }
+  const parsed = credentials.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return fail(400, "Informe e-mail e senha válidos.");
+  const { email, password } = parsed.data;
 
-  stage = "proteção de acesso";
-  const loginLimit = await checkLoginLimit(request, email);
-  if (loginLimit.blocked) {
-    return Response.json({ error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." }, { status: 429 });
-  }
+  try {
+    const limit = await checkLoginLimit(request, email);
+    if (limit.blocked) return fail(429, "Muitas tentativas. Aguarde 15 minutos e tente novamente.");
 
-  stage = "consulta da conta";
-  const db = getDb();
-  const [account] = await db.select().from(accounts).where(eq(accounts.email, email)).limit(1);
-  const admin = adminRuntimeConfig();
-  const isRuntimeAdmin = email === admin.email && Boolean(admin.passwordHash);
+    const db = getDb();
+    const [account] = await db.select().from(accounts).where(eq(accounts.email, email)).limit(1);
+    const admin = adminRuntimeConfig();
+    const isConfiguredAdmin = Boolean(admin.email && admin.passwordHash && email === admin.email);
 
-  let valid = false;
-  let role = account?.role || "client";
+    // O administrador principal é definido pelos segredos do Worker
+    // (ADMIN_EMAIL / ADMIN_PASSWORD_HASH). Outras contas administrativas
+    // ficam na tabela `accounts`.
+    let valid = false;
+    if (isConfiguredAdmin) valid = await verifyPassword(password, admin.passwordHash);
+    if (!valid && account?.active) valid = await verifyPassword(password, account.passwordHash);
 
-  if (isRuntimeAdmin) {
-    stage = "validação da senha administrativa";
-    valid = await verifyPassword(password, admin.passwordHash);
-    if (!valid && account?.active && account.passwordHash !== admin.passwordHash) {
-      valid = await verifyPassword(password, account.passwordHash);
+    const role = isConfiguredAdmin && valid ? ADMIN_ROLE : account?.role;
+    if (!valid || role !== ADMIN_ROLE) {
+      await recordLoginFailure(limit.key);
+      return fail(401, "E-mail ou senha incorretos.");
     }
-    if (valid) {
-      role = "admin";
-      stage = "sincronização da conta administrativa";
-      if (!account) {
-        await db.insert(accounts).values({
-          email,
-          passwordHash: admin.passwordHash,
-          role: "admin",
-          active: true,
-          createdAt: new Date().toISOString(),
-        });
-      } else if (account.role !== "admin" || !account.active || account.passwordHash !== admin.passwordHash) {
-        await db.update(accounts)
-          .set({ passwordHash: admin.passwordHash, role: "admin", active: true })
-          .where(eq(accounts.email, email));
-      }
+    await clearLoginFailures(limit.key);
+
+    const now = new Date().toISOString();
+    if (!account) {
+      await db.insert(accounts).values({ email, passwordHash: await hashPassword(password), role: ADMIN_ROLE, active: true, createdAt: now });
+    } else if (account.role !== ADMIN_ROLE || !account.active || needsRehash(account.passwordHash)) {
+      // Atualiza hashes antigos para o formato atual na primeira oportunidade.
+      const passwordHash = needsRehash(account.passwordHash) ? await hashPassword(password) : account.passwordHash;
+      await db.update(accounts).set({ role: ADMIN_ROLE, active: true, passwordHash }).where(eq(accounts.email, email));
     }
-  } else {
-    stage = "validação da senha";
-    valid = Boolean(account?.active && await verifyPassword(password, account.passwordHash));
-  }
 
-  if (!valid) {
-    await recordLoginFailure(loginLimit.key);
-    return Response.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+    // O administrador também atende: garante seu cadastro na equipe (e o nome exibido).
+    await ensureOwnerCollaborator(db, { email, name: email, role: ADMIN_ROLE });
+    await startSession(email, new URL(request.url).protocol === "https:");
+    return Response.json({ ok: true }, { headers: { "cache-control": "no-store" } });
+  } catch (error) {
+    console.error("auth-login-failure", error);
+    return fail(500, "Não foi possível entrar agora. Tente novamente em instantes.");
   }
-  await clearLoginFailures(loginLimit.key);
-  if (requestedArea === "admin" && role !== "admin") return Response.json({ error: "Este usuário não possui acesso administrativo." }, { status: 403 });
-
-  stage = "criação da sessão";
-  const session = await createSession(email);
-  stage = "gravação do cookie";
-  (await cookies()).set(SESSION_COOKIE, session.token, {
-    httpOnly: true,
-    secure: new URL(request.url).protocol === "https:",
-    sameSite: "lax",
-    path: "/",
-    expires: session.expiresAt,
-  });
-  return Response.json({ ok: true, role });
- } catch (error) {
-  console.error("auth-login-failure", stage, error);
-  return Response.json({ error: "Não foi possível entrar agora. Tente novamente em instantes." }, { status: 500 });
- }
 }
