@@ -1,123 +1,131 @@
-# Yuri Barbershop
+# Yuri Barbershop — Sistema de gestão
 
-## Implantação própria na Cloudflare
+Painel administrativo da **Yuri Barbershop**: agenda, caixa, clientes com cartão
+fidelidade, equipe e comissões, serviços, produtos com estoque, relatórios
+financeiros e remarketing pelo WhatsApp.
 
-O projeto inclui `wrangler.jsonc` preparado para o Worker `yuri-barbershop-app`,
-o banco D1 `yuri-barbershop-db` e o bucket R2
-`imagens-de-barbearia-yuri`.
+O sistema é **exclusivo da administração**: sem login, só a tela de acesso é exibida.
 
-Antes da primeira implantação:
+## Funcionalidades
 
-1. Configure a autenticação e os segredos do administrador.
-2. Execute `npm run cloudflare:migrate` para criar ou atualizar as tabelas.
-3. Valide com `npm run cloudflare:check`.
-4. Implante pelo fluxo conectado ao GitHub na Cloudflare.
+| Tela | O que faz |
+| --- | --- |
+| **Início** | Faturamento do dia, atendimentos concluídos, ticket médio, saldo do mês, próximos atendimentos e gráfico dos últimos 7 dias. |
+| **Agenda** | Visão por dia ou 7 dias, filtros por status. Novo agendamento com vários serviços, escolha de profissional e horários livres calculados pelo servidor. Confirmar, finalizar (com forma de pagamento) e cancelar. |
+| **Caixa** | Entradas e saídas do dia (sempre na data de hoje) e **atendimento avulso** (cliente sem agendamento, já com comissão). |
+| **Clientes** | Busca, ficha do cliente, edição, **cartão fidelidade** (8 atendimentos pagos = 1 cortesia) com ajuste manual e importação de contatos (celular, CSV ou VCF). |
+| **Remarketing** | Listas automáticas (pós-atendimento, retorno, aniversariantes, fidelidade, indicação) com mensagem pronta no WhatsApp e acompanhamento de respostas/retornos. |
+| **Serviços** | Preço, duração e ativação. |
+| **Produtos** | Estoque, fotos e **venda no balcão** (baixa o estoque e lança no caixa). |
+| **Equipe** | Colaboradores, comissão padrão, comissão por serviço e ganhos do mês. |
+| **Relatórios** | Resultado mensal e anual, gráfico por mês, entradas por forma de pagamento, lançamento de dias anteriores ou de um mês fechado, edição e exclusão de lançamentos. |
 
-Nunca grave senhas ou tokens no código ou no arquivo `wrangler.jsonc`.
+## Tecnologias
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+- **Next.js 16 + React 19**, executado pelo [vinext](https://github.com/cloudflare/vinext) (Vite) em um **Cloudflare Worker**
+- **Cloudflare D1** (SQLite) com **Drizzle ORM** e migrações em `drizzle/`
+- **Cloudflare R2** para as fotos dos produtos
+- **Zod** para validar os dados recebidos pela API
+- CSS próprio (um único design system em `app/globals.css`)
 
-## Prerequisites
+## Estrutura do projeto
 
-- Node.js `>=22.13.0`
-- Linux with `flock`, `curl`, and GNU `timeout`
-
-## Sites Lifecycle
-
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout and then validates the Sites artifact. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```
+app/
+  page.tsx               Tela inicial: login ou painel (conforme a sessão)
+  layout.tsx             HTML base e metadados
+  globals.css            Design system (tokens, componentes, telas, responsivo)
+  api/                   Rotas da API, uma pasta por recurso
+    appointments/        Agenda (lista, criação, disponibilidade, status)
+    clients/             Clientes (cadastro, importação, fidelidade)
+    collaborators/       Equipe e comissões
+    transactions/        Lançamentos financeiros
+    products/, product-orders/, services/, walk-ins/, dashboard/, ...
+components/
+  ui/                    Componentes genéricos (botão, campo, modal, avisos...)
+  admin/                 Painel: estrutura, telas (sections/) e modais
+  auth/                  Tela de login
+lib/
+  domain/                Regras de negócio puras (datas, agenda, fidelidade,
+                         dinheiro, finanças, telefone) — testadas em tests/
+  server/                Código só do servidor: sessão, senhas, validação,
+                         acesso ao banco por assunto (agenda, clientes...)
+  client/                Comunicação do painel com a API (cache e ações)
+db/                      Schema do banco (Drizzle)
+drizzle/                 Migrações SQL
+worker/index.ts          Entrada do Worker (bindings e cabeçalhos de segurança)
+tests/                   Testes unitários (*.test.ts) e de integração (*.test.mjs)
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+### Como as camadas conversam
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+```
+Tela (components/admin/sections)
+  └─ useApi / useAction  (lib/client)          → fetch para /api/...
+       └─ Rota (app/api/.../route.ts)
+            ├─ adminRoute: exige admin, bloqueia outros sites, trata erros
+            ├─ readBody + Zod: valida os dados
+            └─ lib/server/*  →  lib/domain/* (regras)  +  db (Drizzle/D1)
+```
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## Regras de negócio importantes
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+- **Fuso horário:** toda data do negócio usa `America/Sao_Paulo` (`lib/domain/dates.ts`).
+- **Horário de funcionamento:** seg–sex 18h–20h30, sábado 8h–20h30, domingo 8h–12h, em faixas de 30 min (`lib/domain/schedule.ts`).
+- **Reserva de horário:** cada agendamento reserva faixas na tabela `appointment_slots`, que tem índice único — dois agendamentos nunca ocupam o mesmo horário do mesmo profissional, mesmo se forem feitos ao mesmo tempo.
+- **Finalizar atendimento** lança a entrada no caixa e calcula a comissão (percentual do serviço ou o padrão do colaborador). Só é possível finalizar atendimentos de hoje ou de dias anteriores, e o mesmo atendimento não é finalizado duas vezes.
+- **Cortesia** (cartão fidelidade) só é aceita quando o cliente tem benefício disponível; nada é lançado no caixa.
+- **Valores** são guardados em centavos (inteiros).
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+## Segurança
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+- Senhas com PBKDF2-SHA256 (100.000 iterações, salt aleatório). Hashes antigos são atualizados automaticamente no próximo login.
+- Sessão em cookie `httpOnly`; o banco guarda apenas o hash do token.
+- Limite de tentativas de login (8 erros em 15 minutos bloqueiam por 15 minutos).
+- Todas as rotas da API exigem administrador e rejeitam escritas vindas de outros sites.
+- Imagens só são servidas para chaves geradas pelo próprio sistema.
+- Cabeçalhos de segurança (CSP, HSTS, X-Frame-Options...) em todas as respostas.
 
-## Diagnostic Commands
+## Como rodar localmente
 
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build and validate the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build, validate, and verify the rendered development-preview metadata
-- `npm run validate:artifact`: recheck an existing artifact's manifest and ESM `default.fetch` export
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+Pré-requisitos: Node.js 22.18 ou superior.
 
-Use build and validation commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
+```bash
+npm ci
 
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
+# Senha do administrador para desenvolvimento (arquivo ignorado pelo git):
+npm run admin:hash-password          # copie o hash gerado
+echo 'ADMIN_PASSWORD_HASH="<hash>"' > .dev.vars
 
-## Learn More
+npm run dev                          # http://localhost:5173
+```
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+O e-mail do administrador fica em `ADMIN_EMAIL` (`wrangler.jsonc`). Para criar as
+tabelas no banco local, aplique as migrações da pasta `drizzle/` com o
+`wrangler d1 migrations apply --local`.
+
+## Testes e qualidade
+
+```bash
+npm run lint        # ESLint
+npm run typecheck   # TypeScript
+npm run test:unit   # regras de negócio (rápido)
+npm test            # unitários + build + testes de integração do Worker
+```
+
+O GitHub Actions (`.github/workflows/qa.yml`) roda lint, tipos e testes em cada push e pull request para `main`.
+
+## Implantação (Cloudflare)
+
+O projeto usa o Worker `yuri-barbershop-app`, o banco D1 `yuri-barbershop-db` e o
+bucket R2 `imagens-de-barbearia-yuri`.
+
+1. Configure o segredo do administrador: `npx wrangler secret put ADMIN_PASSWORD_HASH` (gere o valor com `npm run admin:hash-password`).
+2. `npm run cloudflare:migrate` — aplica as migrações no banco remoto.
+3. `npm run cloudflare:check` — valida o build.
+4. Implante pelo fluxo conectado ao GitHub na Cloudflare (ou `npm run cloudflare:deploy`).
+
+Nunca grave senhas ou tokens no código ou no `wrangler.jsonc`.
+
+> Os segredos `MP_*` da antiga integração com o Mercado Pago não são mais usados
+> e podem ser removidos do painel da Cloudflare.

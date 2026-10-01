@@ -30,9 +30,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint report
-        continue-on-error: true
+      - name: Lint
         run: npm run lint
 
-      - name: Build and tests
+      - name: Tipos (TypeScript)
+        run: npm run typecheck
+
+      - name: Testes e build
         run: npm test

@@ -1,15 +1,11 @@
-import { cookies } from "next/headers";
-import { deleteSession, SESSION_COOKIE } from "../../../session-auth";
-import { rejectCrossSiteWrite } from "../../../request-security";
+import { rejectCrossSiteWrite } from "../../../../lib/server/request-security";
+import { endSession } from "../../../../lib/server/session";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const originError = rejectCrossSiteWrite(request);
-  if (originError) return originError;
-
-  const store = await cookies();
-  await deleteSession(store.get(SESSION_COOKIE)?.value);
-  store.set(SESSION_COOKIE, "", { httpOnly: true, secure: new URL(request.url).protocol === "https:", sameSite: "lax", path: "/", maxAge: 0 });
-  return Response.redirect(new URL("/", request.url), 303);
+export async function POST(request: Request) {
+  const crossSite = rejectCrossSiteWrite(request);
+  if (crossSite) return crossSite;
+  await endSession(new URL(request.url).protocol === "https:");
+  return Response.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }

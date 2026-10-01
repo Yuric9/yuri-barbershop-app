@@ -1,4 +1,9 @@
-/** Cloudflare Worker entry point for the vinext-starter template. */
+/**
+ * Ponto de entrada do Cloudflare Worker.
+ *
+ * Disponibiliza os bindings (banco D1, bucket R2 e segredos) para a aplicação
+ * e adiciona cabeçalhos de segurança em todas as respostas.
+ */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 
@@ -8,9 +13,6 @@ interface Env {
   BUCKET: R2Bucket;
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD_HASH?: string;
-  MP_WEBHOOK_SECRET?: string;
-  MP_ACCESS_TOKEN?: string;
-  MP_TEST_PAYER_EMAIL?: string;
   IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -52,9 +54,6 @@ const worker = {
     (globalThis as typeof globalThis & { __YURI_BUCKET?: R2Bucket }).__YURI_BUCKET = env.BUCKET;
     (globalThis as typeof globalThis & { __YURI_ADMIN_EMAIL?: string }).__YURI_ADMIN_EMAIL = env.ADMIN_EMAIL;
     (globalThis as typeof globalThis & { __YURI_ADMIN_PASSWORD_HASH?: string }).__YURI_ADMIN_PASSWORD_HASH = env.ADMIN_PASSWORD_HASH;
-    (globalThis as typeof globalThis & { __YURI_MP_WEBHOOK_SECRET?: string }).__YURI_MP_WEBHOOK_SECRET = env.MP_WEBHOOK_SECRET;
-    (globalThis as typeof globalThis & { __YURI_MP_ACCESS_TOKEN?: string }).__YURI_MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN;
-    (globalThis as typeof globalThis & { __YURI_MP_TEST_PAYER_EMAIL?: string }).__YURI_MP_TEST_PAYER_EMAIL = env.MP_TEST_PAYER_EMAIL;
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
@@ -65,11 +64,12 @@ const worker = {
         }
         return withSecurityHeaders(await env.ASSETS.fetch(new Request(new URL(source, request.url))));
       }
+      const images = env.IMAGES;
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return withSecurityHeaders(await handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
         transformImage: async (body, { width, format, quality }) => {
-          const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
+          const result = await images.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
       }, allowedWidths));

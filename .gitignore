@@ -40,3 +40,8 @@ next-env.d.ts
 /.sites-runtime/
 /outputs/
 /work/
+
+# segredos locais do Wrangler
+.dev.vars
+.scratch/
+*.tsbuildinfo

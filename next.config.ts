@@ -31,11 +31,7 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
-        source: "/api/data",
-        headers: noStoreHeaders,
-      },
-      {
-        source: "/api/auth/:path*",
+        source: "/api/:path*",
         headers: noStoreHeaders,
       },
     ];

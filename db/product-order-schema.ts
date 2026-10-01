@@ -1,3 +1,4 @@
+/** Pedidos de produtos (vendas com baixa de estoque). */
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const productOrders = sqliteTable("product_orders", {
