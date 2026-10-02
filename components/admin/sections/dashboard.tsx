@@ -13,6 +13,12 @@ import { Button } from "../../ui/button";
 import { Alert, AsyncContent, EmptyState } from "../../ui/feedback";
 import { Avatar, Metric, MetricGrid, PageHeader, Panel } from "../../ui/layout";
 
+/** Primeiro nome com inicial maiúscula (ex.: "yuri césar" → "Yuri"). */
+function firstName(name: string) {
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  return first.charAt(0).toLocaleUpperCase("pt-BR") + first.slice(1);
+}
+
 export default function DashboardSection({ navigate, user }: SectionProps) {
   const dashboard = useApi<Dashboard>("/api/dashboard");
   const [creating, setCreating] = useState(false);
@@ -23,14 +29,14 @@ export default function DashboardSection({ navigate, user }: SectionProps) {
       <PageHeader
         className="page-header--greeting"
         eyebrow="Visão geral"
-        title={`Olá, ${user.name.split(" ")[0]}!`}
+        title={`Olá, ${firstName(user.name)}!`}
         description="Resumo do dia e dos próximos atendimentos."
         actions={
-          <Button variant="secondary" icon="cash" onClick={() => navigate("caixa")}>
-            Lançar no caixa
+          <Button variant="secondary" icon="calendar" onClick={() => setCreating(true)}>
+            Novo agendamento
           </Button>
         }
-        primary={{ label: "Novo agendamento", icon: "plus", onClick: () => setCreating(true) }}
+        primary={{ label: "Lançar no caixa", icon: "cash", onClick: () => navigate("caixa") }}
       />
 
       <AsyncContent {...dashboard} onRetry={dashboard.reload}>
