@@ -24,11 +24,7 @@ export default function TeamSection() {
         eyebrow="Cadastros"
         title="Equipe"
         description="Barbeiros, percentuais de comissão e ganhos do mês. A comissão é calculada quando o atendimento é finalizado."
-        actions={
-          <Button icon="plus" onClick={() => setEditing("new")}>
-            Novo colaborador
-          </Button>
-        }
+        primary={{ label: "Novo colaborador", icon: "plus", onClick: () => setEditing("new") }}
       />
       <AsyncContent {...collaborators} onRetry={collaborators.reload}>
         {({ collaborators: rows }) =>

@@ -8,6 +8,7 @@ import { useAction } from "../../../lib/client/use-action";
 import { addDays, formatLongDate, todayKey } from "../../../lib/domain/dates";
 import { formatMoney } from "../../../lib/domain/money";
 import { FinalizeModal, NewAppointmentModal } from "../appointment-modals";
+import { DateStrip } from "../date-strip";
 import { AppointmentStatus } from "../status";
 import { useFeedback } from "../../ui/feedback-provider";
 import { Button, IconButton } from "../../ui/button";
@@ -36,11 +37,7 @@ export default function AgendaSection() {
         eyebrow="Operação"
         title="Agenda"
         description="Confirme, finalize ou cancele os atendimentos."
-        actions={
-          <Button icon="plus" onClick={() => setCreating(true)}>
-            Novo agendamento
-          </Button>
-        }
+        primary={{ label: "Novo agendamento", icon: "plus", onClick: () => setCreating(true) }}
       />
 
       <div className="toolbar">
@@ -64,6 +61,8 @@ export default function AgendaSection() {
           ]}
         />
       </div>
+
+      <DateStrip value={date} onChange={setDate} />
 
       <AsyncContent {...agenda} onRetry={agenda.reload}>
         {({ appointments }) => {

@@ -1,14 +1,51 @@
 import type { ReactNode } from "react";
+import { Button } from "./button";
+import { Icon, type IconName } from "./icon";
 
-export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: ReactNode; actions?: ReactNode }) {
+export type PrimaryAction = { label: string; icon?: IconName; onClick: () => void };
+
+/**
+ * Cabeçalho da tela. A ação principal (`primary`) aparece como botão no
+ * computador e como botão flutuante (FAB) no celular, no estilo de aplicativo.
+ */
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  actions,
+  primary,
+  className = "",
+}: {
+  className?: string;
+  eyebrow?: string;
+  title: string;
+  description?: ReactNode;
+  actions?: ReactNode;
+  primary?: PrimaryAction;
+}) {
   return (
-    <header className="page-header">
-      <div>
+    <header className={`page-header ${className}`.trim()}>
+      <div className="page-header__text">
         {eyebrow && <span className="eyebrow">{eyebrow}</span>}
         <h2>{title}</h2>
         {description && <p>{description}</p>}
       </div>
-      {actions && <div className="page-header__actions">{actions}</div>}
+      {(actions || primary) && (
+        <div className="page-header__actions">
+          {actions}
+          {primary && (
+            <Button icon={primary.icon} className="page-header__primary" onClick={primary.onClick}>
+              {primary.label}
+            </Button>
+          )}
+        </div>
+      )}
+      {primary && (
+        <button type="button" className="fab" onClick={primary.onClick} aria-label={primary.label}>
+          <Icon name={primary.icon ?? "plus"} size={22} />
+          <span>{primary.label}</span>
+        </button>
+      )}
     </header>
   );
 }

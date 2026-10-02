@@ -21,19 +21,16 @@ export default function DashboardSection({ navigate, user }: SectionProps) {
   return (
     <>
       <PageHeader
+        className="page-header--greeting"
         eyebrow="Visão geral"
         title={`Olá, ${user.name.split(" ")[0]}!`}
         description="Resumo do dia e dos próximos atendimentos."
         actions={
-          <>
-            <Button variant="secondary" icon="cash" onClick={() => navigate("caixa")}>
-              Lançar no caixa
-            </Button>
-            <Button icon="plus" onClick={() => setCreating(true)}>
-              Novo agendamento
-            </Button>
-          </>
+          <Button variant="secondary" icon="cash" onClick={() => navigate("caixa")}>
+            Lançar no caixa
+          </Button>
         }
+        primary={{ label: "Novo agendamento", icon: "plus", onClick: () => setCreating(true) }}
       />
 
       <AsyncContent {...dashboard} onRetry={dashboard.reload}>

@@ -30,11 +30,7 @@ export default function ServicesSection() {
         eyebrow="Cadastros"
         title="Serviços"
         description="Preços e durações usados na agenda, no caixa e nas comissões."
-        actions={
-          <Button icon="plus" onClick={() => setEditing("new")}>
-            Novo serviço
-          </Button>
-        }
+        primary={{ label: "Novo serviço", icon: "plus", onClick: () => setEditing("new") }}
       />
       <AsyncContent {...services} onRetry={services.reload}>
         {({ services: rows }) =>

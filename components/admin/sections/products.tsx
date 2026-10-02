@@ -33,15 +33,11 @@ export default function ProductsSection() {
         title="Produtos"
         description="Estoque e vendas. Cada venda baixa o estoque e entra no caixa."
         actions={
-          <>
-            <Button variant="secondary" icon="plus" onClick={() => setEditing("new")}>
-              Novo produto
-            </Button>
-            <Button icon="cash" onClick={() => setSelling(true)}>
-              Registrar venda
-            </Button>
-          </>
+          <Button variant="secondary" icon="plus" onClick={() => setEditing("new")}>
+            Novo produto
+          </Button>
         }
+        primary={{ label: "Registrar venda", icon: "cash", onClick: () => setSelling(true) }}
       />
 
       <div className="stack">

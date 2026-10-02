@@ -11,6 +11,7 @@ const paths = {
   megaphone: "M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1ZM17 8a5 5 0 0 1 0 8",
   logout: "M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l-4-4 4-4M6 12h11",
   menu: "M4 7h16M4 12h16M4 17h16",
+  grid: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
   close: "M6 6l12 12M18 6 6 18",
   plus: "M12 5v14M5 12h14",
   minus: "M5 12h14",
