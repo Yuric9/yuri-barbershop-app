@@ -40,15 +40,11 @@ export default function ClientsSection() {
         title="Clientes"
         description="Cadastro, histórico e cartão fidelidade de cada cliente."
         actions={
-          <>
-            <Button variant="secondary" icon="upload" onClick={() => setModal("import")}>
-              Importar contatos
-            </Button>
-            <Button icon="plus" onClick={() => setModal("new")}>
-              Novo cliente
-            </Button>
-          </>
+          <Button variant="secondary" icon="upload" onClick={() => setModal("import")}>
+            Importar contatos
+          </Button>
         }
+        primary={{ label: "Novo cliente", icon: "plus", onClick: () => setModal("new") }}
       />
 
       <AsyncContent {...clients} onRetry={clients.reload}>

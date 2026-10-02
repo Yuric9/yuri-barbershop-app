@@ -48,11 +48,7 @@ export default function ReportsSection() {
         eyebrow="Financeiro"
         title="Relatórios"
         description="Acompanhe os resultados, registre dias anteriores e corrija lançamentos."
-        actions={
-          <Button icon="plus" onClick={() => setEditing("new")}>
-            Novo lançamento
-          </Button>
-        }
+        primary={{ label: "Novo lançamento", icon: "plus", onClick: () => setEditing("new") }}
       />
 
       <div className="toolbar">

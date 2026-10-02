@@ -31,15 +31,11 @@ export default function CashSection() {
         title="Caixa"
         description="Os lançamentos do caixa ficam sempre na data de hoje. Para dias anteriores, use Relatórios."
         actions={
-          <>
-            <Button variant="secondary" icon="scissors" onClick={() => setModal("walk-in")}>
-              Atendimento avulso
-            </Button>
-            <Button icon="plus" onClick={() => setModal("entry")}>
-              Nova movimentação
-            </Button>
-          </>
+          <Button variant="secondary" icon="scissors" onClick={() => setModal("walk-in")}>
+            Atendimento avulso
+          </Button>
         }
+        primary={{ label: "Nova movimentação", icon: "plus", onClick: () => setModal("entry") }}
       />
 
       <AsyncContent {...ledger} onRetry={ledger.reload}>
