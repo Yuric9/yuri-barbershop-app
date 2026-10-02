@@ -896,8 +896,12 @@ fieldset {
 .modal {
   width: 100%;
   max-width: 100%;
+  /* Presa à base da tela; a altura acompanha o conteúdo (até 92% da tela). */
+  inset: auto 0 0;
+  height: auto;
+  max-height: 92vh; /* iOS antigo, sem suporte a dvh */
   max-height: 92dvh;
-  margin: auto 0 0;
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 22px 22px 0 0;
@@ -947,9 +951,14 @@ fieldset {
   flex-direction: column;
 }
 
+/*
+ * `flex: 1 1 auto` (e não `flex: 1`): no Safari do iPhone, a base 0% dentro
+ * de um <dialog> com altura automática faz o conteúdo ficar com altura zero
+ * — a tela escurecia e a janela não aparecia.
+ */
 .modal__form {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
 }
@@ -976,8 +985,10 @@ fieldset {
 }
 
 .modal__body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: var(--space-4);
 }
@@ -1404,8 +1415,8 @@ fieldset {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  /* Espaço para a barra de abas e o botão flutuante. */
-  padding: var(--space-4) var(--space-4) calc(var(--tabbar-space) + 96px);
+  /* Espaço para a barra de abas. */
+  padding: var(--space-4) var(--space-4) calc(var(--tabbar-space) + var(--space-6));
 }
 
 /* Transição suave ao trocar de tela. */
@@ -1473,38 +1484,6 @@ fieldset {
 .tabbar .is-active svg {
   background: var(--gold-soft);
   color: var(--gold-strong);
-}
-
-/* Botão flutuante com a ação principal da tela. */
-.fab {
-  position: fixed;
-  z-index: 25;
-  right: var(--space-4);
-  bottom: calc(var(--tabbar-space) + var(--space-4));
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 56px;
-  padding: 0 var(--space-5) 0 var(--space-4);
-  border: 0;
-  border-radius: 18px;
-  background: var(--ink);
-  color: #fff;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  box-shadow: 0 10px 24px rgb(20 16 8 / 30%);
-  animation: fab-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.fab svg {
-  color: var(--gold);
-}
-
-@keyframes fab-in {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
 }
 
 /* Menu "Mais" */
@@ -1625,7 +1604,6 @@ fieldset {
 
 /* Sensação de toque: leve "afundar" ao pressionar. */
 .button:active:not(:disabled),
-.fab:active,
 .tabbar a:active,
 .tabbar button:active,
 .more-menu__grid button:active,
@@ -1637,7 +1615,6 @@ fieldset {
 }
 
 .button,
-.fab,
 .choice,
 .time-grid button,
 .date-strip__day {
@@ -2268,7 +2245,9 @@ fieldset {
   }
 
   .modal {
+    inset: 0;
     width: min(560px, calc(100% - 32px));
+    height: fit-content;
     max-height: calc(100% - 48px);
     margin: auto;
     border-radius: 20px;
@@ -2412,8 +2391,7 @@ fieldset {
   }
 
   .tabbar,
-  .fab,
-  .topbar__logo,
+    .topbar__logo,
   .topbar__avatar {
     display: none;
   }
@@ -2443,8 +2421,8 @@ fieldset {
   }
 }
 
-/* Celular e tablet: o título já está na barra superior e a ação principal
-   vira botão flutuante, então o cabeçalho da tela fica mais enxuto. */
+/* Celular e tablet: o título já está na barra superior, então o cabeçalho
+   da tela mostra só os botões de ação (e a saudação na tela inicial). */
 @media (max-width: 1023px) {
   .page-header {
     gap: var(--space-3);
@@ -2453,27 +2431,22 @@ fieldset {
 
   .page-header .eyebrow,
   .page-header__text h2,
-  .page-header__primary {
-    display: none;
-  }
-
-  /* Sem saudação nem ações secundárias, o cabeçalho não ocupa espaço. */
-  .page-header:not(.page-header--greeting):not(:has(.page-header__actions > :not(.page-header__primary))) {
-    gap: 0;
-    margin: 0;
-  }
-
-  .page-header--greeting .page-header__text h2 {
-    display: block;
-  }
-
   .page-header p {
     display: none;
   }
 
+  .page-header--greeting .page-header__text h2,
   .page-header--greeting p {
     display: block;
+  }
+
+  .page-header--greeting p {
     font-size: var(--text-sm);
+  }
+
+  /* Sem saudação, o bloco de texto some e sobram só os botões. */
+  .page-header:not(.page-header--greeting) .page-header__text {
+    display: none;
   }
 
   .date-nav .icon-button {
@@ -2489,12 +2462,10 @@ fieldset {
     flex-wrap: nowrap;
   }
 
-  .page-header__actions:not(:has(> :not(.page-header__primary))) {
-    display: none;
-  }
-
   .page-header__actions > * {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    white-space: normal;
+    text-align: center;
   }
 }
 

@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
 import { Button } from "./button";
-import { Icon, type IconName } from "./icon";
+import type { IconName } from "./icon";
 
 export type PrimaryAction = { label: string; icon?: IconName; onClick: () => void };
 
-/**
- * Cabeçalho da tela. A ação principal (`primary`) aparece como botão no
- * computador e como botão flutuante (FAB) no celular, no estilo de aplicativo.
- */
+/** Cabeçalho da tela. A ação principal (`primary`) aparece com destaque ao lado das demais. */
 export function PageHeader({
   eyebrow,
   title,
@@ -39,12 +36,6 @@ export function PageHeader({
             </Button>
           )}
         </div>
-      )}
-      {primary && (
-        <button type="button" className="fab" onClick={primary.onClick} aria-label={primary.label}>
-          <Icon name={primary.icon ?? "plus"} size={22} />
-          <span>{primary.label}</span>
-        </button>
       )}
     </header>
   );
