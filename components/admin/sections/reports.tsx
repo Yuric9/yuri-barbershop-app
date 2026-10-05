@@ -6,6 +6,7 @@ import { REFRESH } from "../../../lib/client/refresh";
 import { useClients, useServices } from "../../../lib/client/resources";
 import type { Transaction } from "../../../lib/client/types";
 import { useAction } from "../../../lib/client/use-action";
+import { PAYMENT_METHODS } from "../../../lib/domain/catalog";
 import { MONTH_NAMES, todayKey } from "../../../lib/domain/dates";
 import { inPeriod, isIncome, monthlySummaries, totals } from "../../../lib/domain/finance";
 import { centsToInput, formatMoney } from "../../../lib/domain/money";
@@ -159,6 +160,18 @@ function ReportBody({
   );
 }
 
+/** Os últimos 24 meses, do atual para trás, no formato "AAAA-MM". */
+function recentMonths(today: string, count = 24) {
+  let year = Number(today.slice(0, 4));
+  let month = Number(today.slice(5, 7));
+  return Array.from({ length: count }, () => {
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    month -= 1;
+    if (month === 0) [year, month] = [year - 1, 12];
+    return key;
+  });
+}
+
 function TransactionModal({ transaction, onClose }: { transaction: Transaction | null; onClose: () => void }) {
   const services = useServices();
   const clients = useClients();
@@ -175,6 +188,10 @@ function TransactionModal({ transaction, onClose }: { transaction: Transaction |
     serviceId: transaction?.serviceId ? String(transaction.serviceId) : "",
     paymentMethod: transaction?.paymentMethod ?? "",
   });
+
+  // Mantém formas de pagamento antigas (digitadas à mão) visíveis na edição.
+  const paymentOptions: string[] = [...PAYMENT_METHODS];
+  if (form.paymentMethod && !paymentOptions.includes(form.paymentMethod)) paymentOptions.push(form.paymentMethod);
 
   async function submit() {
     const body = {
@@ -233,12 +250,23 @@ function TransactionModal({ transaction, onClose }: { transaction: Transaction |
               <option value="despesa">Saída / despesa</option>
             </SelectField>
             {mode === "month" && !transaction ? (
-              <TextField label="Mês" type="month" max={today.slice(0, 7)} required value={form.month} onChange={(event) => setForm({ ...form, month: event.target.value })} />
+              <SelectField label="Mês" required value={form.month} onChange={(event) => setForm({ ...form, month: event.target.value })}>
+                {recentMonths(today).map((month) => (
+                  <option key={month} value={month}>
+                    {MONTH_NAMES[Number(month.slice(5)) - 1]} de {month.slice(0, 4)}
+                  </option>
+                ))}
+              </SelectField>
             ) : (
               <TextField label="Data" type="date" max={today} required value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
             )}
             <TextField label="Valor (R$)" inputMode="decimal" placeholder="0,00" required value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
-            <TextField label="Forma de pagamento" placeholder="Pix, dinheiro..." value={form.paymentMethod} onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })} />
+            <SelectField label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })}>
+              <option value="">Não informado</option>
+              {paymentOptions.map((method) => (
+                <option key={method}>{method}</option>
+              ))}
+            </SelectField>
             <SelectField label="Serviço (opcional)" value={form.serviceId} onChange={(event) => setForm({ ...form, serviceId: event.target.value })}>
               <option value="">Sem vínculo</option>
               {(services.data?.services ?? []).map((service) => (

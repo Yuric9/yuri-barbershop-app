@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { isMonthKey } from "../domain/dates";
 import { getDb } from "../../db";
 import { profiles, services } from "../../db/schema";
 import { ApiError } from "./http";
@@ -10,7 +11,7 @@ export const transactionInput = z.object({
   amount: moneyCents,
   /** Dia do lançamento. Para o fechamento de um mês inteiro, use `month`. */
   date: dateKey.optional(),
-  month: z.string().regex(/^\d{4}-\d{2}$/, "Mês inválido.").optional(),
+  month: z.string().refine(isMonthKey, "Mês inválido.").optional(),
   description: optionalText(240),
   clientEmail: z.string().trim().toLowerCase().optional().default(""),
   serviceId: optionalId,

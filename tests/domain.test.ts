@@ -3,7 +3,7 @@ import test from "node:test";
 import { addDays, daysBetween, formatDate, isDateKey, monthRange, nowMinutes, todayKey } from "../lib/domain/dates.ts";
 import { blockAffects, findFreeResource, isPastSlot, operatingWindow, slotsCovered, startTimesFor } from "../lib/domain/schedule.ts";
 import { loyaltyAdjustmentFor, loyaltySnapshot } from "../lib/domain/loyalty.ts";
-import { formatMoney, percentOf, toCents } from "../lib/domain/money.ts";
+import { centsToInput, formatMoney, percentOf, toCents } from "../lib/domain/money.ts";
 import { formatPhone, isValidPhone, whatsappLink } from "../lib/domain/phone.ts";
 import { parseContactsFile } from "../lib/domain/contacts.ts";
 import { completedServices, dailyIncome, monthlySummaries, totals } from "../lib/domain/finance.ts";
@@ -76,6 +76,15 @@ test("dinheiro em centavos", () => {
   assert.equal(toCents("30,50"), 3050);
   assert.equal(toCents("R$ 1.234,56"), 123456);
   assert.equal(toCents("abc"), null);
+  // Ponto como separador de milhar (sem vírgula).
+  assert.equal(toCents("1.000"), 100000);
+  assert.equal(toCents("8.500"), 850000);
+  assert.equal(toCents("R$ 1.234.567"), 123456700);
+  // Ponto como decimal.
+  assert.equal(toCents("30.00"), 3000);
+  assert.equal(toCents("30.5"), 3050);
+  assert.equal(toCents("1.5"), 150);
+  assert.equal(toCents(centsToInput(123456)), 123456);
   assert.equal(percentOf(5000, 40), 2000);
   assert.equal(formatMoney(123456).replace(/\s/g, " "), "R$ 1.234,56");
 });

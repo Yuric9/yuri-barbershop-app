@@ -2,7 +2,7 @@ import { and, desc, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../../../db";
 import { transactions } from "../../../db/schema";
-import { monthRange, todayKey } from "../../../lib/domain/dates";
+import { MONTH_NAMES, monthRange, todayKey } from "../../../lib/domain/dates";
 import { adminRoute, ApiError, ok, readBody } from "../../../lib/server/http";
 import { resolveLinks, transactionInput } from "../../../lib/server/transactions";
 
@@ -27,8 +27,9 @@ export const POST = adminRoute(async ({ request }) => {
   if (date > today) throw new ApiError(400, "Não é possível lançar valores em datas futuras.");
 
   const links = await resolveLinks(input.clientEmail, input.serviceId);
+  const monthLabel = input.month ? `${MONTH_NAMES[Number(input.month.slice(5)) - 1]}/${input.month.slice(0, 4)}` : "";
   const fallback = input.month
-    ? `${input.kind === "entrada" ? "Faturamento" : "Despesas"} consolidadas de ${input.month}`
+    ? `${input.kind === "entrada" ? "Faturamento consolidado" : "Despesas consolidadas"} de ${monthLabel}`
     : links.serviceName || (input.kind === "entrada" ? "Entrada" : "Despesa");
   const [created] = await getDb()
     .insert(transactions)
