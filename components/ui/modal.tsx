@@ -18,6 +18,34 @@ type ModalProps = {
 /** Distância (px) que a folha precisa ser arrastada para baixo para fechar. */
 const SWIPE_TO_CLOSE = 110;
 
+/** Quantas janelas estão abertas agora e onde a página estava rolada. */
+let openModals = 0;
+let savedScrollY = 0;
+
+/**
+ * Trava a rolagem da página enquanto houver uma janela aberta.
+ * No Safari do iPhone, `overflow: hidden` no body não basta: o gesto de
+ * arrastar dentro da folha "vaza" e rola a página de trás. Fixar o body na
+ * posição atual impede isso; ao fechar, a página volta para onde estava.
+ */
+function lockPageScroll() {
+  if (openModals++ === 0) {
+    savedScrollY = window.scrollY;
+    Object.assign(document.body.style, {
+      position: "fixed",
+      top: `-${savedScrollY}px`,
+      left: "0",
+      right: "0",
+      overflow: "hidden",
+    });
+  }
+  return () => {
+    if (--openModals > 0) return;
+    Object.assign(document.body.style, { position: "", top: "", left: "", right: "", overflow: "" });
+    window.scrollTo(0, savedScrollY);
+  };
+}
+
 /**
  * Janela modal acessível baseada no `<dialog>` nativo: prende o foco,
  * fecha com Esc e devolve o foco ao elemento anterior.
@@ -33,6 +61,10 @@ export function Modal({ open, title, description, onClose, children, footer, siz
     if (!dialog) return;
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  useEffect(() => {
+    if (open) return lockPageScroll();
   }, [open]);
 
   function startDrag(event: PointerEvent<HTMLElement>) {

@@ -909,6 +909,8 @@ fieldset {
   color: var(--text);
   box-shadow: var(--shadow-lg);
   transition: transform 200ms ease;
+  /* O gesto de rolar não passa para a página de trás. */
+  overscroll-behavior: contain;
 }
 
 .modal[open] {
