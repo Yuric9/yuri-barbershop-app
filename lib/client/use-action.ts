@@ -7,6 +7,8 @@ import { invalidate } from "./api";
 type ActionOptions = {
   /** Mensagem de sucesso exibida ao usuário. */
   success?: string;
+  /** Botão no aviso de sucesso (ex.: "Desfazer"). */
+  successAction?: { label: string; onClick: () => void };
   /** Prefixos de endereços da API que devem ser recarregados depois. */
   refresh?: readonly string[];
 };
@@ -25,7 +27,7 @@ export function useAction() {
       try {
         const result = await action();
         if (options.refresh?.length) invalidate(...options.refresh);
-        if (options.success) feedback.success(options.success);
+        if (options.success) feedback.success(options.success, options.successAction);
         return result;
       } catch (error) {
         feedback.error(error instanceof Error ? error.message : "Não foi possível concluir a operação.");

@@ -1049,6 +1049,21 @@ fieldset {
   animation: toast-in 200ms ease-out;
 }
 
+.toast span {
+  flex: 1;
+}
+
+.toast__action {
+  pointer-events: auto;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--gold);
+  font-weight: 700;
+}
+
 .toast--success svg {
   color: #7fd3a4;
 }
@@ -2191,6 +2206,113 @@ fieldset {
   border-color: #cfe5d7;
 }
 
+/* Lançamento rápido */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.quick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 72px;
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: left;
+  transition: transform 120ms ease, border-color var(--transition), background var(--transition);
+}
+
+.quick-tile strong {
+  font-size: var(--text-md);
+  line-height: 1.25;
+}
+
+.quick-tile span {
+  color: var(--gold-strong);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Os três primeiros (Corte, Barba, Combo) em destaque. */
+.quick-tile:nth-child(-n + 3) {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.quick-tile:nth-child(-n + 3) span {
+  color: var(--gold);
+}
+
+.quick-tile--other {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.quick-tile:active {
+  transform: scale(0.97);
+}
+
+/* Campo de valor grande */
+.amount-input {
+  font-size: 1.75rem !important;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-height: 64px !important;
+}
+
+/* Botões de escolha (pagamento, categoria) */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.chip.is-selected {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Tendência em relação ao mês anterior */
+.trend {
+  display: block;
+  margin-top: 2px;
+  font-weight: 700;
+}
+
+.trend--up {
+  color: var(--success);
+}
+
+.trend--down {
+  color: var(--danger);
+}
+
+.metric--highlight .trend--up {
+  color: #7fd3a4;
+}
+
 /* ─── 6. Utilitários ────────────────────────────────────────────────────── */
 
 .muted {
@@ -2298,6 +2420,10 @@ fieldset {
 
   .loyalty-card__stamps {
     gap: var(--space-3);
+  }
+
+  .quick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   }
 
   .panel {

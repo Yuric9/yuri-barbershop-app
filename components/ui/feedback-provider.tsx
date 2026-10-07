@@ -9,11 +9,13 @@ import { Button } from "./button";
 import { Icon } from "./icon";
 import { Modal } from "./modal";
 
-type Toast = { id: number; tone: "success" | "danger"; message: string };
+type ToastAction = { label: string; onClick: () => void };
+type Toast = { id: number; tone: "success" | "danger"; message: string; action?: ToastAction };
 type ConfirmOptions = { title: string; message: ReactNode; confirmLabel?: string; danger?: boolean };
 
 type FeedbackContextValue = {
-  success: (message: string) => void;
+  /** Aviso de sucesso; `action` mostra um botão (ex.: "Desfazer"). */
+  success: (message: string, action?: ToastAction) => void;
   error: (message: string) => void;
   confirm: (options: ConfirmOptions) => Promise<boolean>;
 };
@@ -35,11 +37,17 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     if (toasts.length) layer.showPopover();
   }, [toasts]);
 
-  const push = useCallback((tone: Toast["tone"], message: string) => {
-    const id = nextId.current++;
-    setToasts((current) => [...current.slice(-2), { id, tone, message }]);
-    window.setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), tone === "danger" ? 7000 : 4000);
-  }, []);
+  const dismiss = useCallback((id: number) => setToasts((current) => current.filter((toast) => toast.id !== id)), []);
+
+  const push = useCallback(
+    (tone: Toast["tone"], message: string, action?: ToastAction) => {
+      const id = nextId.current++;
+      setToasts((current) => [...current.slice(-2), { id, tone, message, action }]);
+      // Com botão de ação, o aviso fica mais tempo na tela.
+      window.setTimeout(() => dismiss(id), action ? 8000 : tone === "danger" ? 7000 : 4000);
+    },
+    [dismiss],
+  );
 
   const confirm = useCallback((options: ConfirmOptions) => {
     setPending(options);
@@ -54,7 +62,11 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   };
 
   const value = useMemo(
-    () => ({ success: (message: string) => push("success", message), error: (message: string) => push("danger", message), confirm }),
+    () => ({
+      success: (message: string, action?: ToastAction) => push("success", message, action),
+      error: (message: string) => push("danger", message),
+      confirm,
+    }),
     [push, confirm],
   );
 
@@ -66,6 +78,18 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
           <div key={toast.id} className={`toast toast--${toast.tone}`} role={toast.tone === "danger" ? "alert" : "status"}>
             <Icon name={toast.tone === "success" ? "check" : "alert"} size={18} />
             <span>{toast.message}</span>
+            {toast.action && (
+              <button
+                type="button"
+                className="toast__action"
+                onClick={() => {
+                  dismiss(toast.id);
+                  toast.action?.onClick();
+                }}
+              >
+                {toast.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>

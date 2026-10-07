@@ -39,6 +39,7 @@ export const POST = adminRoute(async ({ request }) => {
       date,
       ...links,
       paymentMethod: input.paymentMethod,
+      category: input.kind === "despesa" ? input.category : "",
       createdAt: new Date().toISOString(),
     })
     .returning();

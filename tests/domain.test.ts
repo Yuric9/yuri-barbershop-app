@@ -6,7 +6,7 @@ import { loyaltyAdjustmentFor, loyaltySnapshot } from "../lib/domain/loyalty.ts"
 import { formatMoney, percentOf, toCents } from "../lib/domain/money.ts";
 import { formatPhone, isValidPhone, whatsappLink } from "../lib/domain/phone.ts";
 import { parseContactsFile } from "../lib/domain/contacts.ts";
-import { completedServices, dailyIncome, monthlySummaries, totals } from "../lib/domain/finance.ts";
+import { dailyIncome, monthlySummaries, totals } from "../lib/domain/finance.ts";
 import { canTransition } from "../lib/domain/catalog.ts";
 
 test("datas usam o fuso de São Paulo", () => {
@@ -107,11 +107,6 @@ test("resumos financeiros", () => {
     { date: "2026-09-30", income: 3000 },
     { date: "2026-10-01", income: 6000 },
   ]);
-  const appointments = [
-    { id: 10, date: "2026-10-01", status: "Finalizado", totalCents: 5000, cashTransactionId: 1 },
-    { id: 11, date: "2026-10-01", status: "Finalizado", totalCents: 4000, cashTransactionId: null },
-  ];
-  assert.deepEqual(completedServices(transactions, appointments, "2026-10-01"), { count: 2, revenue: 9000, averageTicket: 4500 });
 });
 
 test("status da agenda não volta depois de finalizado ou cancelado", () => {

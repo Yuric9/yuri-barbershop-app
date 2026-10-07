@@ -29,7 +29,7 @@ export default function LoginScreen({ notice }: { notice?: string }) {
   return (
     <main className="login">
       <section className="login__card" aria-labelledby="login-title">
-        <img className="login__logo" src="/brand/yuri-barbershop-logo.png" alt="Yuri Barbershop" width={88} height={88} />
+        <img className="login__logo" src="/brand/logo-176.webp" alt="Yuri Barbershop" width={88} height={88} />
         <span className="eyebrow">Sistema de gestão</span>
         <h1 id="login-title">Acesso administrativo</h1>
         <p className="login__subtitle">Entre com o e-mail e a senha da administração.</p>

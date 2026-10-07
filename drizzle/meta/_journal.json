@@ -99,6 +99,13 @@
       "when": 1787652000000,
       "tag": "0019_loyalty_card_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1791390622018,
+      "tag": "0020_cash_quick_entry",
+      "breakpoints": true
     }
   ]
 }

@@ -2,173 +2,100 @@
 
 import { useState } from "react";
 import { api, useApi } from "../../../lib/client/api";
-import { useClients, useCollaborators, useServices } from "../../../lib/client/resources";
+import { useCollaborators, useServices } from "../../../lib/client/resources";
 import type { Transaction } from "../../../lib/client/types";
 import { REFRESH } from "../../../lib/client/refresh";
 import { useAction } from "../../../lib/client/use-action";
 import { PAYMENT_METHODS } from "../../../lib/domain/catalog";
 import { formatDate, todayKey } from "../../../lib/domain/dates";
-import { inPeriod, totals } from "../../../lib/domain/finance";
-import { centsToInput, formatMoney } from "../../../lib/domain/money";
-import { ClientPicker } from "../client-picker";
+import { inPeriod, isServiceEntry, totals } from "../../../lib/domain/finance";
+import { formatMoney } from "../../../lib/domain/money";
+import { ExpenseModal, RecurringExpensesPanel } from "../expenses";
+import { QuickEntry } from "../quick-entry";
 import { TransactionTable } from "../transaction-table";
 import { Button } from "../../ui/button";
 import { AsyncContent, LoadingState } from "../../ui/feedback";
-import { SelectField, TextAreaField, TextField } from "../../ui/field";
-import { Metric, MetricGrid, PageHeader, Panel, Tabs } from "../../ui/layout";
+import { useFeedback } from "../../ui/feedback-provider";
+import { SelectField, TextField } from "../../ui/field";
+import { Metric, MetricGrid, PageHeader, Panel } from "../../ui/layout";
 import { Modal } from "../../ui/modal";
 
 export default function CashSection() {
   const today = todayKey();
   const year = today.slice(0, 4);
   const ledger = useApi<{ transactions: Transaction[] }>(`/api/transactions?year=${year}`);
-  const [modal, setModal] = useState<"entry" | "walk-in" | null>(null);
+  const collaborators = useCollaborators();
+  const feedback = useFeedback();
+  const { run } = useAction();
+  const [modal, setModal] = useState<"expense" | "walk-in" | null>(null);
+  // O atendimento avulso com escolha de profissional só faz sentido com equipe.
+  const hasTeam = (collaborators.data?.collaborators ?? []).filter((item) => item.active).length > 1;
+
+  async function remove(transaction: Transaction) {
+    const confirmed = await feedback.confirm({
+      title: "Excluir lançamento?",
+      message: `“${transaction.description}” (${formatMoney(transaction.amountCents)}) será removido do caixa.`,
+      confirmLabel: "Excluir",
+      danger: true,
+    });
+    if (confirmed) await run(() => api(`/api/transactions/${transaction.id}`, { method: "DELETE" }), { success: "Lançamento excluído.", refresh: REFRESH.finance });
+  }
 
   return (
     <>
       <PageHeader
-        eyebrow="Operação"
+        eyebrow="Financeiro"
         title="Caixa"
-        description="Os lançamentos do caixa ficam sempre na data de hoje. Para dias anteriores, use Relatórios."
+        description="Atendimentos entram na data de hoje. Gastos podem ser lançados com a data em que aconteceram."
         actions={
-          <Button variant="secondary" icon="scissors" onClick={() => setModal("walk-in")}>
-            Atendimento avulso
-          </Button>
+          hasTeam ? (
+            <Button variant="secondary" icon="scissors" onClick={() => setModal("walk-in")}>
+              Atendimento por profissional
+            </Button>
+          ) : undefined
         }
-        primary={{ label: "Nova movimentação", icon: "plus", onClick: () => setModal("entry") }}
+        primary={{ label: "Registrar gasto", icon: "cash", onClick: () => setModal("expense") }}
       />
 
-      <AsyncContent {...ledger} onRetry={ledger.reload}>
-        {({ transactions }) => {
-          const todayRows = inPeriod(transactions, today);
-          const todayTotals = totals(todayRows);
-          const month = totals(inPeriod(transactions, today.slice(0, 7)));
-          const yearTotals = totals(transactions);
-          return (
-            <div className="stack">
-              <MetricGrid>
-                <Metric highlight label="Entradas hoje" value={formatMoney(todayTotals.income)} hint={`Saídas hoje: ${formatMoney(todayTotals.expenses)}`} />
-                <Metric label="Entradas do mês" value={formatMoney(month.income)} hint={`Saídas: ${formatMoney(month.expenses)}`} />
-                <Metric label="Saldo do mês" value={formatMoney(month.balance)} hint="Entradas − saídas" />
-                <Metric label={`Saldo de ${year}`} value={formatMoney(yearTotals.balance)} hint="Resultado do ano" />
-              </MetricGrid>
+      <div className="stack">
+        <Panel eyebrow="Toque para lançar" title="Lançamento rápido">
+          <QuickEntry />
+        </Panel>
 
-              <Panel eyebrow={formatDate(today)} title="Movimentações de hoje">
-                <TransactionTable transactions={todayRows} empty="Nenhuma movimentação hoje." />
-              </Panel>
+        <AsyncContent {...ledger} onRetry={ledger.reload}>
+          {({ transactions }) => {
+            const todayRows = inPeriod(transactions, today);
+            const todayTotals = totals(todayRows);
+            const todayServices = todayRows.filter(isServiceEntry).length;
+            const month = totals(inPeriod(transactions, today.slice(0, 7)));
+            const yearTotals = totals(transactions);
+            return (
+              <div className="stack">
+                <MetricGrid>
+                  <Metric highlight label="Entradas hoje" value={formatMoney(todayTotals.income)} hint={`${todayServices} atendimento(s) · gastos ${formatMoney(todayTotals.expenses)}`} />
+                  <Metric label="Entradas do mês" value={formatMoney(month.income)} hint={`Gastos: ${formatMoney(month.expenses)}`} />
+                  <Metric label="Saldo do mês" value={formatMoney(month.balance)} hint="Entradas − gastos" />
+                  <Metric label={`Saldo de ${year}`} value={formatMoney(yearTotals.balance)} hint="Resultado do ano" />
+                </MetricGrid>
 
-              <Panel eyebrow="Histórico" title="Últimas movimentações">
-                <TransactionTable transactions={transactions.slice(0, 30)} empty="Nenhuma movimentação registrada neste ano." showDate />
-              </Panel>
-            </div>
-          );
-        }}
-      </AsyncContent>
+                <Panel eyebrow={formatDate(today)} title="Lançamentos de hoje">
+                  <TransactionTable transactions={todayRows} empty="Nenhum lançamento hoje." onDelete={remove} />
+                </Panel>
 
-      {modal === "entry" && <EntryModal onClose={() => setModal(null)} />}
+                <RecurringExpensesPanel />
+
+                <Panel eyebrow="Histórico" title="Últimos lançamentos">
+                  <TransactionTable transactions={transactions.slice(0, 30)} empty="Nenhum lançamento registrado neste ano." showDate onDelete={remove} />
+                </Panel>
+              </div>
+            );
+          }}
+        </AsyncContent>
+      </div>
+
+      {modal === "expense" && <ExpenseModal onClose={() => setModal(null)} />}
       {modal === "walk-in" && <WalkInModal onClose={() => setModal(null)} />}
     </>
-  );
-}
-
-function EntryModal({ onClose }: { onClose: () => void }) {
-  const services = useServices();
-  const clients = useClients();
-  const { busy, run } = useAction();
-  const [form, setForm] = useState({ kind: "entrada", amount: "", description: "", clientEmail: "", serviceId: "", paymentMethod: "Pix" });
-  const income = form.kind === "entrada";
-
-  function chooseService(serviceId: string) {
-    const service = services.data?.services.find((item) => String(item.id) === serviceId);
-    setForm({ ...form, serviceId, amount: service ? centsToInput(service.priceCents) : form.amount });
-  }
-
-  async function submit() {
-    const done = await run(
-      () =>
-        api("/api/transactions", {
-          method: "POST",
-          body: {
-            kind: form.kind,
-            amount: form.amount,
-            description: form.description,
-            clientEmail: income ? form.clientEmail : "",
-            serviceId: income && form.serviceId ? Number(form.serviceId) : null,
-            paymentMethod: income ? form.paymentMethod : "",
-          },
-        }),
-      { success: "Movimentação registrada.", refresh: REFRESH.finance },
-    );
-    if (done) onClose();
-  }
-
-  return (
-    <Modal
-      open
-      title="Nova movimentação"
-      description={`Lançamento na data de hoje (${formatDate(todayKey())}).`}
-      onClose={onClose}
-      onSubmit={submit}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={busy}>
-            Registrar
-          </Button>
-        </>
-      }
-    >
-      <div className="form-sections">
-        <Tabs
-          label="Tipo"
-          value={form.kind}
-          onChange={(kind) => setForm({ ...form, kind })}
-          items={[
-            { value: "entrada", label: "Entrada" },
-            { value: "despesa", label: "Saída / despesa" },
-          ]}
-        />
-        {income && (
-          <>
-            {services.loading || clients.loading ? (
-              <LoadingState />
-            ) : (
-              <div className="form-grid">
-                <SelectField label="Serviço (opcional)" value={form.serviceId} onChange={(event) => chooseService(event.target.value)}>
-                  <option value="">Sem serviço vinculado</option>
-                  {(services.data?.services ?? []).filter((item) => item.active).map((service) => (
-                    <option key={service.id} value={service.id}>
-                      {service.name} — {formatMoney(service.priceCents)}
-                    </option>
-                  ))}
-                </SelectField>
-                <ClientPicker label="Cliente (opcional)" emptyLabel="Sem cliente vinculado" clients={clients.data?.clients ?? []} value={form.clientEmail} onChange={(clientEmail) => setForm({ ...form, clientEmail })} />
-              </div>
-            )}
-          </>
-        )}
-        <div className="form-grid">
-          <TextField label="Valor (R$)" inputMode="decimal" placeholder="0,00" required value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
-          {income && (
-            <SelectField label="Forma de pagamento" value={form.paymentMethod} onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })}>
-              {PAYMENT_METHODS.map((method) => (
-                <option key={method}>{method}</option>
-              ))}
-            </SelectField>
-          )}
-        </div>
-        <TextAreaField
-          label={income ? "Descrição (opcional)" : "Descrição"}
-          required={!income}
-          placeholder={income ? "Ex.: venda avulsa" : "Ex.: aluguel, energia, produtos"}
-          maxLength={240}
-          value={form.description}
-          onChange={(event) => setForm({ ...form, description: event.target.value })}
-        />
-      </div>
-    </Modal>
   );
 }
 

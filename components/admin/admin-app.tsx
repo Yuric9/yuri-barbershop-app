@@ -34,14 +34,14 @@ type SectionDefinition = {
 
 const SECTIONS: SectionDefinition[] = [
   { id: "inicio", label: "Início", icon: "home", group: "Visão geral", tab: true, component: DashboardSection },
-  { id: "agenda", label: "Agenda", icon: "calendar", group: "Operação", tab: true, component: AgendaSection },
-  { id: "caixa", label: "Caixa", icon: "cash", group: "Operação", tab: true, component: CashSection },
-  { id: "clientes", label: "Clientes", icon: "users", group: "Relacionamento", tab: true, component: ClientsSection },
-  { id: "remarketing", label: "Remarketing", icon: "megaphone", group: "Relacionamento", component: MarketingSection },
+  { id: "caixa", label: "Caixa", icon: "cash", group: "Financeiro", tab: true, component: CashSection },
+  { id: "relatorios", label: "Relatórios", icon: "chart", group: "Financeiro", tab: true, component: ReportsSection },
+  { id: "clientes", label: "Clientes", icon: "users", group: "Clientes", tab: true, component: ClientsSection },
+  { id: "remarketing", label: "Remarketing", icon: "megaphone", group: "Clientes", component: MarketingSection },
   { id: "servicos", label: "Serviços", icon: "scissors", group: "Cadastros", component: ServicesSection },
   { id: "produtos", label: "Produtos", icon: "box", group: "Cadastros", component: ProductsSection },
   { id: "equipe", label: "Equipe", icon: "team", group: "Cadastros", component: TeamSection },
-  { id: "relatorios", label: "Relatórios", icon: "chart", group: "Financeiro", component: ReportsSection },
+  { id: "agenda", label: "Agenda", icon: "calendar", group: "Agendamentos", component: AgendaSection },
 ];
 
 const DEFAULT_SECTION: SectionId = "inicio";
@@ -97,7 +97,7 @@ export default function AdminApp({ user }: { user: { name: string; email: string
       <div className="app">
         <aside className="sidebar">
           <div className="sidebar__brand">
-            <img src="/brand/yuri-barbershop-logo.png" alt="" width={44} height={44} />
+            <img src="/brand/logo-176.webp" alt="" width={44} height={44} />
             <div>
               <strong>Yuri Barbershop</strong>
               <span>Gestão</span>
@@ -131,7 +131,7 @@ export default function AdminApp({ user }: { user: { name: string; email: string
 
         <div className="app__main">
           <header className="topbar">
-            <img className="topbar__logo" src="/brand/yuri-barbershop-logo.png" alt="" width={36} height={36} />
+            <img className="topbar__logo" src="/brand/logo-176.webp" alt="" width={36} height={36} />
             <div className="topbar__title">
               <span>{today}</span>
               <h1>{current.label}</h1>

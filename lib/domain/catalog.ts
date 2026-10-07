@@ -7,6 +7,21 @@ export const PAYMENT_METHODS = ["Pix", "Dinheiro", "Cartão de débito", "Cartã
 
 export const COURTESY = "Cortesia";
 
+/** Categorias de gasto, para saber para onde vai o dinheiro. */
+export const EXPENSE_CATEGORIES = [
+  "Aluguel",
+  "Produtos",
+  "Energia",
+  "Água",
+  "Internet e telefone",
+  "Manutenção",
+  "Marketing",
+  "Impostos e taxas",
+  "Outros",
+] as const;
+
+export const UNCATEGORIZED = "Sem categoria";
+
 /** Serviços criados automaticamente no primeiro acesso. */
 export const DEFAULT_SERVICES = [
   { name: "Corte", priceCents: 3000, durationMin: 60 },

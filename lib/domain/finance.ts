@@ -14,13 +14,6 @@ export type FinanceTransaction = {
   serviceId?: number | null;
 };
 
-export type FinanceAppointment = {
-  id: number;
-  date: string;
-  status: string;
-  totalCents: number;
-  cashTransactionId?: number | null;
-};
 
 export function isIncome(transaction: { kind: string }) {
   return transaction.kind.toLowerCase() === "entrada";
@@ -64,31 +57,48 @@ export function dailyIncome(transactions: FinanceTransaction[], today: string, d
   });
 }
 
-/**
- * Atendimentos concluídos no dia.
- *
- * Uma entrada no caixa vinculada a um serviço ou a um agendamento representa
- * um atendimento realizado (finalização de agendamento, atendimento avulso ou
- * lançamento manual de serviço). Vendas de produtos não contam. Atendimentos
- * antigos finalizados sem lançamento vinculado também são contados.
- */
-export function completedServices(transactions: FinanceTransaction[], appointments: FinanceAppointment[], date: string) {
-  const serviceEntries = transactions.filter(
-    (transaction) =>
-      transaction.date === date && isIncome(transaction) && Boolean(transaction.serviceId || transaction.appointmentId),
-  );
-  const linkedAppointments = new Set(serviceEntries.map((entry) => entry.appointmentId).filter(Boolean));
-  const linkedTransactions = new Set(serviceEntries.map((entry) => entry.id));
-  const legacy = appointments.filter(
-    (appointment) =>
-      appointment.date === date &&
-      appointment.status === "Finalizado" &&
-      !linkedAppointments.has(appointment.id) &&
-      !(appointment.cashTransactionId && linkedTransactions.has(appointment.cashTransactionId)),
-  );
-  const count = serviceEntries.length + legacy.length;
-  const revenue =
-    serviceEntries.reduce((sum, entry) => sum + entry.amountCents, 0) +
-    legacy.reduce((sum, appointment) => sum + appointment.totalCents, 0);
-  return { count, revenue, averageTicket: count ? Math.round(revenue / count) : 0 };
+type ServiceEntry = FinanceTransaction & { serviceName?: string | null };
+
+/** Entrada que representa um atendimento (vinculada a serviço ou agendamento). */
+export function isServiceEntry(transaction: FinanceTransaction) {
+  return isIncome(transaction) && Boolean(transaction.serviceId || transaction.appointmentId);
+}
+
+/** Atendimentos e faturamento entre duas datas (inclusive). */
+export function periodStats(transactions: FinanceTransaction[], from: string, to: string) {
+  const rows = transactions.filter((item) => item.date >= from && item.date <= to);
+  const income = rows.filter(isIncome).reduce((sum, item) => sum + item.amountCents, 0);
+  const services = rows.filter(isServiceEntry).length;
+  return { services, income, averageTicket: services ? Math.round(rows.filter(isServiceEntry).reduce((sum, item) => sum + item.amountCents, 0) / services) : 0 };
+}
+
+/** Quantidade e valor de cada serviço no período, do mais feito ao menos feito. */
+export function serviceRanking(transactions: ServiceEntry[], from: string, to: string) {
+  const groups = new Map<string, { name: string; count: number; amountCents: number }>();
+  for (const item of transactions) {
+    if (item.date < from || item.date > to || !isServiceEntry(item)) continue;
+    const name = item.serviceName?.trim() || "Outros";
+    const group = groups.get(name) ?? { name, count: 0, amountCents: 0 };
+    group.count++;
+    group.amountCents += item.amountCents;
+    groups.set(name, group);
+  }
+  return [...groups.values()].sort((a, b) => b.count - a.count || b.amountCents - a.amountCents);
+}
+
+/** Variação percentual (arredondada); `null` quando não há base de comparação. */
+export function percentChange(current: number, previous: number) {
+  if (!previous) return null;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+/** Gastos agrupados por categoria, do maior para o menor. */
+export function expensesByCategory(transactions: (FinanceTransaction & { category?: string | null })[], fallback: string) {
+  const groups = new Map<string, number>();
+  for (const item of transactions) {
+    if (isIncome(item)) continue;
+    const category = item.category?.trim() || fallback;
+    groups.set(category, (groups.get(category) ?? 0) + item.amountCents);
+  }
+  return [...groups.entries()].map(([category, amountCents]) => ({ category, amountCents })).sort((a, b) => b.amountCents - a.amountCents);
 }

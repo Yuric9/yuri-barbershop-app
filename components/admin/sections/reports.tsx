@@ -7,7 +7,8 @@ import { useClients, useServices } from "../../../lib/client/resources";
 import type { Transaction } from "../../../lib/client/types";
 import { useAction } from "../../../lib/client/use-action";
 import { MONTH_NAMES, todayKey } from "../../../lib/domain/dates";
-import { inPeriod, isIncome, monthlySummaries, totals } from "../../../lib/domain/finance";
+import { expensesByCategory, inPeriod, isIncome, monthlySummaries, serviceRanking, totals } from "../../../lib/domain/finance";
+import { EXPENSE_CATEGORIES, UNCATEGORIZED } from "../../../lib/domain/catalog";
 import { centsToInput, formatMoney } from "../../../lib/domain/money";
 import { BarChart } from "../bar-chart";
 import { ClientPicker } from "../client-picker";
@@ -108,18 +109,16 @@ function ReportBody({
   const monthTotals = totals(monthRows);
   const yearTotals = totals(transactions);
   const summaries = monthlySummaries(transactions, year);
-  const byPayment = useMemo(() => {
-    const groups = new Map<string, number>();
-    for (const row of monthRows.filter(isIncome)) groups.set(row.paymentMethod || "Não informado", (groups.get(row.paymentMethod || "Não informado") ?? 0) + row.amountCents);
-    return [...groups.entries()].sort((a, b) => b[1] - a[1]);
-  }, [monthRows]);
+  const byCategory = useMemo(() => expensesByCategory(monthRows, UNCATEGORIZED), [monthRows]);
+  const ranking = useMemo(() => serviceRanking(monthRows, `${monthKey}-01`, `${monthKey}-31`), [monthRows, monthKey]);
+  const monthServices = ranking.reduce((sum, item) => sum + item.count, 0);
   const monthName = MONTH_NAMES[month - 1];
 
   return (
     <div className="stack">
       <MetricGrid>
-        <Metric highlight label={`Faturamento de ${monthName}`} value={formatMoney(monthTotals.income)} hint={`${monthRows.filter(isIncome).length} entrada(s)`} />
-        <Metric label="Despesas do mês" value={formatMoney(monthTotals.expenses)} hint="Saídas registradas" />
+        <Metric highlight label={`Faturamento de ${monthName}`} value={formatMoney(monthTotals.income)} hint={`${monthServices} atendimento(s)`} />
+        <Metric label="Gastos do mês" value={formatMoney(monthTotals.expenses)} hint={`${monthRows.filter((row) => !isIncome(row)).length} gasto(s) lançado(s)`} />
         <Metric label="Saldo do mês" value={formatMoney(monthTotals.balance)} hint="Entradas − saídas" />
         <Metric label={`Saldo de ${year}`} value={formatMoney(yearTotals.balance)} hint={`${formatMoney(yearTotals.income)} faturados no ano`} />
       </MetricGrid>
@@ -133,24 +132,44 @@ function ReportBody({
             bars={summaries.map((item) => ({ key: String(item.month), label: item.name.slice(0, 3), title: `${item.name} de ${year}`, value: item.income }))}
           />
         </Panel>
-        <Panel eyebrow={monthName} title="Entradas por pagamento">
-          {byPayment.length ? (
+        <Panel eyebrow={monthName} title="Gastos por categoria">
+          {byCategory.length ? (
             <ul className="breakdown">
-              {byPayment.map(([method, amount]) => (
-                <li key={method}>
-                  <span>{method}</span>
+              {byCategory.map((item) => (
+                <li key={item.category}>
+                  <span>{item.category}</span>
                   <span className="breakdown__bar">
-                    <span style={{ width: `${(amount / Math.max(1, monthTotals.income)) * 100}%` }} />
+                    <span style={{ width: `${(item.amountCents / Math.max(1, monthTotals.expenses)) * 100}%` }} />
                   </span>
-                  <strong>{formatMoney(amount)}</strong>
+                  <strong>{formatMoney(item.amountCents)}</strong>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="muted">Sem entradas neste mês.</p>
+            <p className="muted">Nenhum gasto lançado neste mês.</p>
           )}
         </Panel>
       </div>
+
+      <Panel eyebrow={monthName} title="Atendimentos por serviço">
+        {ranking.length ? (
+          <ul className="breakdown">
+            {ranking.map((item) => (
+              <li key={item.name}>
+                <span>{item.name}</span>
+                <span className="breakdown__bar">
+                  <span style={{ width: `${(item.count / Math.max(1, ranking[0].count)) * 100}%` }} />
+                </span>
+                <strong>
+                  {item.count}× · {formatMoney(item.amountCents)}
+                </strong>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">Nenhum atendimento lançado neste mês.</p>
+        )}
+      </Panel>
 
       <Panel eyebrow="Histórico" title={`Lançamentos de ${monthName}`}>
         <TransactionTable transactions={monthRows} empty="Nenhum lançamento neste mês." showDate onEdit={onEdit} onDelete={onDelete} />
@@ -174,6 +193,7 @@ function TransactionModal({ transaction, onClose }: { transaction: Transaction |
     clientEmail: transaction?.clientEmail ?? "",
     serviceId: transaction?.serviceId ? String(transaction.serviceId) : "",
     paymentMethod: transaction?.paymentMethod ?? "",
+    category: transaction?.category ?? "",
   });
 
   async function submit() {
@@ -184,6 +204,7 @@ function TransactionModal({ transaction, onClose }: { transaction: Transaction |
       clientEmail: form.clientEmail,
       serviceId: form.serviceId ? Number(form.serviceId) : null,
       paymentMethod: form.paymentMethod,
+      category: form.category,
       ...(mode === "month" && !transaction ? { month: form.month } : { date: form.date }),
     };
     const done = await run(
@@ -238,7 +259,16 @@ function TransactionModal({ transaction, onClose }: { transaction: Transaction |
               <TextField label="Data" type="date" max={today} required value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
             )}
             <TextField label="Valor (R$)" inputMode="decimal" placeholder="0,00" required value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
-            <TextField label="Forma de pagamento" placeholder="Pix, dinheiro..." value={form.paymentMethod} onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })} />
+            {form.kind === "despesa" ? (
+              <SelectField label="Categoria" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>
+                <option value="">{UNCATEGORIZED}</option>
+                {EXPENSE_CATEGORIES.map((category) => (
+                  <option key={category}>{category}</option>
+                ))}
+              </SelectField>
+            ) : (
+              <TextField label="Forma de pagamento (opcional)" placeholder="Pix, dinheiro..." value={form.paymentMethod} onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })} />
+            )}
             <SelectField label="Serviço (opcional)" value={form.serviceId} onChange={(event) => setForm({ ...form, serviceId: event.target.value })}>
               <option value="">Sem vínculo</option>
               {(services.data?.services ?? []).map((service) => (
