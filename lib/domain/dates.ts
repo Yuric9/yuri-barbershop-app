@@ -106,3 +106,17 @@ export function formatWeekdayShort(key: string) {
     .format(toNoonUtc(key))
     .replace(".", "");
 }
+
+/** Segunda-feira da semana de `key` (semana de segunda a domingo). */
+export function startOfWeek(key: string) {
+  const day = weekday(key);
+  return addDays(key, day === 0 ? -6 : 1 - day);
+}
+
+/** Mesmo dia no mês anterior (limitado ao último dia daquele mês). */
+export function sameDayPreviousMonth(key: string) {
+  const [year, month, day] = key.split("-").map(Number);
+  const previous = month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, "0")}`;
+  const lastDay = Number(monthRange(previous).end.slice(8));
+  return `${previous}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
+}

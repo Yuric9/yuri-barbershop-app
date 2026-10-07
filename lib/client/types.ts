@@ -1,6 +1,6 @@
 /** Tipos dos dados recebidos da API (derivados do schema do banco). */
 import type { productOrderItems, productOrders } from "../../db/product-order-schema";
-import type { appointments, collaborators, marketingContacts, products, services, transactions } from "../../db/schema";
+import type { appointments, collaborators, marketingContacts, products, recurringExpenses, services, transactions } from "../../db/schema";
 import type { ClientSummary } from "../server/clients";
 
 export type { ClientSummary };
@@ -22,14 +22,21 @@ export type Collaborator = typeof collaborators.$inferSelect & {
   };
 };
 
+export type PeriodStats = { services: number; income: number; averageTicket: number };
+
+export type RecurringExpense = typeof recurringExpenses.$inferSelect & { launched: boolean; due: boolean };
+
 export type Dashboard = {
   today: string;
-  todayIncomeCents: number;
-  completedToday: { count: number; revenue: number; averageTicket: number };
-  scheduledToday: number;
-  pendingToday: number;
-  month: { income: number; expenses: number; balance: number };
+  day: PeriodStats;
+  week: PeriodStats;
+  month: PeriodStats;
+  /** Mesmo período (dia 1 até hoje) do mês anterior. */
+  previousMonth: PeriodStats;
+  monthTotals: { income: number; expenses: number; balance: number };
+  ranking: { name: string; count: number; amountCents: number }[];
   lastSevenDays: { date: string; income: number }[];
-  upcoming: Appointment[];
+  recurring: RecurringExpense[];
+  daysSinceLastExpense: number | null;
   pendingOrders: number;
 };

@@ -83,3 +83,10 @@ export const clientFields = z.object({
   phone,
   birthDate: optionalDateKey,
 });
+
+export const recurringExpenseFields = z.object({
+  description: text("a descrição", 120),
+  amount: moneyCents,
+  category: z.string().trim().max(40).optional(),
+  dayOfMonth: z.coerce.number().int().min(1, "Informe um dia entre 1 e 31.").max(31, "Informe um dia entre 1 e 31."),
+});

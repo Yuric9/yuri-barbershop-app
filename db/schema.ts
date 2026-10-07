@@ -191,6 +191,22 @@ export const transactions = sqliteTable("transactions", {
   serviceName: text("service_name").notNull().default(""),
   collaboratorId: integer("collaborator_id"),
   paymentMethod: text("payment_method").notNull().default(""),
+  /** Categoria do gasto (aluguel, produtos...). Vazio nas entradas. */
+  category: text("category").notNull().default(""),
+  /** Despesa fixa que originou este lançamento, se houver. */
+  recurringExpenseId: integer("recurring_expense_id"),
+  createdAt: text("created_at").notNull(),
+});
+
+/** Gastos que se repetem todo mês (ex.: aluguel), confirmados com 1 toque. */
+export const recurringExpenses = sqliteTable("recurring_expenses", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  description: text("description").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  category: text("category").notNull().default(""),
+  /** Dia do mês em que vence (1 a 31). */
+  dayOfMonth: integer("day_of_month").notNull().default(1),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
 });
 

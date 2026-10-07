@@ -15,6 +15,8 @@ export const transactionInput = z.object({
   clientEmail: z.string().trim().toLowerCase().optional().default(""),
   serviceId: optionalId,
   paymentMethod: optionalText(40),
+  /** Categoria do gasto; ignorada nas entradas. */
+  category: optionalText(40),
 });
 
 /** Busca cliente e serviço vinculados (opcionais) para gravar os nomes junto. */

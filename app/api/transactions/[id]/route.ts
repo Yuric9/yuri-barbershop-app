@@ -27,6 +27,7 @@ export const PATCH = adminRoute<{ id: string }>(async ({ request, params }) => {
       date,
       description: input.description || current.description,
       paymentMethod: input.paymentMethod,
+      category: input.kind === "despesa" ? input.category : "",
       ...links,
     })
     .where(eq(transactions.id, current.id))

@@ -36,7 +36,7 @@ export function TransactionTable({ transactions, empty, showDate = false, onEdit
         <tbody>
           {transactions.map((item) => {
             const income = isIncome(item);
-            const links = [item.clientName, item.serviceName].filter(Boolean).join(" · ");
+            const links = [item.category, item.clientName, item.serviceName].filter(Boolean).join(" · ");
             return (
               <tr key={item.id}>
                 {showDate && <td data-label="Data">{formatDate(item.date)}</td>}
@@ -46,7 +46,7 @@ export function TransactionTable({ transactions, empty, showDate = false, onEdit
                 </td>
                 <td data-label="Pagamento">{item.paymentMethod || "—"}</td>
                 <td data-label="Tipo">
-                  <Badge tone={income ? "success" : "danger"}>{income ? "Entrada" : "Saída"}</Badge>
+                  <Badge tone={income ? "success" : "danger"}>{income ? "Entrada" : "Gasto"}</Badge>
                 </td>
                 <td data-label="Valor" className={`table__number ${income ? "" : "is-negative"}`}>
                   {income ? "" : "− "}
