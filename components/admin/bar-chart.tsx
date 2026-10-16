@@ -4,11 +4,14 @@ import { formatMoney } from "../../lib/domain/money";
 
 export type Bar = { key: string; label: string; title: string; value: number };
 
-/** Gráfico de barras simples e acessível (cada barra é um botão). */
+/**
+ * Gráfico de barras simples e acessível (cada barra é um botão). Com muitas
+ * barras, só a selecionada mostra o valor, para os números não se sobreporem.
+ */
 export function BarChart({ bars, selected, onSelect, label }: { bars: Bar[]; selected?: string; onSelect?: (key: string) => void; label: string }) {
   const max = Math.max(1, ...bars.map((bar) => bar.value));
   return (
-    <div className="bar-chart" role="group" aria-label={label}>
+    <div className={`bar-chart ${bars.length > 7 ? "bar-chart--dense" : ""}`} role="group" aria-label={label}>
       {bars.map((bar) => (
         <button
           type="button"

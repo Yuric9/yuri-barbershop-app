@@ -7,91 +7,76 @@ import type { Transaction } from "../../../lib/client/types";
 import { REFRESH } from "../../../lib/client/refresh";
 import { useAction } from "../../../lib/client/use-action";
 import { PAYMENT_METHODS } from "../../../lib/domain/catalog";
-import { formatDate, todayKey } from "../../../lib/domain/dates";
-import { inPeriod, isServiceEntry, totals } from "../../../lib/domain/finance";
+import { todayKey } from "../../../lib/domain/dates";
+import { inPeriod, totals } from "../../../lib/domain/finance";
 import { formatMoney } from "../../../lib/domain/money";
 import { ExpenseModal, RecurringExpensesPanel } from "../expenses";
-import { QuickEntry } from "../quick-entry";
-import { TransactionTable } from "../transaction-table";
+import { EntryList, useDeleteEntry } from "../entry-list";
 import { Button } from "../../ui/button";
 import { AsyncContent, LoadingState } from "../../ui/feedback";
-import { useFeedback } from "../../ui/feedback-provider";
 import { SelectField, TextField } from "../../ui/field";
-import { Metric, MetricGrid, PageHeader, Panel } from "../../ui/layout";
+import { PageHeader, Panel } from "../../ui/layout";
 import { Modal } from "../../ui/modal";
 
 export default function CashSection() {
   const today = todayKey();
-  const year = today.slice(0, 4);
-  const ledger = useApi<{ transactions: Transaction[] }>(`/api/transactions?year=${year}`);
+  const ledger = useApi<{ transactions: Transaction[] }>(`/api/transactions?year=${today.slice(0, 4)}`);
   const collaborators = useCollaborators();
-  const feedback = useFeedback();
-  const { run } = useAction();
+  const remove = useDeleteEntry();
   const [modal, setModal] = useState<"expense" | "walk-in" | null>(null);
   // O atendimento avulso com escolha de profissional só faz sentido com equipe.
   const hasTeam = (collaborators.data?.collaborators ?? []).filter((item) => item.active).length > 1;
-
-  async function remove(transaction: Transaction) {
-    const confirmed = await feedback.confirm({
-      title: "Excluir lançamento?",
-      message: `“${transaction.description}” (${formatMoney(transaction.amountCents)}) será removido do caixa.`,
-      confirmLabel: "Excluir",
-      danger: true,
-    });
-    if (confirmed) await run(() => api(`/api/transactions/${transaction.id}`, { method: "DELETE" }), { success: "Lançamento excluído.", refresh: REFRESH.finance });
-  }
 
   return (
     <>
       <PageHeader
         eyebrow="Financeiro"
         title="Caixa"
-        description="Atendimentos entram na data de hoje. Gastos podem ser lançados com a data em que aconteceram."
+        description="Tudo o que entrou e saiu, dia a dia."
         actions={
-          hasTeam ? (
-            <Button variant="secondary" icon="scissors" onClick={() => setModal("walk-in")}>
-              Atendimento por profissional
+          <>
+            {hasTeam && (
+              <Button variant="secondary" icon="scissors" onClick={() => setModal("walk-in")}>
+                Por profissional
+              </Button>
+            )}
+            <Button variant="secondary" icon="minus" onClick={() => setModal("expense")}>
+              Registrar gasto
             </Button>
-          ) : undefined
+          </>
         }
-        primary={{ label: "Registrar gasto", icon: "cash", onClick: () => setModal("expense") }}
       />
 
-      <div className="stack">
-        <Panel eyebrow="Toque para lançar" title="Lançamento rápido">
-          <QuickEntry />
-        </Panel>
+      <AsyncContent {...ledger} onRetry={ledger.reload}>
+        {({ transactions }) => {
+          const todayTotals = totals(inPeriod(transactions, today));
+          const month = totals(inPeriod(transactions, today.slice(0, 7)));
+          return (
+            <div className="stack">
+              <dl className="summary">
+                <div>
+                  <dt>Hoje</dt>
+                  <dd>{formatMoney(todayTotals.income)}</dd>
+                </div>
+                <div>
+                  <dt>Mês</dt>
+                  <dd>{formatMoney(month.income)}</dd>
+                </div>
+                <div>
+                  <dt>Saldo do mês</dt>
+                  <dd className={month.balance < 0 ? "is-negative" : ""}>{formatMoney(month.balance)}</dd>
+                </div>
+              </dl>
 
-        <AsyncContent {...ledger} onRetry={ledger.reload}>
-          {({ transactions }) => {
-            const todayRows = inPeriod(transactions, today);
-            const todayTotals = totals(todayRows);
-            const todayServices = todayRows.filter(isServiceEntry).length;
-            const month = totals(inPeriod(transactions, today.slice(0, 7)));
-            const yearTotals = totals(transactions);
-            return (
-              <div className="stack">
-                <MetricGrid>
-                  <Metric highlight label="Entradas hoje" value={formatMoney(todayTotals.income)} hint={`${todayServices} atendimento(s) · gastos ${formatMoney(todayTotals.expenses)}`} />
-                  <Metric label="Entradas do mês" value={formatMoney(month.income)} hint={`Gastos: ${formatMoney(month.expenses)}`} />
-                  <Metric label="Saldo do mês" value={formatMoney(month.balance)} hint="Entradas − gastos" />
-                  <Metric label={`Saldo de ${year}`} value={formatMoney(yearTotals.balance)} hint="Resultado do ano" />
-                </MetricGrid>
+              <Panel title="Lançamentos">
+                <EntryList transactions={transactions} pageDays={7} empty="Nenhum lançamento registrado neste ano." onDelete={remove} />
+              </Panel>
 
-                <Panel eyebrow={formatDate(today)} title="Lançamentos de hoje">
-                  <TransactionTable transactions={todayRows} empty="Nenhum lançamento hoje." onDelete={remove} />
-                </Panel>
-
-                <RecurringExpensesPanel />
-
-                <Panel eyebrow="Histórico" title="Últimos lançamentos">
-                  <TransactionTable transactions={transactions.slice(0, 30)} empty="Nenhum lançamento registrado neste ano." showDate onDelete={remove} />
-                </Panel>
-              </div>
-            );
-          }}
-        </AsyncContent>
-      </div>
+              <RecurringExpensesPanel />
+            </div>
+          );
+        }}
+      </AsyncContent>
 
       {modal === "expense" && <ExpenseModal onClose={() => setModal(null)} />}
       {modal === "walk-in" && <WalkInModal onClose={() => setModal(null)} />}

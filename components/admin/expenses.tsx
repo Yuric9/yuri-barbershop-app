@@ -98,7 +98,6 @@ export function RecurringExpensesPanel() {
 
   return (
     <Panel
-      eyebrow="Todo mês"
       title="Despesas fixas"
       actions={
         <Button variant="ghost" size="sm" icon="plus" onClick={() => setEditing("new")}>

@@ -34,8 +34,7 @@ export type Dashboard = {
   /** Mesmo período (dia 1 até hoje) do mês anterior. */
   previousMonth: PeriodStats;
   monthTotals: { income: number; expenses: number; balance: number };
-  ranking: { name: string; count: number; amountCents: number }[];
-  lastSevenDays: { date: string; income: number }[];
+  todayEntries: Transaction[];
   recurring: RecurringExpense[];
   daysSinceLastExpense: number | null;
   pendingOrders: number;
