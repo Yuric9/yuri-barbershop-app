@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { api } from "../../lib/client/api";
 import { REFRESH } from "../../lib/client/refresh";
 import { useServices } from "../../lib/client/resources";
@@ -25,35 +25,77 @@ function toInputValue(cents: number) {
 
 type Selection = { service: Service | null };
 
+/** Quantos serviços aparecem como botão grande (Corte, Barba e Combo). */
+const MAIN_SERVICES = 3;
+
 /**
  * Lançamento rápido de atendimentos no caixa: toque no serviço, confira o
  * valor (pode mudar, para desconto ou acréscimo) e lance. Fica sempre na
- * data de hoje e pode ser desfeito logo depois.
+ * data de hoje e pode ser desfeito logo depois. Só os serviços principais
+ * ficam à vista; os demais abrem em "Outros".
  */
-export function QuickEntry() {
+export function QuickEntry({ extra }: { extra?: ReactNode }) {
   const services = useServices();
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (services.loading && !services.data) return <LoadingState />;
   const list = sortForQuickEntry((services.data?.services ?? []).filter((service) => service.active));
+  const main = list.slice(0, MAIN_SERVICES);
+  const others = list.slice(MAIN_SERVICES);
+
+  function choose(service: Service | null) {
+    setPickerOpen(false);
+    setSelection({ service });
+  }
 
   return (
     <>
       <div className="quick-grid">
-        {list.map((service) => (
-          <button key={service.id} type="button" className="quick-tile" onClick={() => setSelection({ service })}>
-            <strong>{service.name.trim()}</strong>
+        {main.map((service) => (
+          <button key={service.id} type="button" className="quick-tile" onClick={() => choose(service)}>
+            <strong>{shortName(service.name)}</strong>
             <span>{formatMoney(service.priceCents)}</span>
           </button>
         ))}
-        <button type="button" className="quick-tile quick-tile--other" onClick={() => setSelection({ service: null })}>
-          <Icon name="plus" size={20} />
-          <strong>Outro valor</strong>
-        </button>
       </div>
+      <div className="quick-actions">
+        <Button variant="secondary" icon="plus" onClick={() => setPickerOpen(true)}>
+          Outros
+        </Button>
+        {extra}
+      </div>
+
+      {pickerOpen && (
+        <Modal open title="Outros serviços" onClose={() => setPickerOpen(false)}>
+          <ul className="entry-list">
+            {others.map((service) => (
+              <li key={service.id} className="entry">
+                <button type="button" className="entry__main" onClick={() => choose(service)}>
+                  <span className="entry__name">{service.name.trim()}</span>
+                </button>
+                <strong className="entry__amount">{formatMoney(service.priceCents)}</strong>
+              </li>
+            ))}
+            <li className="entry">
+              <button type="button" className="entry__main" onClick={() => choose(null)}>
+                <span className="entry__name">Outro valor</span>
+                <span className="entry__meta">Serviço avulso ou produto</span>
+              </button>
+              <Icon name="plus" size={18} />
+            </li>
+          </ul>
+        </Modal>
+      )}
       {selection && <QuickEntrySheet key={selection.service?.id ?? "outro"} service={selection.service} onClose={() => setSelection(null)} />}
     </>
   );
+}
+
+/** "Combo Corte + Barba" → "Combo" para caber no botão. */
+function shortName(name: string) {
+  const trimmed = name.trim();
+  return /^combo\b/i.test(trimmed) ? "Combo" : trimmed;
 }
 
 function QuickEntrySheet({ service, onClose }: { service: Service | null; onClose: () => void }) {

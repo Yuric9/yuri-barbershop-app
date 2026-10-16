@@ -7,17 +7,17 @@ import { useClients, useServices } from "../../../lib/client/resources";
 import type { Transaction } from "../../../lib/client/types";
 import { useAction } from "../../../lib/client/use-action";
 import { MONTH_NAMES, todayKey } from "../../../lib/domain/dates";
-import { expensesByCategory, inPeriod, isIncome, monthlySummaries, serviceRanking, totals } from "../../../lib/domain/finance";
+import { expensesByCategory, inPeriod, monthlySummaries, serviceRanking, totals } from "../../../lib/domain/finance";
 import { EXPENSE_CATEGORIES, UNCATEGORIZED } from "../../../lib/domain/catalog";
 import { centsToInput, formatMoney } from "../../../lib/domain/money";
+import { plural } from "../../../lib/domain/text";
 import { BarChart } from "../bar-chart";
 import { ClientPicker } from "../client-picker";
-import { TransactionTable } from "../transaction-table";
+import { EntryList, useDeleteEntry } from "../entry-list";
 import { Button } from "../../ui/button";
 import { AsyncContent, LoadingState } from "../../ui/feedback";
-import { useFeedback } from "../../ui/feedback-provider";
 import { SelectField, TextField } from "../../ui/field";
-import { Metric, MetricGrid, PageHeader, Panel, Tabs } from "../../ui/layout";
+import { PageHeader, Panel, Tabs } from "../../ui/layout";
 import { Modal } from "../../ui/modal";
 
 export default function ReportsSection() {
@@ -27,33 +27,21 @@ export default function ReportsSection() {
   const [month, setMonth] = useState(Number(today.slice(5, 7)));
   const [editing, setEditing] = useState<Transaction | "new" | null>(null);
   const ledger = useApi<{ transactions: Transaction[] }>(`/api/transactions?year=${year}`);
-  const feedback = useFeedback();
-  const { run } = useAction();
+  const remove = useDeleteEntry();
 
   const years = Array.from({ length: 7 }, (_, index) => currentYear - 5 + index);
   const monthKey = `${year}-${String(month).padStart(2, "0")}`;
-
-  async function remove(transaction: Transaction) {
-    const confirmed = await feedback.confirm({
-      title: "Excluir lançamento?",
-      message: `“${transaction.description}” (${formatMoney(transaction.amountCents)}) será removido do caixa.`,
-      confirmLabel: "Excluir",
-      danger: true,
-    });
-    if (confirmed) await run(() => api(`/api/transactions/${transaction.id}`, { method: "DELETE" }), { success: "Lançamento excluído.", refresh: REFRESH.finance });
-  }
 
   return (
     <>
       <PageHeader
         eyebrow="Financeiro"
         title="Relatórios"
-        description="Acompanhe os resultados, registre dias anteriores e corrija lançamentos."
-        primary={{ label: "Novo lançamento", icon: "plus", onClick: () => setEditing("new") }}
+        description="Resultados do mês. Toque num lançamento para corrigir."
       />
 
       <div className="toolbar">
-        <div className="filters">
+        <div className="filters filters--inline">
           <SelectField label="Mês" value={month} onChange={(event) => setMonth(Number(event.target.value))}>
             {MONTH_NAMES.map((name, index) => (
               <option key={name} value={index + 1}>
@@ -67,6 +55,9 @@ export default function ReportsSection() {
             ))}
           </SelectField>
         </div>
+        <Button variant="secondary" icon="plus" onClick={() => setEditing("new")}>
+          Novo
+        </Button>
       </div>
 
       <AsyncContent {...ledger} onRetry={ledger.reload}>
@@ -116,23 +107,54 @@ function ReportBody({
 
   return (
     <div className="stack">
-      <MetricGrid>
-        <Metric highlight label={`Faturamento de ${monthName}`} value={formatMoney(monthTotals.income)} hint={`${monthServices} atendimento(s)`} />
-        <Metric label="Gastos do mês" value={formatMoney(monthTotals.expenses)} hint={`${monthRows.filter((row) => !isIncome(row)).length} gasto(s) lançado(s)`} />
-        <Metric label="Saldo do mês" value={formatMoney(monthTotals.balance)} hint="Entradas − saídas" />
-        <Metric label={`Saldo de ${year}`} value={formatMoney(yearTotals.balance)} hint={`${formatMoney(yearTotals.income)} faturados no ano`} />
-      </MetricGrid>
+      <dl className="summary">
+        <div>
+          <dt>Entrou</dt>
+          <dd>{formatMoney(monthTotals.income)}</dd>
+        </div>
+        <div>
+          <dt>Gastou</dt>
+          <dd>{formatMoney(monthTotals.expenses)}</dd>
+        </div>
+        <div>
+          <dt>Sobrou</dt>
+          <dd className={monthTotals.balance < 0 ? "is-negative" : ""}>{formatMoney(monthTotals.balance)}</dd>
+        </div>
+        <p className="summary__foot">
+          {plural(monthServices, "atendimento", "atendimentos")} em {monthName} · saldo de {year}: {formatMoney(yearTotals.balance)}
+        </p>
+      </dl>
 
-      <div className="grid-2 grid-2--wide-first">
-        <Panel eyebrow="Visão anual" title={`Faturamento por mês — ${year}`}>
-          <BarChart
-            label={`Faturamento mensal de ${year}`}
-            selected={String(month)}
-            onSelect={(key) => onSelectMonth(Number(key))}
-            bars={summaries.map((item) => ({ key: String(item.month), label: item.name.slice(0, 3), title: `${item.name} de ${year}`, value: item.income }))}
-          />
+      <Panel title={`Faturamento de ${year}`}>
+        <BarChart
+          label={`Faturamento mensal de ${year}`}
+          selected={String(month)}
+          onSelect={(key) => onSelectMonth(Number(key))}
+          bars={summaries.map((item) => ({ key: String(item.month), label: item.name.slice(0, 3), title: `${item.name} de ${year}`, value: item.income }))}
+        />
+      </Panel>
+
+      <div className="grid-2">
+        <Panel title="Atendimentos por serviço">
+          {ranking.length ? (
+            <ul className="breakdown">
+              {ranking.map((item) => (
+                <li key={item.name}>
+                  <span>{item.name}</span>
+                  <span className="breakdown__bar">
+                    <span style={{ width: `${(item.count / Math.max(1, ranking[0].count)) * 100}%` }} />
+                  </span>
+                  <strong>
+                    {item.count}× · {formatMoney(item.amountCents)}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">Nenhum atendimento lançado neste mês.</p>
+          )}
         </Panel>
-        <Panel eyebrow={monthName} title="Gastos por categoria">
+        <Panel title="Gastos por categoria">
           {byCategory.length ? (
             <ul className="breakdown">
               {byCategory.map((item) => (
@@ -151,28 +173,8 @@ function ReportBody({
         </Panel>
       </div>
 
-      <Panel eyebrow={monthName} title="Atendimentos por serviço">
-        {ranking.length ? (
-          <ul className="breakdown">
-            {ranking.map((item) => (
-              <li key={item.name}>
-                <span>{item.name}</span>
-                <span className="breakdown__bar">
-                  <span style={{ width: `${(item.count / Math.max(1, ranking[0].count)) * 100}%` }} />
-                </span>
-                <strong>
-                  {item.count}× · {formatMoney(item.amountCents)}
-                </strong>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted">Nenhum atendimento lançado neste mês.</p>
-        )}
-      </Panel>
-
-      <Panel eyebrow="Histórico" title={`Lançamentos de ${monthName}`}>
-        <TransactionTable transactions={monthRows} empty="Nenhum lançamento neste mês." showDate onEdit={onEdit} onDelete={onDelete} />
+      <Panel title={`Lançamentos de ${monthName}`}>
+        <EntryList transactions={monthRows} pageDays={5} empty="Nenhum lançamento neste mês." onEdit={onEdit} onDelete={onDelete} />
       </Panel>
     </div>
   );

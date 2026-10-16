@@ -2206,61 +2206,280 @@ fieldset {
   border-color: #cfe5d7;
 }
 
-/* Lançamento rápido */
+/* Lançamento rápido: só os serviços principais à vista */
 .quick-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
 .quick-tile {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 72px;
-  padding: var(--space-3);
-  border: 1px solid var(--border-strong);
+  min-height: 68px;
+  padding: var(--space-2);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  text-align: left;
-  transition: transform 120ms ease, border-color var(--transition), background var(--transition);
+  background: var(--ink);
+  color: #fff;
+  text-align: center;
+  transition: transform 120ms ease;
 }
 
 .quick-tile strong {
   font-size: var(--text-md);
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .quick-tile span {
-  color: var(--gold-strong);
+  color: var(--gold);
   font-size: var(--text-sm);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-/* Os três primeiros (Corte, Barba, Combo) em destaque. */
-.quick-tile:nth-child(-n + 3) {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: #fff;
+.quick-tile:active {
+  transform: scale(0.97);
 }
 
-.quick-tile:nth-child(-n + 3) span {
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Resumo do dia na tela inicial */
+.today-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--night);
+  color: var(--on-dark);
+}
+
+.today-card__label,
+.today-card__hint {
+  color: var(--on-dark-muted);
+  font-size: var(--text-sm);
+}
+
+.today-card__value {
   color: var(--gold);
+  font-size: 2.25rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
 
-.quick-tile--other {
-  flex-direction: row;
+.today-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.today-card__stats dt {
+  color: var(--on-dark-muted);
+  font-size: var(--text-xs);
+}
+
+.today-card__stats dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.today-card .trend {
+  font-size: var(--text-xs);
+}
+
+.today-card .trend--up {
+  color: #7fd3a4;
+}
+
+.today-card .trend--down,
+.today-card .is-negative {
+  color: #f19a8f;
+}
+
+/* Resumo em três números (Caixa e Relatórios) */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.summary dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.summary dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.summary__foot {
+  grid-column: 1 / -1;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.is-negative {
+  color: var(--danger);
+}
+
+/* Avisos de uma linha */
+.notice {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: #fbf3e2;
+  font-size: var(--text-sm);
+}
+
+.notice-list {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius);
+  background: #fbf3e2;
+}
+
+.notice-list .list__item {
+  padding: var(--space-2) 0;
+}
+
+.notice-list .list__item:first-child {
+  padding-top: var(--space-2);
+}
+
+/* Lançamentos em linhas compactas, agrupados por dia */
+.entry-days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.entry-day__header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
-  border-style: dashed;
+  min-height: 48px;
+  border-top: 1px solid var(--border);
+}
+
+.entry:first-child {
+  border-top: 0;
+}
+
+.entry__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.entry__main:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.entry__name,
+.entry__meta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry__name {
+  font-weight: 600;
+}
+
+.entry__meta {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.entry__amount {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.entry__delete {
+  flex: none;
+  width: 36px;
+  height: 36px;
   color: var(--text-muted);
 }
 
-.quick-tile:active {
-  transform: scale(0.97);
+.entry-days__more {
+  align-self: center;
+}
+
+.filters--inline {
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbar:has(.filters--inline) {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+
+.filters--inline > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.filters--inline > :first-child {
+  flex-basis: 130px;
+}
+
+/* Gráfico com muitas barras: valor só na barra selecionada. */
+.bar-chart--dense .bar-chart__value {
+  visibility: hidden;
+}
+
+.bar-chart--dense .is-selected .bar-chart__value {
+  visibility: visible;
 }
 
 /* Campo de valor grande */
@@ -2420,10 +2639,6 @@ fieldset {
 
   .loyalty-card__stamps {
     gap: var(--space-3);
-  }
-
-  .quick-grid {
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   }
 
   .panel {
