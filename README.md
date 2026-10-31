@@ -74,6 +74,7 @@ Tela (components/admin/sections)
 - **Horário de funcionamento:** seg–sex 18h–20h30, sábado 8h–20h30, domingo 8h–12h, em faixas de 30 min (`lib/domain/schedule.ts`).
 - **Reserva de horário:** cada agendamento reserva faixas na tabela `appointment_slots`, que tem índice único — dois agendamentos nunca ocupam o mesmo horário do mesmo profissional, mesmo se forem feitos ao mesmo tempo.
 - **Finalizar atendimento** lança a entrada no caixa e calcula a comissão (percentual do serviço ou o padrão do colaborador). Só é possível finalizar atendimentos de hoje ou de dias anteriores, e o mesmo atendimento não é finalizado duas vezes.
+- **Finalizar atendimento e vender produto** são operações "tudo ou nada" (`db.batch` do D1): status, caixa e estoque são gravados juntos, e um clique repetido não lança nada em dobro. Uma trava no banco (`drizzle/0021_product_stock_guard.sql`) impede estoque negativo.
 - **Cortesia** (cartão fidelidade) só é aceita quando o cliente tem benefício disponível; nada é lançado no caixa.
 - **Valores** são guardados em centavos (inteiros).
 

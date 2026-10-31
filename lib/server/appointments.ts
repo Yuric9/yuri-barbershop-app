@@ -2,7 +2,8 @@
  * Regras de agendamento que dependem do banco: disponibilidade, criação com
  * reserva de horário e mudança de status (com lançamento no caixa).
  */
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, max, ne, sql } from "drizzle-orm";
+import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
 import type { Database } from "../../db";
 import { appointmentSlots, appointments, collaborators, profiles, scheduleBlocks, services, transactions } from "../../db/schema";
 import { COURTESY, canTransition, type AppointmentStatus } from "../domain/catalog";
@@ -11,6 +12,7 @@ import { loyaltySnapshot } from "../domain/loyalty";
 import { percentOf } from "../domain/money";
 import { findFreeResource, isPastSlot, resourceKeyFor, slotsCovered, startTimesFor } from "../domain/schedule";
 import { isPaidVisit } from "./clients";
+import { insertWhen } from "./insert-when";
 import { commissionPercentFor } from "./collaborators";
 import { ApiError } from "./http";
 
@@ -158,12 +160,9 @@ export async function changeAppointmentStatus(
   }
 
   // A condição `status = atual` evita processar duas vezes o mesmo clique.
-  const claim = (values: Partial<AppointmentRow>) =>
-    db
-      .update(appointments)
-      .set({ status, ...values })
-      .where(and(eq(appointments.id, appointment.id), eq(appointments.status, appointment.status)))
-      .returning({ id: appointments.id });
+  const stillPending = and(eq(appointments.id, appointment.id), eq(appointments.status, appointment.status));
+  const claim = (values: SQLiteUpdateSetSource<typeof appointments>) =>
+    db.update(appointments).set({ status, ...values }).where(stillPending).returning({ id: appointments.id });
 
   if (status !== "Finalizado") {
     const updated = await claim({});
@@ -173,6 +172,10 @@ export async function changeAppointmentStatus(
   }
 
   const now = new Date().toISOString();
+  // Tudo o que acontece ao finalizar vai em um único lote (`db.batch`): o D1
+  // grava todos os comandos ou nenhum. Os comandos que vêm antes do `claim` só
+  // agem se o agendamento ainda estiver no status de antes; assim, um clique
+  // repetido não lança nada em dobro.
 
   if (paymentMethod === COURTESY) {
     const [profile] = await db.select().from(profiles).where(eq(profiles.email, appointment.clientEmail)).limit(1);
@@ -183,25 +186,24 @@ export async function changeAppointmentStatus(
     if (!profile || !loyaltySnapshot(profile, history.filter(isPaidVisit).length).rewardAvailable) {
       throw new ApiError(409, "Este cliente ainda não possui atendimento gratuito disponível.");
     }
-    const updated = await claim({ paymentMethod, commissionPercent: 0, commissionCents: 0, cashTransactionId: null });
+    const [, updated] = await db.batch([
+      db
+        .update(profiles)
+        .set({ loyaltyRewardsRedeemed: sql`${profiles.loyaltyRewardsRedeemed} + 1`, loyaltyUpdatedAt: now, loyaltyUpdatedBy: actorEmail })
+        .where(and(eq(profiles.email, appointment.clientEmail), exists(db.select({ id: appointments.id }).from(appointments).where(stillPending)))),
+      claim({ paymentMethod, commissionPercent: 0, commissionCents: 0, cashTransactionId: null }),
+    ]);
     if (!updated.length) throw new ApiError(409, "O agendamento foi alterado por outra pessoa. Atualize a página.");
-    await db
-      .update(profiles)
-      .set({ loyaltyRewardsRedeemed: sql`${profiles.loyaltyRewardsRedeemed} + 1`, loyaltyUpdatedAt: now, loyaltyUpdatedBy: actorEmail })
-      .where(eq(profiles.email, appointment.clientEmail));
     return;
   }
 
   const commissionPercent = appointment.collaboratorId
     ? await commissionPercentFor(db, appointment.collaboratorId, appointment.serviceId)
     : 0;
-  const updated = await claim({ paymentMethod, commissionPercent, commissionCents: percentOf(appointment.totalCents, commissionPercent) });
-  if (!updated.length) throw new ApiError(409, "O agendamento foi alterado por outra pessoa. Atualize a página.");
-
   const [profile] = await db.select().from(profiles).where(eq(profiles.email, appointment.clientEmail)).limit(1);
-  const [cashEntry] = await db
-    .insert(transactions)
-    .values({
+
+  const [, updated] = await db.batch([
+    insertWhen(db, transactions, {
       kind: "entrada",
       description: `${appointment.serviceName} — ${appointment.clientName}`,
       amountCents: appointment.totalCents,
@@ -214,7 +216,13 @@ export async function changeAppointmentStatus(
       collaboratorId: appointment.collaboratorId,
       paymentMethod,
       createdAt: now,
-    })
-    .returning();
-  await db.update(appointments).set({ cashTransactionId: cashEntry.id }).where(eq(appointments.id, appointment.id));
+    }, exists(db.select({ id: appointments.id }).from(appointments).where(stillPending))),
+    claim({
+      paymentMethod,
+      commissionPercent,
+      commissionCents: percentOf(appointment.totalCents, commissionPercent),
+      cashTransactionId: sql`(${db.select({ id: max(transactions.id) }).from(transactions).where(eq(transactions.appointmentId, appointment.id))})`,
+    }),
+  ]);
+  if (!updated.length) throw new ApiError(409, "O agendamento foi alterado por outra pessoa. Atualize a página.");
 }
